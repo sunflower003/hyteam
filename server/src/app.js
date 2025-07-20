@@ -10,6 +10,7 @@ const connectDB = require('./config/database');
 const corsOptions = require('./config/cors');
 const errorHandler = require('./middleware/errorHandler');
 const { createResponse } = require('./utils/response');
+const { initializeSocket } = require('./config/socket');
 
 //import routes
 const authRoutes = require('./routes/auth');
@@ -22,7 +23,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Initialize Socket.io
-
+const io = initializeSocket(server);
 
 // security middlewares
 app.use(helmet());

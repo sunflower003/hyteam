@@ -31,7 +31,8 @@ const register = async (req, res) => {
         });
 
         //Tao token
-        const token = generateToken(newUser._id);
+        const token = generateToken(user._id);
+
         
         res.status(201).json(
             createResponse(true, {
@@ -102,7 +103,7 @@ const getProfile = async (req, res) => {
                     username: user.username,
                     email: user.email,
                     role: user.role,
-                    avatar: user.avatat,
+                    avatar: user.avatar,
                     lastLogin: user.lastLogin,
                 }
             }, 'User profile retrieved successfully')

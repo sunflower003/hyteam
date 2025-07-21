@@ -11,7 +11,7 @@ const generateToken = (id) => {
 const register = async (req, res) => {
     try {
         const  { username, email, password } = req.body;
-        
+        console.log('Register body:', req.body);
         //Kiem tra nguoi dung da ton tai chua
         const existingUser = await User.findOne({
             $or: [{ username }, { email }]

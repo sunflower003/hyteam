@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-const Login = () => {
+const Login = ({ onSwitchToRegister}) => {
     const [formData, setFormData] = useState({
         email: '',
         password: ''     
@@ -44,7 +44,7 @@ const Login = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} classNAme="auth-form">
+                <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">
                         <label htmlFor="email">Email</label>
                         <input
@@ -78,7 +78,7 @@ const Login = () => {
                     Don't have an account?
                     <button 
                      type="button"
-                     onClick={onSwitchToRegister}
+                     onClick={onSwitchToRegister}  //onSwitchToRegister là props lấy từ App.jsx
                      className="link-button"
                      >Register now</button>
                 </p>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }) => {
                 return { success: true, message: response.data.message };
             }
         } catch (error) {
+            console.log("Register error:", error.response?.data || error.message);
             const message = error.response?.data?.message || 'Registration failed';
             return { success: false, message };
         }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-const Register = () => {
+const Register = ({ onSwitchToLogin }) => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -36,7 +36,12 @@ const Register = () => {
         const result = await register(formData.name, formData.email, formData.password);
 
         if(!result.success) {
-            setError(result.message || 'Dang ky that bai');
+        // Nếu BE trả về mảng error:
+            if (result.error && Array.isArray(result.error)) {
+                setError(result.error.map(err => err.msg).join('. '));
+            } else {
+                setError(result.message);
+            }
         }
         setIsLoading(false);
     };

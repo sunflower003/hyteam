@@ -1,7 +1,7 @@
 const express = require('express');
 const { createRoom, getRoomInfo, updateCurrentMovie } = require('../controllers/roomController');
-const { validateRoom } = require('../middlewares/validation');
-const { protect } = require('../middlewares/auth');
+const { validateRoom } = require('../middleware/validation');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 

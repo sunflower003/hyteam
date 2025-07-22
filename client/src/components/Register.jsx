@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Register = ({ onSwitchToLogin }) => {
     const [formData, setFormData] = useState({
-        name: '',
+        username: '',
         email: '',
         password: '',
         confirmPassword: ''

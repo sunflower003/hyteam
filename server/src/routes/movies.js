@@ -1,6 +1,6 @@
 const express = require('express');
 const { searchMovies, getMovieDetails, getTrendingMovies } = require('../controllers/movieController');
-const { protect } = require('../middlewares/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 

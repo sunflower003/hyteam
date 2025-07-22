@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../utils/api';
 
 const MovieRoom = () => {
     const [socket, setSocket] = useState(null);
@@ -32,7 +32,7 @@ const MovieRoom = () => {
 
     useEffect(() => {
         // Initialize socket connection
-        const newSocket = io('http://localhost:5000', {
+        const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
             withCredentials: true
         });
         
@@ -129,7 +129,7 @@ const MovieRoom = () => {
 
     const fetchTrendingMovies = async () => {
         try {
-            const response = await axios.get('/api/movies/trending');
+            const response = await api.get('/api/movies/trending');
             if (response.data.success) {
                 setTrendingMovies(response.data.data);
             }
@@ -143,7 +143,7 @@ const MovieRoom = () => {
         
         setIsSearching(true);
         try {
-            const response = await axios.get('/api/movies/search', {
+            const response = await api.get('/api/movies/search', {
                 params: { query: searchQuery }
             });
             if (response.data.success) {
@@ -163,7 +163,7 @@ const MovieRoom = () => {
         }
 
         try {
-            const response = await axios.put(`/api/rooms/${roomId}/movie`, {
+            const response = await api.put(`/api/rooms/${roomId}/movie`, {
                 tmdbId: movie.id,
                 title: movie.title,
                 poster: movie.posterPath,
@@ -201,7 +201,7 @@ const MovieRoom = () => {
 
             // Get room info first
             try {
-                const roomResponse = await axios.get(`/api/rooms/${roomId}`);
+                const roomResponse = await api.get(`/api/rooms/${roomId}`);
                 if (roomResponse.data.success) {
                     const roomData = roomResponse.data.data;
                     setIsHost(roomData.host._id === user.id);
@@ -210,7 +210,7 @@ const MovieRoom = () => {
             } catch (error) {
                 // Room doesn't exist, create it
                 if (error.response?.status === 404) {
-                    await axios.post('/api/rooms', {
+                    await api.post('/api/rooms', {
                         roomId: roomId.trim(),
                         name: roomName || `${user.username}'s Room`,
                         description: 'Movie watching room'
@@ -436,11 +436,7 @@ const MovieRoom = () => {
                         <div className="movie-player">
                             <iframe
                                 src={currentMovie.streamUrl}
-                                width="100%"
-                                height="500px"
-                                frameBorder="0"
-                                allowFullScreen
-                                title={currentMovie.title}
+                                referrerpolicy="origin"
                             ></iframe>
                             <div className="movie-details">
                                 <h4>{currentMovie.title}</h4>

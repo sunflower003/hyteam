@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     //cau hinh axios mac dinh
-    const API_BASE_URL = 'http://localhost:5000/api';
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     useEffect(() => {
         if (token) {
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/auth/profile`);
+            const response = await axios.get(`${API_BASE_URL}/api/auth/profile`);
             if (response.data.success) {
                 setUser(response.data.data.user);
             }
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/auth/login`, 
+            const response = await axios.post(`${API_BASE_URL}/api/auth/login`, 
                 { email, 
                   password 
                 });
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (username, email, password) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/auth/register`, 
+            const response = await axios.post(`${API_BASE_URL}/api/auth/register`, 
                 { username, 
                   email, 
                   password 

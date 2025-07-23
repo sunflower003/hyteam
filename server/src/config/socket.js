@@ -1,4 +1,5 @@
 const socketIo = require('socket.io');
+const { saveMessage } = require('../controllers/messageController');
 
 const rooms = new Map(); //Luu tru thong tin phong va nguoi dung
 
@@ -27,7 +28,9 @@ const initializeSocket = (server) => {
                 socketId: socket.id,
                 userId: user.id,
                 username: user.username,
-                avatar: user.avatar
+                avatar: user.avatar,
+                isSpeaking: false,
+                isMuted: false
             });
 
             // Thong bao cho cac user khac trong phong
@@ -86,13 +89,89 @@ const initializeSocket = (server) => {
         });
     });
 
-    // Chat message event
-    socket.on('chat-message', (data) => {
+    // Voice chat events - Discord style
+    socket.on('toggle-mute', (data) => {
+        const { roomId, isMuted } = data;
+
+        if(rooms.has(roomId)) {
+            const roomUsers = rooms.get(roomId);
+            for (let user of roomUsers) {
+                if (user.socketId === socket.id) {
+                    user.isMuted = isMuted;
+                    break;
+                }
+            }
+
+            // Thong bao trang thai mute cho tat ca users
+            socket.to(roomId).emit('user-mute-changed', {
+                socketId: socket.id,
+                isMuted
+            });
+
+            const updatedUsers = Array.from(roomUsers);
+            io.to(roomId).emit('room-users', updatedUsers);
+        }
+    });
+
+    socket.on('speaking-state', (data) => {
+        const { roomId, isSpeaking } = data;
+
+        if(rooms.has(roomId)) {
+            const roomUsers = rooms.get(roomId);
+            for (let user of roomUsers) {
+                if (user.socketId === socket.id) {
+                    user.isSpeaking = isSpeaking;
+                    break;
+                }
+            }
+
+            // Thong bao trang thai speaking cho tat ca users
+            socket.to(roomId).emit('user-speaking-changed', {
+                socketId: socket.id,
+                isSpeaking
+            });
+        }
+    });
+
+    // Chat message event - luu vao Database
+    socket.on('chat-message', async (data) => {
         const { roomId, message } = data;
         console.log('Chat message in room', roomId, ':', message);
+        
+        try {
+            // Luu tin nhan vao Database
+            const savedMessage = await saveMessage({
+                roomId, 
+                user: message.user.id,
+                message: message.message,
+                messageType: 'text'
+            });
 
-        // Gui tin nhan den tat ca nguoi dung trong phong
-        io.to(roomId).emit('chat-message', message);
+            if (savedMessage) {
+                // Format message de gui qua socket
+                const messageToSend = {
+                    id: savedMessage._id,
+                    user: {
+                        id: savedMessage.user._id,
+                        username: savedMessage.user.username,
+                        avatar: savedMessage.user.avatar
+                    },
+                    message: savedMessage.message,
+                    timestamp: savedMessage.createdAt,
+                    edited: savedMessage.edited,
+                };
+                // Gui tin nhan den tat ca nguoi dung trong phong
+                io.to(roomId).emit('chat-message', messageToSend);
+                console.log(`Message sent to room ${roomId}:`, messageToSend);
+            } else {
+                // neu khong luu duoc, van gui message tam thoi
+                io.to(roomId).emit('chat-message', message);
+            }
+        } catch (error) {
+            console.error('Error handling chat message:', error);
+            // Fallback: gui message khong luu DB
+            io.to(roomId).emit('chat-message', message);
+        }
     });
 
     //Movie selection event

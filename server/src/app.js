@@ -16,6 +16,7 @@ const { initializeSocket } = require('./config/socket');
 const authRoutes = require('./routes/auth');
 const movieRoutes = require('./routes/movies');
 const roomRoutes = require('./routes/rooms');
+const messageRoutes = require('./routes/messages');
 
 
 //Connect to database
@@ -51,6 +52,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Handle undefined routes
 app.all('*', (req, res) => {

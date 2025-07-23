@@ -10,9 +10,16 @@ const MovieRoom = () => {
     const [roomName, setRoomName] = useState('');
     const [isInRoom, setIsInRoom] = useState(false);
     const [users, setUsers] = useState([]);
-    const [isMuted, setIsMuted] = useState(false);
     const [peers, setPeers] = useState({});
     const [isHost, setIsHost] = useState(false);
+
+    // Voice Chat States - Discord-like
+    const [isVoiceConnected, setIsVoiceConnected] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isDeafened, setIsDeafened] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [voiceActivity, setVoiceActivity] = useState({});
+    const [audioInputLevel, setAudioInputLevel] = useState(0);
     
     // Movie states
     const [currentMovie, setCurrentMovie] = useState(null);
@@ -25,11 +32,17 @@ const MovieRoom = () => {
     // Chat states
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [hasMoreMessages, setHasMoreMessages] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
     
     const { user } = useAuth();
     const userVideo = useRef();
     const peersRef = useRef([]);
     const messagesEndRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const analyserRef = useRef(null);
+    const speakingTimeoutRef = useRef(null);
 
     //Auto scroll to bottom when new message
     const scrollToBottom = () => {
@@ -39,6 +52,76 @@ const MovieRoom = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages]); //goi ham scrollToBottom khi messages thay doi
+
+    //Voice activity detection
+    const setupVoiceActivityDetection = (stream) => {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioContext.createAnalyser();
+            const microphone = audioContext.createMediaStreamSource(stream);
+            // Setup analyser
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.8;
+            // Create a buffer to hold the audio data
+            microphone.connect(analyser);
+
+            audioContextRef.current = audioContext;
+            analyserRef.current = analyser;
+
+            const detectSpeaking = () => {
+                if (!analyserRef.current || isMuted || isDeafened) {
+                    requestAnimationFrame(detectSpeaking);
+                    return;
+                }
+
+                const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+                analyserRef.current.getByteFrequencyData(dataArray);
+
+                //Tinh muc do am thanh
+                const average = dataArray.reduce((a, b) => a+b) / dataArray.length;
+                setAudioInputLevel(average);
+
+                // Phat hien speaking (threshold co the dieu chinh)
+                const SPEAKING_THRESHOLD = 20;
+                const currentlySpeaking = average > SPEAKING_THRESHOLD;
+
+                if (currentlySpeaking !== isSpeaking) {
+                    setIsSpeaking(currentlySpeaking);
+
+                    // Emit speaking state
+                    if (socket) {
+                        socket.emit('speaking-state', {
+                            roomId, 
+                            isSpeaking: currentlySpeaking
+                        });
+                    }
+
+                    //Clear previous timeout
+                    if (speakingTimeoutRef.current) {
+                        clearTimeout(speakingTimeoutRef.current);
+                    }
+
+                    // Stop speaking after delay
+                    if (currentlySpeaking) {
+                        speakingTimeoutRef.current = setTimeout(() => {
+                            setIsSpeaking(false);
+                            if (socket) {
+                                socket.emit('speaking-state', {
+                                    roomId, 
+                                    isSpeaking: false
+                                });
+                            }
+                        }, 3000); // 3 seconds
+                    }
+                }
+                requestAnimationFrame(detectSpeaking);
+            };
+                detectSpeaking();
+        } catch (error) {
+            console.error('Error setting up voice activity detection:', error);
+        }
+    };
+
 
     useEffect(() => {
         // Initialize socket connection
@@ -97,6 +180,13 @@ const MovieRoom = () => {
                 delete newPeers[socketId];
                 return newPeers;
             });
+
+            //Remove from voice activity
+            setVoiceActivity(prev => {
+                const newActivity = { ...prev };
+                delete newActivity[socketId];
+                return newActivity;
+            });
         });
 
         // WebRTC signaling events 
@@ -119,6 +209,22 @@ const MovieRoom = () => {
             }
         });
 
+        // Voice activity events
+        newSocket.on('user-mute-changed', (data) => {
+            setUsers(prev => prev.map(user => 
+                user.socketId === data.socketId
+                    ? { ...user, isMuted: data.isMuted }
+                    : user
+            ));
+        });
+
+        newSocket.on('user-speaking-changed', (data) => {
+            setVoiceActivity(prev => ({
+                ...prev,
+                [data.socketId]: data.isSpeaking
+            }));
+        })
+
         // Chat events
         newSocket.on('chat-message', (message) => {
             console.log('Received chat message', message);
@@ -133,14 +239,44 @@ const MovieRoom = () => {
 
 
         return () => {
-            console.log('Cleaning up socket connection');
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
             newSocket.close();
         };
-    }, []);
+    }, [isVoiceConnected]); // Chỉ khởi tạo socket khi isVoiceConnected hoặc roomId thay đổi
 
     useEffect(() => {
         fetchTrendingMovies();
     }, []);
+
+    //Load chat history 
+    const loadChatHistory = async (page = 1) => {
+        if (!roomId || isLoadingMessages) return;
+
+        setIsLoadingMessages(true);
+        try {
+            const response = await api.get(`/api/messages/room/${roomId}?page=${page}&limit=50`);
+            if (response.data.success) {
+                const { messages: newMessages, pagination } = response.data.data;
+
+                if (page === 1) {
+                    setMessages(newMessages);
+                }
+                else {
+                    setMessages(prev => [...newMessages, ...prev]);
+                }
+                setHasMoreMessages(pagination.currentPage < pagination.totalPages);
+                setCurrentPage(pagination.currentPage);
+                console.log('Chat history loaded:', newMessages.length, 'messages');
+            }
+            
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+        } finally {
+            setIsLoadingMessages(false);
+        }
+    }
 
     const createPeer = (userToSignal, callerID) => {
         const peer = new Peer({
@@ -181,6 +317,101 @@ const MovieRoom = () => {
         return peer;
     };
 
+    const joinVoiceChat = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                },
+                video: false
+        });
+
+        if (userVideo.current) {
+            userVideo.current.srcObject = stream;
+        }
+        setupVoiceActivityDetection(stream);
+        setIsVoiceConnected(true);
+
+        //Tao peer connections cho users hien tai
+        users.forEach(roomUser => {
+            if (roomUser.socketId !== socket.id) {
+                const peer = createPeer(roomUser.socketId, socket.id);
+                peersRef.current.push({
+                    peerID: roomUser.socketId,
+                    peer,
+                });
+                setPeers(prev => ({ ...prev, [roomUser.socketId]: peer }));
+            }
+        });
+        } catch (error) {
+            console.error('Error joining voice chat:', error);
+            alert('Khong the truy cap vao microphone');
+        }
+    };
+
+    const leaveVoiceChat = () => {
+        //Stop media stream 
+        if (userVideo.current && userVideo.current.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach(track => track.stop());
+        }
+
+        //Close audio context
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+        }
+
+        //Clean up peers
+        peersRef.current.forEach(({ peer }) => {
+            peer.destroy();
+        });
+        peersRef.current = [];
+        setPeers({});
+
+        setIsVoiceConnected(false);
+        setIsSpeaking(false);
+        setVoiceActivity({});
+    };
+
+    const toggleMute = () => {
+        if (userVideo.current && userVideo.current.srcObject) {
+            const audioTrack = userVideo.current.srcObject.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = isMuted;
+                setIsMuted(!isMuted);
+                console.log('Audio muted:', !isMuted);
+
+                // Emit mute state to server
+                socket.emit('toggle-mute', {
+                    roomId,
+                    isMuted: !isMuted
+                });
+            }
+        }
+    };
+
+    const toggleDeafen = () => {
+        setIsDeafened(!isDeafened);
+
+        // Mute/unmute all peer audio
+        Object.values(peers).forEach(peer => {
+            //Disable audio playback when deafend
+            if (peer.remoteStream) {
+                peer.remoteStream.getAudioTracks().forEach(track => {
+                    track.enabled = isDeafened;
+                });
+            }
+        });
+
+        //Auto mute when deafened
+        if (!isDeafened && !isMuted) {
+            toggleMute(); // Mute if not already muted
+        }
+    };
+
+
+    // Fetch trending movies from API
     const fetchTrendingMovies = async () => {
         try {
             const response = await api.get('/api/movies/trending');
@@ -248,21 +479,6 @@ const MovieRoom = () => {
         }
 
         try {
-            // Get user media for voice chat
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                     audio: true, 
-                     video: false 
-                });
-                if (userVideo.current) {
-                    userVideo.current.srcObject = stream;
-                }
-                console.log('Audio stream obtained');
-            } catch (mediaError) {
-                console.warn('Could not access microphone:', mediaError);
-                alert('Could not access microphone. Voice chat will not work');
-            }
-
             // Get room info first
             try {
                 const roomResponse = await api.get(`/api/rooms/${roomId}`);
@@ -297,6 +513,10 @@ const MovieRoom = () => {
             });
 
             setIsInRoom(true);
+
+            //Load chat history
+            await loadChatHistory(1);
+
         } catch (error) {
             console.error('Error joining room:', error);
             alert('Failed to join room. Please try again.');
@@ -310,17 +530,10 @@ const MovieRoom = () => {
             socket.emit('leave-room', roomId);
         }
         
-        // Stop media stream
-        if (userVideo.current && userVideo.current.srcObject) {
-            userVideo.current.srcObject.getTracks().forEach(track => track.stop());
+        // Leave voice chat if connected
+        if (isVoiceConnected) {
+            leaveVoiceChat();
         }
-
-        // Clean up peers
-        peersRef.current.forEach(({ peer }) => {
-            peer.destroy();
-        });
-        peersRef.current = [];
-        setPeers({});
         
         setIsInRoom(false);
         setUsers([]);
@@ -330,23 +543,16 @@ const MovieRoom = () => {
         setIsHost(false);
     };
 
-    const toggleMute = () => {
-        if (userVideo.current && userVideo.current.srcObject) {
-            const audioTrack = userVideo.current.srcObject.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = isMuted;
-                setIsMuted(!isMuted);
-                console.log('Audio muted:', !isMuted);
-            }
-        }
-    };
-
     const sendMessage = () => {
         if (!newMessage.trim() || !socket) return;
 
         const message = {
             id: Date.now(),
-            user: { username: user.username },
+            user: { 
+                id: user.id,
+                username: user.username,
+                avatar: user.avatar
+            },
             message: newMessage.trim(),
             timestamp: new Date()
         };
@@ -391,7 +597,7 @@ const MovieRoom = () => {
         );
     }
 
-    // Main Room UI
+    // Main Room UI với Discord-like voice chat
     return (
         <div className="movie-room-container">
             <div className="room-header">
@@ -402,6 +608,52 @@ const MovieRoom = () => {
                         {socket?.connected ? '🟢 Kết nối' : '🔴 Mất kết nối'}
                     </span>
                 </div>
+
+                {/* Discord-like Voice Controls */}
+                <div className="voice-controls">
+                    {!isVoiceConnected ? (
+                        <button onClick={joinVoiceChat} className="voice-join-btn">
+                            🎤 Tham gia Voice Chat
+                        </button>
+                    ) : (
+                        <div className="voice-control-group">
+                            <button 
+                                onClick={toggleMute}
+                                className={`voice-btn ${isMuted ? 'muted' : ''}`}
+                                title={isMuted ? 'Bo tat tieng' : 'Tat tieng'}
+                        >
+                                {isMuted ? '🔇' : '🎤'}
+                            </button>
+
+                            <button
+                                onClick={toggleDeafen}
+                                className={`voice-btn ${isDeafened ? 'deafened' : ''}`}
+                                title={isDeafened ? 'Bo tat nghe' : 'Tat nghe' }
+                            >
+                                {isDeafened ? '🔕' : ' 🔊'}
+                            </button>
+
+                            <button 
+                                onClick={leaveVoiceChat}
+                                className="voice-btn disconnect"
+                                title="Roi voice chat"
+                            >
+                                🚪 Rời Voice Chat
+                            </button>
+
+                            {/* Voice Activity Indicator */}
+                            <div className="voice-activity">
+                                <div 
+                                    className={`activity-bar ${isSpeaking ? 'speaking' : ''}`}
+                                    style={{
+                                        width: `${Math.min(audioInputLevel * 2, 100)}%`
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <div className="room-controls">
                     {isHost && (
                         <button 
@@ -411,12 +663,6 @@ const MovieRoom = () => {
                             🎭 Chọn phim
                         </button>
                     )}
-                    <button 
-                        onClick={toggleMute} 
-                        className={`control-btn ${isMuted ? 'muted' : ''}`}
-                    >
-                        {isMuted ? '🔇' : '🔊'}
-                    </button>
                     <button onClick={leaveRoom} className="control-btn leave-btn">
                         🚪 Rời phòng
                     </button>
@@ -519,6 +765,56 @@ const MovieRoom = () => {
 
                 {/* Sidebar */}
                 <div className="sidebar">
+                    {/* Voice Chat Users - Discord Style */}
+                    {isVoiceConnected && (
+                        <div className="voice-chat-section">
+                            <h4>🎤 Voice Chat ({users.filter(u => u.socketId === socket.id || peers[u.socketId]).length})</h4>
+                            <div className="voice-users-list">
+                                {/* Current user */}
+                                <div className={`voice-user-item ${isSpeaking ? 'speaking' : ''}`}>
+                                    <img 
+                                        src={user.avatar} 
+                                        alt={user.username}
+                                        className="voice-avatar"
+                                        onError={(e) => {
+                                            e.target.src = `https://via.placeholder.com/32/667eea/ffffff?text=${user.username?.[0] || '?'}`;
+                                        }}
+                                    />
+                                    <span className="voice-username">
+                                        {user.username} (Bạn)
+                                    </span>
+                                    <div className="voice-indicators">
+                                        {isMuted && <span className="muted-icon">🔇</span>}
+                                        {isDeafened && <span className="deafened-icon">🔇</span>}
+                                        {isSpeaking && <span className="speaking-icon">📢</span>}
+                                    </div>
+                                </div>
+                                {/* Other users in voice */}
+                                {users.filter(u => u.socketId !== socket.id && peers[u.socketId]).map(roomUser => (
+                                    <div 
+                                        key={roomUser.socketId} 
+                                        className={`voice-user-item ${voiceActivity[roomUser.socketId] ? 'speaking' : ''}`}
+                                    >
+                                        <img 
+                                            src={roomUser.avatar} 
+                                            alt={roomUser.username}
+                                            className="voice-avatar"
+                                            onError={(e) => {
+                                                e.target.src = `https://via.placeholder.com/32/667eea/ffffff?text=${roomUser.username?.[0] || '?'}`;
+                                            }}
+                                        />
+                                        <span className="voice-username">{roomUser.username}</span>
+                                        <div className="voice-indicators">
+                                            {roomUser.isMuted && <span className="muted-icon">🔇</span>}
+                                            {voiceActivity[roomUser.socketId] && <span className="speaking-icon">📢</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+
                     {/* Users */}
                     <div className="users-section">
                         <h4>👥 Thành viên ({users.length})</h4>
@@ -537,18 +833,30 @@ const MovieRoom = () => {
                                         {roomUser.username}
                                         {roomUser.userId === user.id && ' (Bạn)'}
                                     </span>
-                                    {/* Voice indicator */}
-                                    {peers[roomUser.socketId] && (
-                                        <span className="voice-indicator">🎤</span>
-                                    )}
+                                    <div className="user-status">
+                                        {peers[roomUser.socketId] && <span className="voice-status">🎤</span>}
+                                        {voiceActivity[roomUser.socketId] && <span className="speaking-status">📢</span>}
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Chat */}
+                    {/* Chat voi lich su */}
                     <div className="chat-section">
-                        <h4>💬 Chat</h4>
+                        <div className="chat-header">
+                            <h4>💬 Chat</h4>
+                            {hasMoreMessages && (
+                                <button 
+                                    onClick={() => loadChatHistory(currentPage + 1)}
+                                    disabled={isLoadingMessages}
+                                    className="load-more-btn"
+                                >
+                                    {isLoadingMessages ? '⏳' : '📜 Tải thêm'}
+                                </button>
+                            )}
+                        </div>
+
                         <div className="chat-messages">
                             {messages.length === 0 ? (
                                 <p className="no-messages">Chưa có tin nhắn nào...</p>
@@ -589,7 +897,7 @@ const MovieRoom = () => {
             {/* Hidden audio elements for voice chat */}
             <audio ref={userVideo} autoPlay muted />
             {Object.entries(peers).map(([peerId, peer]) => (
-                <PeerAudio key={peerId} peer={peer} />
+                <PeerAudio key={peerId} peer={peer} isDeafened={isDeafened} />
             ))}
         </div>
     );

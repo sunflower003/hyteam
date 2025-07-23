@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -16,14 +16,11 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
-    //cau hinh axios mac dinh
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
     useEffect(() => {
         if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        //Verify token va lay thong tin user
-        checkAuth();
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            //Verify token va lay thong tin user
+            checkAuth();
         } else {
             setLoading(false);
         }
@@ -31,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/auth/profile`);
+            const response = await api.get('/api/auth/profile');
             if (response.data.success) {
                 setUser(response.data.data.user);
             }
@@ -45,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/auth/login`, 
+            const response = await api.post('/api/auth/login', 
                 { email, 
                   password 
                 });
@@ -55,7 +52,7 @@ export const AuthProvider = ({ children }) => {
                     setUser(user);
                     setToken(token);
                     localStorage.setItem('token', token);
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                     return { success: true, message: response.data.message };
                 }
         } catch (error) {
@@ -66,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (username, email, password) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/auth/register`, 
+            const response = await api.post('/api/auth/register', 
                 { username, 
                   email, 
                   password 
@@ -77,7 +74,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(user);
                 setToken(token);
                 localStorage.setItem('token', token);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 return { success: true, message: response.data.message };
             }
         } catch (error) {
@@ -91,7 +88,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setToken(null);
         localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
+        delete api.defaults.headers.common['Authorization'];
     }
 
     const value = {

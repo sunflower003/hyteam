@@ -29,30 +29,62 @@ const MovieRoom = () => {
     const { user } = useAuth();
     const userVideo = useRef();
     const peersRef = useRef([]);
+    const messagesEndRef = useRef(null);
+
+    //Auto scroll to bottom when new message
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth"});
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]); //goi ham scrollToBottom khi messages thay doi
 
     useEffect(() => {
         // Initialize socket connection
-        const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
-            withCredentials: true
+        const socketURL= import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+        console.log('Connecting to socket server at:', socketURL);
+
+        const newSocket = io(socketURL, {
+            withCredentials: true,
+            transports: ['websocket', 'polling']
         });
         
         setSocket(newSocket);
 
-        // Socket event listeners
+        // Connection events
+        newSocket.on('connect', () => {
+            console.log('Socket connected:', newSocket.id);
+        });
+
+        newSocket.on('disconnect', () => {
+            console.log('Socket disconnected');
+        });
+
+        newSocket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+        });
+
+        // Room events
         newSocket.on('room-users', (roomUsers) => {
+            console.log('Room users updated:', roomUsers);
             setUsers(roomUsers);
         });
 
         newSocket.on('user-joined', (data) => {
             console.log('User joined:', data);
-            const peer = createPeer(data.socketId, newSocket.id);
-            peersRef.current.push({
-                peerID: data.socketId,
-                peer,
-            });
-            setPeers(prev => ({ ...prev, [data.socketId]: peer }));
+            // Tao peer connection cho voice chat
+            if (data.socketId !== newSocket.id) {
+                const peer = createPeer(data.socketId, newSocket.id);
+                peersRef.current.push({
+                    peerID: data.socketId,
+                    peer,
+                });
+                setPeers(prev => ({ ...prev, [data.socketId]: peer }));
+            }
         });
 
+        // Xu ly khi user roi di
         newSocket.on('user-left', (socketId) => {
             console.log('User left:', socketId);
             const peerObj = peersRef.current.find(p => p.peerID === socketId);
@@ -67,8 +99,10 @@ const MovieRoom = () => {
             });
         });
 
+        // WebRTC signaling events 
         newSocket.on('receiving-signal', (payload) => {
-            const peer = addPeer(payload.signal, payload.callerID);
+            console.log('Receiving signal from:', payload.callerID);
+            const peer = addPeer(payload.signal, payload.callerID, newSocket);
             peersRef.current.push({
                 peerID: payload.callerID,
                 peer,
@@ -77,21 +111,29 @@ const MovieRoom = () => {
         });
 
         newSocket.on('signal-received', (payload) => {
+            console.log('Signal received from:', payload.id);
+            // Tim peer tuong ung voi callerID va gui tin hieu
             const item = peersRef.current.find(p => p.peerID === payload.id);
             if (item) {
                 item.peer.signal(payload.signal);
             }
         });
 
-        newSocket.on('movie-changed', (movieData) => {
-            setCurrentMovie(movieData);
-        });
-
+        // Chat events
         newSocket.on('chat-message', (message) => {
+            console.log('Received chat message', message);
             setMessages(prev => [...prev, message]);
         });
 
+        // Movie change event
+        newSocket.on('movie-changed', (movieData) => {
+            console.log('Movie changed:', movieData);
+            setCurrentMovie(movieData);
+        });
+
+
         return () => {
+            console.log('Cleaning up socket connection');
             newSocket.close();
         };
     }, []);
@@ -107,8 +149,14 @@ const MovieRoom = () => {
         });
 
         peer.on('signal', (signal) => {
+            console.log('Sending signal to:', userToSignal);
             socket.emit('sending-signal', { userToSignal, callerID, signal });
         });
+
+        //Them stream tu camera va mic neu co
+        if (userVideo.current && uservideo.current.srcObject) {
+            peer.addStream(userVideo.current.srcObject);
+        }
 
         return peer;
     };
@@ -120,8 +168,14 @@ const MovieRoom = () => {
         });
 
         peer.on('signal', (signal) => {
+            console.log('Returning signal to:', callerID);
             socket.emit('returning-signal', { signal, callerID });
         });
+
+        //Them stream tu camera va mic neu co
+        if (userVideo.current && userVideo.current.srcObject) {
+            peer.addStream(userVideo.current.srcObject);
+        }
 
         peer.signal(incomingSignal);
         return peer;
@@ -174,7 +228,8 @@ const MovieRoom = () => {
                 setCurrentMovie(response.data.data);
                 setShowMovieSearch(false);
                 
-                // Notify other users via socket
+                // Thong bao cho cac nguoi dung khac thong qua socket
+                console.log('Emmitting movie-selected event');
                 socket.emit('movie-selected', {
                     roomId,
                     movie: response.data.data
@@ -194,9 +249,18 @@ const MovieRoom = () => {
 
         try {
             // Get user media for voice chat
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            if (userVideo.current) {
-                userVideo.current.srcObject = stream;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                     audio: true, 
+                     video: false 
+                });
+                if (userVideo.current) {
+                    userVideo.current.srcObject = stream;
+                }
+                console.log('Audio stream obtained');
+            } catch (mediaError) {
+                console.warn('Could not access microphone:', mediaError);
+                alert('Could not access microphone. Voice chat will not work');
             }
 
             // Get room info first
@@ -206,6 +270,7 @@ const MovieRoom = () => {
                     const roomData = roomResponse.data.data;
                     setIsHost(roomData.host._id === user.id);
                     setCurrentMovie(roomData.currentMovie);
+                    console.log('Room found, user is host:', roomData.host._id === user.id);
                 }
             } catch (error) {
                 // Room doesn't exist, create it
@@ -216,10 +281,12 @@ const MovieRoom = () => {
                         description: 'Movie watching room'
                     });
                     setIsHost(true);
+                    console.log('New room created, user is host');
                 }
             }
             
             // Join room via socket
+            console.log('Joining room via socket:', roomId.trim());
             socket.emit('join-room', {
                 roomId: roomId.trim(),
                 user: {
@@ -232,22 +299,13 @@ const MovieRoom = () => {
             setIsInRoom(true);
         } catch (error) {
             console.error('Error joining room:', error);
-            alert('Could not access microphone. Voice chat will not work.');
-            
-            // Join room anyway without audio
-            socket.emit('join-room', {
-                roomId: roomId.trim(),
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    avatar: user.avatar
-                }
-            });
-            setIsInRoom(true);
+            alert('Failed to join room. Please try again.');
         }
     };
 
     const leaveRoom = () => {
+        console.log('Leaving room', roomId);
+
         if (socket) {
             socket.emit('leave-room', roomId);
         }
@@ -278,6 +336,7 @@ const MovieRoom = () => {
             if (audioTrack) {
                 audioTrack.enabled = isMuted;
                 setIsMuted(!isMuted);
+                console.log('Audio muted:', !isMuted);
             }
         }
     };
@@ -291,13 +350,14 @@ const MovieRoom = () => {
             message: newMessage.trim(),
             timestamp: new Date()
         };
-
+        console.log('Sending chat message:', message);
+        // Emit message to server
         socket.emit('chat-message', {
             roomId,
             message
         });
 
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => [...prev, message]); 
         setNewMessage('');
     };
 
@@ -339,6 +399,9 @@ const MovieRoom = () => {
                 <div className="room-info">
                     <h3>🎬 Phòng: {roomId}</h3>
                     {isHost && <span className="host-badge">👑 Host</span>}
+                    <span className="connection-status">
+                        {socket?.connected ? '🟢 Kết nối' : '🔴 Mất kết nối'}
+                    </span>
                 </div>
                 <div className="room-controls">
                     {isHost && (
@@ -436,7 +499,12 @@ const MovieRoom = () => {
                         <div className="movie-player">
                             <iframe
                                 src={currentMovie.streamUrl}
-                                referrerpolicy="origin"
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                allowFullScreen
+                                title={currentMovie.title}
+                                referrerPolicy="origin"
                             ></iframe>
                             <div className="movie-details">
                                 <h4>{currentMovie.title}</h4>
@@ -462,11 +530,18 @@ const MovieRoom = () => {
                                         src={roomUser.avatar || '/default-avatar.png'} 
                                         alt={roomUser.username}
                                         className="user-avatar-small"
+                                        onError={(e) => {
+                                            e.target.src = 'https://via.placeholder.com/35/667eea/ffffff?text=' + (roomUser.username?.[0] || '?');
+                                        }}
                                     />
                                     <span className="username">
                                         {roomUser.username}
                                         {roomUser.userId === user.id && ' (Bạn)'}
                                     </span>
+                                    {/* Voice indicator */}
+                                    {peers[roomUser.socketId] && (
+                                        <span className="voice-indicator">🎤</span>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -476,12 +551,22 @@ const MovieRoom = () => {
                     <div className="chat-section">
                         <h4>💬 Chat</h4>
                         <div className="chat-messages">
-                            {messages.map((msg) => (
-                                <div key={msg.id} className="message">
-                                    <span className="message-user">{msg.user.username}:</span>
-                                    <span className="message-text">{msg.message}</span>
-                                </div>
-                            ))}
+                            {messages.length === 0 ? (
+                                <p className="no-messages">Chưa có tin nhắn nào...</p>
+                            ) : (
+                                messages.map((msg) => (
+                                    <div key={msg.id} className="message">
+                                        <div className="message-header">
+                                            <span className="message-user">{msg.user.username}</span>
+                                            <span className="message-time">
+                                                {new Date(msg.timestamp).toLocaleTimeString()}
+                                            </span>
+                                        </div>
+                                        <div className="message-text">{msg.message}</div>
+                                    </div>
+                                ))
+                            )}
+                            <div ref={messagesEndRef} />
                         </div>
                         <div className="chat-input">
                             <input
@@ -490,8 +575,11 @@ const MovieRoom = () => {
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                                disabled={!socket?.connected}
                             />
-                            <button onClick={sendMessage} disabled={!newMessage.trim()}>
+                            <button 
+                                onClick={sendMessage} 
+                                disabled={!newMessage.trim() || !socket?.connected}>
                                 📤
                             </button>
                         </div>
@@ -499,7 +587,7 @@ const MovieRoom = () => {
                 </div>
             </div>
 
-            {/* Hidden audio elements */}
+            {/* Hidden audio elements for voice chat */}
             <audio ref={userVideo} autoPlay muted />
             {Object.entries(peers).map(([peerId, peer]) => (
                 <PeerAudio key={peerId} peer={peer} />
@@ -514,8 +602,17 @@ const PeerAudio = ({ peer }) => {
 
     useEffect(() => {
         peer.on('stream', (stream) => {
+            console.log('Received peer audio stream');
             ref.current.srcObject = stream;
         });
+
+        peer.on('error', (error) => {
+            console.error('Peer error:', error);
+        });
+
+        return () => {
+            peer.removeAllListeners();
+        };
     }, [peer]);
 
     return <audio ref={ref} autoPlay />;

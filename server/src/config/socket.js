@@ -12,33 +12,35 @@ const initializeSocket = (server) => {
     });
 
     io.on('connection', (socket) =>{
-    console.log('User connected:', socket.id);
+        console.log('User connected:', socket.id);
 
-    // join room event
-    socket.on('join-room', (roomData) => {
-        const { roomId, user } = roomData;
-        socket.join(roomId);
+        // join room event
+        socket.on('join-room', (roomData) => {
+            const { roomId, user } = roomData;
+            socket.join(roomId);
 
-        if(!rooms.has(roomId)) {
-            rooms.set(roomId, new Set());
-        }
+            if(!rooms.has(roomId)) {
+                rooms.set(roomId, new Set());
+            }
 
-        rooms.get(roomId).add({
-            socketId: socket.id,
-            userId: user.id,
-            username: user.username,
-            avatar: user.avatar
-        });
+            rooms.get(roomId).add({
+                socketId: socket.id,
+                userId: user.id,
+                username: user.username,
+                avatar: user.avatar
+            });
 
-        // Thong bao cho cac user khac trong phong
-        socket.to(roomId).emit('user-joined', {
-            socketId: socket.id,
-            user: user
-        });
+            // Thong bao cho cac user khac trong phong
+            socket.to(roomId).emit('user-joined', {
+                socketId: socket.id,
+                user: user
+            });
 
-        //Gui danh sach user trong phong
-        const roomUsers = Array.from(rooms.get(roomId));
-        io.to(roomId).emit('room-users', roomUsers);
+            //Gui danh sach user trong phong
+            const roomUsers = Array.from(rooms.get(roomId));
+            io.to(roomId).emit('room-users', roomUsers);
+
+            console.log(`User ${user.username} joined room ${roomId}`);
     });
 
     // leave room event
@@ -59,14 +61,16 @@ const initializeSocket = (server) => {
                 rooms.delete(roomId);
             } else {
                 socket.to(roomId).emit('user-left', socket.id);
-                const updateUsers = Array.from(roomUsers);
+                const updatedUsers = Array.from(roomUsers);
                 io.to(roomId).emit('room-users', updatedUsers);
             }
         }
     });
 
-    // WebRTC signaling
+    // WebRTC signaling cho voice chat
     socket.on('sending-signal', (payload) => {
+        console.log('Sending signal from ', payload.callerID, 'to', payload.userToSignal);
+        // Gui tin hieu den nguoi dung duoc goi
         io.to(payload.userToSignal).emit('receiving-signal', {
             signal: payload.signal,
             callerID: payload.callerID
@@ -74,11 +78,31 @@ const initializeSocket = (server) => {
     });
 
     socket.on('returning-signal', (payload) => {
+        console.log('Returning signal to', payload.callerID);
+        // Gui tin hieu tro lai nguoi goi   
         io.to(payload.callerID).emit('signal-received', {
             signal: payload.signal,
             id: socket.id
         });
     });
+
+    // Chat message event
+    socket.on('chat-message', (data) => {
+        const { roomId, message } = data;
+        console.log('Chat message in room', roomId, ':', message);
+
+        // Gui tin nhan den tat ca nguoi dung trong phong
+        io.to(roomId).emit('chat-message', message);
+    });
+
+    //Movie selection event
+    socket.on('movie-selected', (data) => {
+        const { roomId, movie } = data;
+        console.log('Movie selected in room', roomId, ':', movie.title);
+
+        // Thong bao phim moi den tat car user trong phong
+        socket.to(roomId).emit('movie-changed', movie);
+    })
 
     // Disconnect event
     socket.on('disconnect', () => {
@@ -105,7 +129,6 @@ const initializeSocket = (server) => {
 });
 
 return io;
-
 };
 
 module.exports = { initializeSocket };

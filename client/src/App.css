@@ -857,8 +857,22 @@
 }
 
 .message {
-  margin-bottom: 10px;
-  font-size: 16px;
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.message-time {
+  font-size: 11px;
+  color: #999;
 }
 
 .message-user {
@@ -869,6 +883,7 @@
 
 .message-text {
   color: #4a5568;
+  word-wrap: break-word;
 }
 
 .chat-input {
@@ -980,4 +995,17 @@
     flex-wrap: wrap;
     justify-content: center;
   }
+}
+
+.connection-status {
+  font-size: 14px;
+  margin-left: 15px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.voice-indicator {
+  font-size: 12px;
+  margin-left: auto;
 }

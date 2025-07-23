@@ -1,0 +1,129 @@
+.container {
+    display: flex;
+}
+
+.leftContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+}
+
+.logo {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 800;
+    font-size: 25px;
+}
+
+.text {
+    text-align: center;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.description {
+    font-size: 16px;
+    color: var(--grey);
+}
+
+.formLogin {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 400px;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.input {
+    padding: 13px;
+    border: 2px solid var(--grey-2);
+    border-radius: 10px;
+    font-size: 14px;
+    background-color: transparent;
+}
+
+.input::placeholder {
+    color: var(--grey);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+}
+
+.forgotPassword {
+    font-size: 14px;
+    color: var(--grey);
+    text-decoration: underline;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.button {
+    background-color: black;
+    border: none;
+    outline: none;
+    color: white;
+    padding: 13px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.button:hover {
+    background-color: var(--grey);
+}
+
+.reset {
+    color: var(--grey);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.reset span {
+    color: black;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.rightContainer {
+    flex: 1;
+    background-image: url('https://images.unsplash.com/photo-1749143351311-e6a2d850fde6?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    height: 100vh;;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    justify-content: end;
+    padding: 40px;
+    gap: 40px;
+}
+
+.feedback {
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.8;
+}
+
+.author {
+    font-size: 20px;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

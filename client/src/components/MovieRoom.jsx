@@ -357,7 +357,6 @@ const MovieRoom = () => {
             message
         });
 
-        setMessages(prev => [...prev, message]); 
         setNewMessage('');
     };
 

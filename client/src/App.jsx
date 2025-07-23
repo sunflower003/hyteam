@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Register from './components/Register';
 import MovieRoom from './components/MovieRoom';
+import NewLogin from './components/NewLogin';
 import './App.css'
 
 const AppContent = () => {
@@ -33,6 +34,8 @@ const AppContent = () => {
       switch(currentView) {
         case 'movie-room':
           return <MovieRoom />;
+        case 'new-login':
+          return <NewLogin />;
         default: 
           return (
             <div className="dashboard">
@@ -50,6 +53,12 @@ const AppContent = () => {
                   onClick={() => setCurrentView('movie-room')}>
                   <h2>Movie Room</h2>
                   <p>Watch movies together with friends</p>
+                </div>
+
+                <div className="feature-card"
+                  onClick={() => setCurrentView('new-login')}>
+                  <h2>New Login</h2>
+                  <p>Test new login component</p>
                 </div>
 
                 <div className="feature-card comming-soon">

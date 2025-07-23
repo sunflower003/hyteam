@@ -154,7 +154,7 @@ const MovieRoom = () => {
         });
 
         //Them stream tu camera va mic neu co
-        if (userVideo.current && uservideo.current.srcObject) {
+        if (userVideo.current && userVideo.current.srcObject) {
             peer.addStream(userVideo.current.srcObject);
         }
 

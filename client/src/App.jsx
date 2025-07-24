@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './components/Login';
-import Register from './components/Register';
+import NewLogin from './components/NewLogin'; 
+import NewRegister from './components/NewRegister'; 
+import Register from './components/Register'; 
 import MovieRoom from './components/MovieRoom';
-import NewLogin from './components/NewLogin';
 import Dashboard from './components/Dashboard';
 import Home from './components/Home';
 import Profile from './components/Profile';
@@ -29,9 +29,11 @@ const AppContent = () => {
         return (
             <div className="app">
                 {authMode === 'login' ? (
-                    <Login onSwitchToRegister={() => setAuthMode('register')} />
+                    <NewLogin onSwitchToRegister={() => setAuthMode('register')} />
                 ) : (
-                    <Register onSwitchToLogin={() => setAuthMode('login')} />
+                    // Sử dụng NewRegister nếu đã tạo, hoặc giữ Register cũ
+                    <NewRegister onSwitchToLogin={() => setAuthMode('login')} />
+                    // <Register onSwitchToLogin={() => setAuthMode('login')} />
                 )}
             </div>
         );
@@ -43,10 +45,11 @@ const AppContent = () => {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="/movie-room" element={<MovieRoom />} />
+            <Route path="movie-room" element={<MovieRoom />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
           </Route>
+          {/* Có thể xóa route này */}
           <Route path="/newlogin" element={<NewLogin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

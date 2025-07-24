@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import NewLogin from './components/NewLogin'; 
-import NewRegister from './components/NewRegister'; 
-import Register from './components/Register'; 
+import NewLogin from './components/NewLogin'; // Thay thế Login cũ
+import NewRegister from './components/NewRegister'; // Thay thế Register cũ 
+import Register from './components/Register'; // 
 import MovieRoom from './components/MovieRoom';
 import Dashboard from './components/Dashboard';
 import Home from './components/Home';
@@ -49,7 +49,7 @@ const AppContent = () => {
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
           </Route>
-          {/* Có thể xóa route này */}
+          {/* Có thể xóa route này nếu không cần */}
           <Route path="/newlogin" element={<NewLogin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

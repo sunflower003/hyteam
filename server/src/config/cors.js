@@ -3,6 +3,8 @@ const corsOptions = {
         const allowedOrigins = [
             'http://localhost:5173',
             'http://localhost:5000',
+            'https://hyteam.vercel.app',
+            'https://hyteam.onrender.com',
             process.env.CLIENT_URL
         ].filter(Boolean);
         
@@ -12,12 +14,15 @@ const corsOptions = {
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log('Blocked origin:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 };
 
 module.exports = corsOptions;

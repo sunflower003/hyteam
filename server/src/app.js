@@ -29,7 +29,12 @@ const server = http.createServer(app);
 const io = initializeSocket(server);
 
 // security middlewares
-app.use(helmet());
+app.use(helmet({
+    crossOriginEmbedderPolicy: false,
+}));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
 //Rate limiting

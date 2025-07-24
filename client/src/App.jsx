@@ -31,9 +31,8 @@ const AppContent = () => {
                 {authMode === 'login' ? (
                     <NewLogin onSwitchToRegister={() => setAuthMode('register')} />
                 ) : (
-                    // Sử dụng NewRegister nếu đã tạo, hoặc giữ Register cũ
+
                     <NewRegister onSwitchToLogin={() => setAuthMode('login')} />
-                    // <Register onSwitchToLogin={() => setAuthMode('login')} />
                 )}
             </div>
         );

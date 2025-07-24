@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import NewLogin from './components/NewLogin';
-import Register from './components/Register'; // Dùng Register cũ tạm thời
+import NewRegister from './components/NewRegister'; // Thay thế Register cũ
 import MovieRoom from './components/MovieRoom';
 import Dashboard from './components/Dashboard';
 import Home from './components/Home';
@@ -30,7 +30,7 @@ const AppContent = () => {
                 {authMode === 'login' ? (
                     <NewLogin onSwitchToRegister={() => setAuthMode('register')} />
                 ) : (
-                    <Register onSwitchToLogin={() => setAuthMode('login')} />
+                    <NewRegister onSwitchToLogin={() => setAuthMode('login')} />
                 )}
             </div>
         );
@@ -62,4 +62,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

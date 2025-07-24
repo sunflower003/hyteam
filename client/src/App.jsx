@@ -25,30 +25,43 @@ const AppContent = () => {
       );
     }
 
-    if (!user) {
-        return (
-            <div className="app">
-                {authMode === 'login' ? (
-                    <Login onSwitchToRegister={() => setAuthMode('register')} />
-                ) : (
-                    <Register onSwitchToLogin={() => setAuthMode('login')} />
-                )}
-            </div>
-        );
-    }
-
     return (
       <div className="app">
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="/movie-room" element={<MovieRoom />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
+          {/* Public routes - accessible without authentication */}
           <Route path="/newlogin" element={<NewLogin />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          
+          {/* Protected routes - require authentication */}
+          {user ? (
+            <>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Home />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="/movie-room" element={<MovieRoom />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          ) : (
+            <>
+              {/* Authentication routes */}
+              <Route path="/login" element={
+                <Login onSwitchToRegister={() => setAuthMode('register')} />
+              } />
+              <Route path="/register" element={
+                <Register onSwitchToLogin={() => setAuthMode('login')} />
+              } />
+              <Route path="/" element={
+                authMode === 'login' ? (
+                  <Login onSwitchToRegister={() => setAuthMode('register')} />
+                ) : (
+                  <Register onSwitchToLogin={() => setAuthMode('login')} />
+                )
+              } />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
         </Routes>
       </div>
     );

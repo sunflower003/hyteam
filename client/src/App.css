@@ -1,8 +1,11 @@
 :root {
   --grey: #949494;
   --grey-2: #e3e3e3;
+  --primary-bg: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
 }
-
 
 * {
   margin: 0;
@@ -14,7 +17,14 @@
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+body {
+  background: var(--primary-bg);
+  color: var(--text-primary);
 }
 
 img {
@@ -29,6 +39,7 @@ li {
 .app {
   min-height: 100vh;
   position: relative;
+  background: var(--primary-bg);
 }
 
 /* Auth Styles - Optimized for Laptop */

@@ -6,6 +6,10 @@ import Register from './components/Register';
 import MovieRoom from './components/MovieRoom';
 import NewLogin from './components/NewLogin';
 import Dashboard from './components/Dashboard';
+import Home from './components/Home';
+import Profile from './components/Profile';
+import Settings from './components/Settings';
+import Layout from './components/Layout';
 import './App.css'
 
 const AppContent = () => {
@@ -36,8 +40,13 @@ const AppContent = () => {
     return (
       <div className="app">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/movie-room" element={<MovieRoom />} />
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="movie-room" element={<MovieRoom />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
           <Route path="/newlogin" element={<NewLogin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -56,6 +56,11 @@ const MovieRoom = () => {
     //Voice activity detection
     const setupVoiceActivityDetection = (stream) => {
         try {
+            // Kiểm tra AudioContext đã tồn tại chưa
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+            }
+            
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const analyser = audioContext.createAnalyser();
             const microphone = audioContext.createMediaStreamSource(stream);
@@ -69,8 +74,7 @@ const MovieRoom = () => {
             analyserRef.current = analyser;
 
             const detectSpeaking = () => {
-                if (!analyserRef.current || isMuted || isDeafened) {
-                    requestAnimationFrame(detectSpeaking);
+                if (!analyserRef.current || isMuted || isDeafened || audioContextRef.current.state === 'closed') {
                     return;
                 }
 
@@ -89,7 +93,7 @@ const MovieRoom = () => {
                     setIsSpeaking(currentlySpeaking);
 
                     // Emit speaking state
-                    if (socket) {
+                    if (socket && roomId) {
                         socket.emit('speaking-state', {
                             roomId, 
                             isSpeaking: currentlySpeaking
@@ -105,7 +109,7 @@ const MovieRoom = () => {
                     if (currentlySpeaking) {
                         speakingTimeoutRef.current = setTimeout(() => {
                             setIsSpeaking(false);
-                            if (socket) {
+                            if (socket && roomId) {
                                 socket.emit('speaking-state', {
                                     roomId, 
                                     isSpeaking: false
@@ -114,7 +118,10 @@ const MovieRoom = () => {
                         }, 3000); // 3 seconds
                     }
                 }
-                requestAnimationFrame(detectSpeaking);
+                
+                if (audioContextRef.current.state === 'running') {
+                    requestAnimationFrame(detectSpeaking);
+                }
             };
                 detectSpeaking();
         } catch (error) {
@@ -124,13 +131,24 @@ const MovieRoom = () => {
 
 
     useEffect(() => {
+        if (!user || !user.id) {
+            console.error('User not authenticated');
+            return;
+        }
+
         // Initialize socket connection
         const socketURL= import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
         console.log('Connecting to socket server at:', socketURL);
+        console.log('User:', user);
 
         const newSocket = io(socketURL, {
             withCredentials: true,
-            transports: ['websocket', 'polling']
+            transports: ['websocket', 'polling'],
+            forceNew: true,
+            timeout: 10000,
+            auth: {
+                token: localStorage.getItem('token')
+            }
         });
         
         setSocket(newSocket);
@@ -140,8 +158,8 @@ const MovieRoom = () => {
             console.log('Socket connected:', newSocket.id);
         });
 
-        newSocket.on('disconnect', () => {
-            console.log('Socket disconnected');
+        newSocket.on('disconnect', (reason) => {
+            console.log('Socket disconnected:', reason);
         });
 
         newSocket.on('connect_error', (error) => {
@@ -157,7 +175,7 @@ const MovieRoom = () => {
         newSocket.on('user-joined', (data) => {
             console.log('User joined:', data);
             // Tao peer connection cho voice chat
-            if (data.socketId !== newSocket.id) {
+            if (data.socketId !== newSocket.id && isVoiceConnected) {
                 const peer = createPeer(data.socketId, newSocket.id);
                 peersRef.current.push({
                     peerID: data.socketId,
@@ -192,12 +210,14 @@ const MovieRoom = () => {
         // WebRTC signaling events 
         newSocket.on('receiving-signal', (payload) => {
             console.log('Receiving signal from:', payload.callerID);
-            const peer = addPeer(payload.signal, payload.callerID, newSocket);
-            peersRef.current.push({
-                peerID: payload.callerID,
-                peer,
-            });
-            setPeers(prev => ({ ...prev, [payload.callerID]: peer }));
+            if (isVoiceConnected) {
+                const peer = addPeer(payload.signal, payload.callerID);
+                peersRef.current.push({
+                    peerID: payload.callerID,
+                    peer,
+                });
+                setPeers(prev => ({ ...prev, [payload.callerID]: peer }));
+            }
         });
 
         newSocket.on('signal-received', (payload) => {
@@ -211,6 +231,7 @@ const MovieRoom = () => {
 
         // Voice activity events
         newSocket.on('user-mute-changed', (data) => {
+            console.log('User mute changed:', data);
             setUsers(prev => prev.map(user => 
                 user.socketId === data.socketId
                     ? { ...user, isMuted: data.isMuted }
@@ -219,6 +240,7 @@ const MovieRoom = () => {
         });
 
         newSocket.on('user-speaking-changed', (data) => {
+            console.log('User speaking changed:', data);
             setVoiceActivity(prev => ({
                 ...prev,
                 [data.socketId]: data.isSpeaking
@@ -228,7 +250,11 @@ const MovieRoom = () => {
         // Chat events
         newSocket.on('chat-message', (message) => {
             console.log('Received chat message', message);
-            setMessages(prev => [...prev, message]);
+            setMessages(prev => {
+                const newMessages = [...prev, message];
+                console.log('Updated message:', newMessages);
+                return newMessages;
+            })
         });
 
         // Movie change event
@@ -239,12 +265,15 @@ const MovieRoom = () => {
 
 
         return () => {
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
+            console.log('Cleaning up socket connection');
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close().catch(console.error);
             }
-            newSocket.close();
+            if (speakingTimeoutRef.current) {
+                clearTimeout(speakingTimeoutRef.current);
+            }
         };
-    }, [isVoiceConnected]); // Chỉ khởi tạo socket khi isVoiceConnected hoặc roomId thay đổi
+    }, [user, isVoiceConnected, roomId]); // Chỉ khởi tạo socket khi isVoiceConnected hoặc roomId thay đổi
 
     useEffect(() => {
         fetchTrendingMovies();
@@ -317,16 +346,22 @@ const MovieRoom = () => {
         return peer;
     };
 
+    // Fix joinVoiceChat Logic
     const joinVoiceChat = async () => {
         try {
+            console.log('Requesting microphone access for voice chat');
+            //Request microphone access
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true
+                    autoGainControl: true,
+                    sampleRate: 44100
                 },
                 video: false
         });
+
+        console.log('Microphone access granted');
 
         if (userVideo.current) {
             userVideo.current.srcObject = stream;
@@ -345,21 +380,39 @@ const MovieRoom = () => {
                 setPeers(prev => ({ ...prev, [roomUser.socketId]: peer }));
             }
         });
+            console.log('Voice chat joined successfully');
+
         } catch (error) {
             console.error('Error joining voice chat:', error);
-            alert('Khong the truy cap vao microphone');
+            //Hien thi loi cu the
+            if (error.name === 'NotAllowedError') {
+                alert('Bạn cần cho phép truy cập microphone. Vui lòng kiểm tra cài đặt trình duyệt.');
+            } else if (error.name === 'NotFoundError') {
+                alert('Không tìm thấy microphone. Vui lòng kiểm tra thiết bị.');
+            } else {
+                alert('Không thể truy cập microphone: ' + error.message);
+            }
         }
     };
 
     const leaveVoiceChat = () => {
+        console.log('Leaving voice chat');
+
         //Stop media stream 
         if (userVideo.current && userVideo.current.srcObject) {
             userVideo.current.srcObject.getTracks().forEach(track => track.stop());
+            userVideo.current.srcObject = null;
         }
 
+
         //Close audio context
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            audioContextRef.current.close().catch(console.error);
+        }
+
+        // Cleat timeout
+        if (speakingTimeoutRef.current) {
+            clearTimeout(speakingTimeoutRef.current);
         }
 
         //Clean up peers
@@ -372,6 +425,9 @@ const MovieRoom = () => {
         setIsVoiceConnected(false);
         setIsSpeaking(false);
         setVoiceActivity({});
+        setAudioInputLevel(0);
+
+        console.log('Voice chat left successfully')
     };
 
     const toggleMute = () => {

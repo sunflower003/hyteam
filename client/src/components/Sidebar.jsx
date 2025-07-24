@@ -25,6 +25,9 @@ const Sidebar = () => {
           <li className={styles.link}>
             <i class="ri-chat-1-line"></i> Chat
           </li>
+          <li className={styles.link} onClick={() => handleNavigation('/')}>
+            <i class="ri-user-line"></i> Profile
+          </li>
           <li className={styles.link}>
             <i class="ri-task-line"></i> Project
           </li>

@@ -43,7 +43,7 @@ const AppContent = () => {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="movie-room" element={<MovieRoom />} />
+            <Route path="/movie-room" element={<MovieRoom />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
           </Route>

@@ -60,6 +60,13 @@ const MovieRoom = () => {
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
                 audioContextRef.current.close();
             }
+
+            // Kiểm tra browser support
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) {
+                console.warn('AudioContext not supported');
+                return;
+            }
             
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const analyser = audioContext.createAnalyser();
@@ -74,7 +81,10 @@ const MovieRoom = () => {
             analyserRef.current = analyser;
 
             const detectSpeaking = () => {
-                if (!analyserRef.current || isMuted || isDeafened || audioContextRef.current.state === 'closed') {
+                if (!analyserRef.current || isMuted || isDeafened) {
+                    if (audioContextRef.current?.state === 'running') {
+                        requestAnimationFrame(detectSpeaking);
+                    }
                     return;
                 }
 
@@ -103,6 +113,7 @@ const MovieRoom = () => {
                     //Clear previous timeout
                     if (speakingTimeoutRef.current) {
                         clearTimeout(speakingTimeoutRef.current);
+                        speakingTimeoutRef.current = null;
                     }
 
                     // Stop speaking after delay
@@ -115,7 +126,7 @@ const MovieRoom = () => {
                                     isSpeaking: false
                                 });
                             }
-                        }, 3000); // 3 seconds
+                        }, 1000); // 1 seconds
                     }
                 }
                 
@@ -123,7 +134,8 @@ const MovieRoom = () => {
                     requestAnimationFrame(detectSpeaking);
                 }
             };
-                detectSpeaking();
+            // Start detection
+            detectSpeaking();
         } catch (error) {
             console.error('Error setting up voice activity detection:', error);
         }
@@ -139,13 +151,15 @@ const MovieRoom = () => {
         // Initialize socket connection
         const socketURL= import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
         console.log('Connecting to socket server at:', socketURL);
-        console.log('User:', user);
 
         const newSocket = io(socketURL, {
             withCredentials: true,
             transports: ['websocket', 'polling'],
-            forceNew: true,
-            timeout: 10000,
+            forceNew: false,
+            timeout: 20000,
+            reconnection: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
             auth: {
                 token: localStorage.getItem('token')
             }
@@ -160,10 +174,18 @@ const MovieRoom = () => {
 
         newSocket.on('disconnect', (reason) => {
             console.log('Socket disconnected:', reason);
+            // Không tự động reconnect nếu disconnect do lỗi client
+            if (reason === 'io client disconnect') {
+                return;
+            }
         });
 
         newSocket.on('connect_error', (error) => {
             console.error('Socket connection error:', error);
+            // Hiển thị thông báo lỗi cho người dùng
+            if (error.message.includes('timeout')) {
+                console.warn('Connection timeout - server may be slow');
+            }
         });
 
         // Room events
@@ -266,14 +288,26 @@ const MovieRoom = () => {
 
         return () => {
             console.log('Cleaning up socket connection');
-            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                audioContextRef.current.close().catch(console.error);
+
+            // Stop voice chat nếu đang active
+            if (isVoiceConnected) {
+                if (userVideo.current && userVideo.current.srcObject) {
+                    userVideo.current.srcObject.getTracks().forEach(track => track.stop());
+                }
+                if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                    audioContextRef.current.close().catch(console.error);
+                }
             }
+            
             if (speakingTimeoutRef.current) {
                 clearTimeout(speakingTimeoutRef.current);
             }
+            
+            // Disconnect socket properly
+            newSocket.removeAllListeners();
+            newSocket.disconnect();
         };
-    }, [user, isVoiceConnected, roomId]); // Chỉ khởi tạo socket khi isVoiceConnected hoặc roomId thay đổi
+    }, [user?.id]); // Chỉ khởi tạo socket khi user.id  thay đổi
 
     useEffect(() => {
         fetchTrendingMovies();
@@ -350,6 +384,11 @@ const MovieRoom = () => {
     const joinVoiceChat = async () => {
         try {
             console.log('Requesting microphone access for voice chat');
+
+            // Kiểm tra browser support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Trình duyệt không hỗ trợ truy cập microphone');
+            }
             //Request microphone access
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -366,6 +405,8 @@ const MovieRoom = () => {
         if (userVideo.current) {
             userVideo.current.srcObject = stream;
         }
+
+        //Setup voice activity detection
         setupVoiceActivityDetection(stream);
         setIsVoiceConnected(true);
 
@@ -385,13 +426,29 @@ const MovieRoom = () => {
         } catch (error) {
             console.error('Error joining voice chat:', error);
             //Hien thi loi cu the
-            if (error.name === 'NotAllowedError') {
-                alert('Bạn cần cho phép truy cập microphone. Vui lòng kiểm tra cài đặt trình duyệt.');
-            } else if (error.name === 'NotFoundError') {
-                alert('Không tìm thấy microphone. Vui lòng kiểm tra thiết bị.');
-            } else {
-                alert('Không thể truy cập microphone: ' + error.message);
+            let errorMessage = 'Không thể truy cập microphone: ';
+        
+            switch (error.name) {
+                case 'NotAllowedError':
+                    errorMessage += 'Bạn đã từ chối quyền truy cập microphone. Vui lòng cho phép trong cài đặt trình duyệt.';
+                    break;
+                case 'NotFoundError':
+                    errorMessage += 'Không tìm thấy microphone. Vui lòng kiểm tra thiết bị.';
+                    break;
+                case 'NotReadableError':
+                    errorMessage += 'Microphone đang được sử dụng bởi ứng dụng khác.';
+                    break;
+                case 'OverconstrainedError':
+                    errorMessage += 'Cấu hình microphone không được hỗ trợ.';
+                    break;
+                case 'SecurityError':
+                    errorMessage += 'Lỗi bảo mật. Vui lòng sử dụng HTTPS.';
+                    break;
+                default:
+                    errorMessage += error.message || 'Lỗi không xác định';
             }
+            alert(errorMessage);
+            setIsVoiceConnected(false);
         }
     };
 
@@ -600,7 +657,26 @@ const MovieRoom = () => {
     };
 
     const sendMessage = () => {
-        if (!newMessage.trim() || !socket) return;
+        if (!newMessage.trim()) {
+            console.log('Empty message');
+            return;
+        }
+
+        if (!socket?.connected) {
+            console.log(' Socket not connected');
+            alert('Khong co ket noi. Vui long thu lai');
+            return;
+        }
+
+        if (!roomId) {
+            console.log('No room ID');
+            return;
+        }
+
+        if (!user?.id) {
+            console.log('No user data');
+            return;
+        }
 
         const message = {
             id: Date.now(),

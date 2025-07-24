@@ -15,6 +15,9 @@ const Sidebar = () => {
             <i class="ri-instagram-line"></i> Hyfeed
           </li>
           <li className={styles.link}>
+            <i class="ri-user-line"></i> Profile
+          </li>
+          <li className={styles.link}>
             <i class="ri-notification-2-line"></i> Notification
           </li>
           <li className={styles.link}>

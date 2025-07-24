@@ -1,7 +1,12 @@
+import { useNavigate } from 'react-router-dom';
 import styles from '../styles/components/Sidebar.module.css';
 
 const Sidebar = () => {
- 
+  const navigate = useNavigate();
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
 
   return (
     <>
@@ -11,11 +16,8 @@ const Sidebar = () => {
           <p className={styles.version}>v1.0</p>
         </div>
         <ul className={styles.links}>
-          <li className={styles.link}>
+          <li className={styles.link} onClick={() => handleNavigation('/')}>
             <i class="ri-instagram-line"></i> Hyfeed
-          </li>
-          <li className={styles.link}>
-            <i class="ri-user-line"></i> Profile
           </li>
           <li className={styles.link}>
             <i class="ri-notification-2-line"></i> Notification
@@ -32,7 +34,7 @@ const Sidebar = () => {
           <li className={styles.link}>
             <i class="ri-drive-line"></i> Document
           </li>
-          <li className={styles.link}>
+          <li className={styles.link} onClick={() => handleNavigation('/movie-room')}>
             <i class="ri-film-line"></i> Movie Room
           </li>
         </ul>
@@ -48,7 +50,7 @@ const Sidebar = () => {
       <div className={styles.navbar}>
         <i class="ri-instagram-line"></i>
         <i class="ri-chat-1-line"></i>
-        <i class="ri-film-line"></i>
+        <i class="ri-film-line" onClick={() => handleNavigation('/movie-room')}></i>
         <i class="ri-btc-line"></i>
         <img src='/img/duongqua.jpg' className={styles.avatarCircle} alt="Avatar" />
       </div>

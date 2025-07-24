@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import styles from '../styles/components/MovieRoom.module.css';
 
 const MovieRoom = () => {
     const [socket, setSocket] = useState(null);
@@ -701,10 +702,10 @@ const MovieRoom = () => {
     // Join Room UI
     if (!isInRoom) {
         return (
-            <div className="movie-room-container">
-                <div className="join-room-card">
+            <div className={styles.movieRoomContainer}>
+                <div className={styles.joinRoomCard}>
                     <h2>🎬 Tham gia Phòng Phim</h2>
-                    <div className="join-form">
+                    <div className={styles.joinForm}>
                         <input
                             type="text"
                             placeholder="Nhập ID phòng (vd: room123)"
@@ -717,66 +718,68 @@ const MovieRoom = () => {
                             value={roomName}
                             onChange={(e) => setRoomName(e.target.value)}
                         />
-                        <button onClick={joinRoom} disabled={!roomId.trim()}>
+                        <button 
+                            onClick={joinRoom} 
+                            disabled={!roomId.trim()}
+                            className={styles.joinButton}
+                        >
                             Tham gia phòng
                         </button>
                     </div>
-                    <p className="join-help">
-                        Nhập ID phòng để tham gia hoặc tạo phòng mới
-                    </p>
+                    <p>Nhập ID phòng để tham gia hoặc tạo phòng mới</p>
                 </div>
             </div>
         );
     }
 
-    // Main Room UI với Discord-like voice chat
+    // Main Room UI với CSS modules
     return (
-        <div className="movie-room-container">
-            <div className="room-header">
-                <div className="room-info">
+        <div className={styles.movieRoomContainer}>
+            <div className={styles.roomHeader}>
+                <div className={styles.roomInfo}>
                     <h3>🎬 Phòng: {roomId}</h3>
-                    {isHost && <span className="host-badge">👑 Host</span>}
-                    <span className="connection-status">
+                    {isHost && <span className={styles.hostBadge}>👑 Host</span>}
+                    <span className={styles.connectionStatus}>
                         {socket?.connected ? '🟢 Kết nối' : '🔴 Mất kết nối'}
                     </span>
                 </div>
 
-                {/* Discord-like Voice Controls */}
-                <div className="voice-controls">
+                {/* Voice Controls */}
+                <div className={styles.voiceControls}>
                     {!isVoiceConnected ? (
-                        <button onClick={joinVoiceChat} className="voice-join-btn">
+                        <button onClick={joinVoiceChat} className={styles.voiceJoinBtn}>
                             🎤 Tham gia Voice Chat
                         </button>
                     ) : (
-                        <div className="voice-control-group">
+                        <div className={styles.voiceControlGroup}>
                             <button 
                                 onClick={toggleMute}
-                                className={`voice-btn ${isMuted ? 'muted' : ''}`}
-                                title={isMuted ? 'Bo tat tieng' : 'Tat tieng'}
-                        >
+                                className={`${styles.voiceBtn} ${isMuted ? styles.muted : ''}`}
+                                title={isMuted ? 'Bỏ tắt tiếng' : 'Tắt tiếng'}
+                            >
                                 {isMuted ? '🔇' : '🎤'}
                             </button>
 
                             <button
                                 onClick={toggleDeafen}
-                                className={`voice-btn ${isDeafened ? 'deafened' : ''}`}
-                                title={isDeafened ? 'Bo tat nghe' : 'Tat nghe' }
+                                className={`${styles.voiceBtn} ${isDeafened ? styles.deafened : ''}`}
+                                title={isDeafened ? 'Bỏ tắt nghe' : 'Tắt nghe'}
                             >
-                                {isDeafened ? '🔕' : ' 🔊'}
+                                {isDeafened ? '🔕' : '🔊'}
                             </button>
 
                             <button 
                                 onClick={leaveVoiceChat}
-                                className="voice-btn disconnect"
-                                title="Roi voice chat"
+                                className={`${styles.voiceBtn} ${styles.disconnect}`}
+                                title="Rời voice chat"
                             >
-                                🚪 Rời Voice Chat
+                                🚪
                             </button>
 
                             {/* Voice Activity Indicator */}
-                            <div className="voice-activity">
+                            <div className={styles.voiceActivity}>
                                 <div 
-                                    className={`activity-bar ${isSpeaking ? 'speaking' : ''}`}
+                                    className={`${styles.activityBar} ${isSpeaking ? styles.speaking : ''}`}
                                     style={{
                                         width: `${Math.min(audioInputLevel * 2, 100)}%`
                                     }}
@@ -786,16 +789,16 @@ const MovieRoom = () => {
                     )}
                 </div>
 
-                <div className="room-controls">
+                <div className={styles.roomControls}>
                     {isHost && (
                         <button 
                             onClick={() => setShowMovieSearch(!showMovieSearch)}
-                            className="control-btn movie-btn"
+                            className={`${styles.controlBtn} ${styles.movieBtn}`}
                         >
                             🎭 Chọn phim
                         </button>
                     )}
-                    <button onClick={leaveRoom} className="control-btn leave-btn">
+                    <button onClick={leaveRoom} className={`${styles.controlBtn} ${styles.leaveBtn}`}>
                         🚪 Rời phòng
                     </button>
                 </div>
@@ -803,19 +806,19 @@ const MovieRoom = () => {
 
             {/* Movie Search Modal */}
             {showMovieSearch && isHost && (
-                <div className="movie-search-modal">
-                    <div className="movie-search-content">
-                        <div className="search-header">
+                <div className={styles.movieSearchModal}>
+                    <div className={styles.movieSearchContent}>
+                        <div className={styles.searchHeader}>
                             <h3>🔍 Tìm kiếm phim</h3>
                             <button 
                                 onClick={() => setShowMovieSearch(false)}
-                                className="close-btn"
+                                className={styles.closeBtn}
                             >
                                 ✕
                             </button>
                         </div>
                         
-                        <div className="search-bar">
+                        <div className={styles.searchBar}>
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm phim..."
@@ -828,16 +831,16 @@ const MovieRoom = () => {
                             </button>
                         </div>
 
-                        <div className="movies-grid">
+                        <div className={styles.moviesGrid}>
                             {/* Search Results */}
                             {searchResults.length > 0 && (
-                                <div className="movies-section">
+                                <div className={styles.moviesSection}>
                                     <h4>Kết quả tìm kiếm</h4>
-                                    <div className="movies-list">
+                                    <div className={styles.moviesList}>
                                         {searchResults.map(movie => (
-                                            <div key={movie.id} className="movie-card" onClick={() => selectMovie(movie)}>
+                                            <div key={movie.id} className={styles.movieCard} onClick={() => selectMovie(movie)}>
                                                 <img src={movie.posterPath || '/placeholder.jpg'} alt={movie.title} />
-                                                <div className="movie-info">
+                                                <div className={styles.movieInfo}>
                                                     <h5>{movie.title}</h5>
                                                     <p>⭐ {movie.voteAverage?.toFixed(1)}</p>
                                                 </div>
@@ -849,13 +852,13 @@ const MovieRoom = () => {
 
                             {/* Trending Movies */}
                             {searchResults.length === 0 && (
-                                <div className="movies-section">
+                                <div className={styles.moviesSection}>
                                     <h4>🔥 Phim thịnh hành</h4>
-                                    <div className="movies-list">
+                                    <div className={styles.moviesList}>
                                         {trendingMovies.map(movie => (
-                                            <div key={movie.id} className="movie-card" onClick={() => selectMovie(movie)}>
+                                            <div key={movie.id} className={styles.movieCard} onClick={() => selectMovie(movie)}>
                                                 <img src={movie.posterPath || '/placeholder.jpg'} alt={movie.title} />
-                                                <div className="movie-info">
+                                                <div className={styles.movieInfo}>
                                                     <h5>{movie.title}</h5>
                                                     <p>⭐ {movie.voteAverage?.toFixed(1)}</p>
                                                 </div>
@@ -869,11 +872,11 @@ const MovieRoom = () => {
                 </div>
             )}
 
-            <div className="room-content">
+            <div className={styles.roomContent}>
                 {/* Movie Player */}
-                <div className="movie-section">
+                <div className={styles.movieSection}>
                     {currentMovie ? (
-                        <div className="movie-player">
+                        <div className={styles.moviePlayer}>
                             <iframe
                                 src={currentMovie.streamUrl}
                                 width="100%"
@@ -883,12 +886,12 @@ const MovieRoom = () => {
                                 title={currentMovie.title}
                                 referrerPolicy="origin"
                             ></iframe>
-                            <div className="movie-details">
+                            <div className={styles.movieDetails}>
                                 <h4>{currentMovie.title}</h4>
                             </div>
                         </div>
                     ) : (
-                        <div className="no-movie">
+                        <div className={styles.noMovie}>
                             <h3>🎬 Chưa có phim nào được chọn</h3>
                             <p>{isHost ? 'Nhấn "Chọn phim" để bắt đầu' : 'Đang chờ host chọn phim...'}</p>
                         </div>
@@ -896,49 +899,50 @@ const MovieRoom = () => {
                 </div>
 
                 {/* Sidebar */}
-                <div className="sidebar">
-                    {/* Voice Chat Users - Discord Style */}
+                <div className={styles.sidebar}>
+                    {/* Voice Chat Users */}
                     {isVoiceConnected && (
-                        <div className="voice-chat-section">
+                        <div className={styles.voiceChatSection}>
                             <h4>🎤 Voice Chat ({users.filter(u => u.socketId === socket.id || peers[u.socketId]).length})</h4>
-                            <div className="voice-users-list">
+                            <div className={styles.voiceUsersList}>
                                 {/* Current user */}
-                                <div className={`voice-user-item ${isSpeaking ? 'speaking' : ''}`}>
+                                <div className={`${styles.voiceUserItem} ${isSpeaking ? styles.speaking : ''}`}>
                                     <img 
                                         src={user.avatar} 
                                         alt={user.username}
-                                        className="voice-avatar"
+                                        className={styles.voiceAvatar}
                                         onError={(e) => {
-                                            e.target.src = `https://via.placeholder.com/32/667eea/ffffff?text=${user.username?.[0] || '?'}`;
+                                            e.target.src = `https://via.placeholder.com/32/3b82f6/ffffff?text=${user.username?.[0] || '?'}`;
                                         }}
                                     />
-                                    <span className="voice-username">
+                                    <span className={styles.voiceUsername}>
                                         {user.username} (Bạn)
                                     </span>
-                                    <div className="voice-indicators">
-                                        {isMuted && <span className="muted-icon">🔇</span>}
-                                        {isDeafened && <span className="deafened-icon">🔇</span>}
-                                        {isSpeaking && <span className="speaking-icon">📢</span>}
+                                    <div className={styles.voiceIndicators}>
+                                        {isMuted && <span className={styles.mutedIcon}>🔇</span>}
+                                        {isDeafened && <span className={styles.deafenedIcon}>🔕</span>}
+                                        {isSpeaking && <span className={styles.speakingIcon}>📢</span>}
                                     </div>
                                 </div>
+                                
                                 {/* Other users in voice */}
                                 {users.filter(u => u.socketId !== socket.id && peers[u.socketId]).map(roomUser => (
                                     <div 
                                         key={roomUser.socketId} 
-                                        className={`voice-user-item ${voiceActivity[roomUser.socketId] ? 'speaking' : ''}`}
+                                        className={`${styles.voiceUserItem} ${voiceActivity[roomUser.socketId] ? styles.speaking : ''}`}
                                     >
                                         <img 
                                             src={roomUser.avatar} 
                                             alt={roomUser.username}
-                                            className="voice-avatar"
+                                            className={styles.voiceAvatar}
                                             onError={(e) => {
-                                                e.target.src = `https://via.placeholder.com/32/667eea/ffffff?text=${roomUser.username?.[0] || '?'}`;
+                                                e.target.src = `https://via.placeholder.com/32/3b82f6/ffffff?text=${roomUser.username?.[0] || '?'}`;
                                             }}
                                         />
-                                        <span className="voice-username">{roomUser.username}</span>
-                                        <div className="voice-indicators">
-                                            {roomUser.isMuted && <span className="muted-icon">🔇</span>}
-                                            {voiceActivity[roomUser.socketId] && <span className="speaking-icon">📢</span>}
+                                        <span className={styles.voiceUsername}>{roomUser.username}</span>
+                                        <div className={styles.voiceIndicators}>
+                                            {roomUser.isMuted && <span className={styles.mutedIcon}>🔇</span>}
+                                            {voiceActivity[roomUser.socketId] && <span className={styles.speakingIcon}>📢</span>}
                                         </div>
                                     </div>
                                 ))}
@@ -946,68 +950,68 @@ const MovieRoom = () => {
                         </div>
                     )}
 
-
-                    {/* Users */}
-                    <div className="users-section">
+                    {/* Users List */}
+                    <div className={styles.usersSection}>
                         <h4>👥 Thành viên ({users.length})</h4>
-                        <div className="users-list">
+                        <div className={styles.usersList}>
                             {users.map((roomUser, index) => (
-                                <div key={roomUser.socketId || index} className="user-item">
+                                <div key={roomUser.socketId || index} className={styles.userItem}>
                                     <img 
                                         src={roomUser.avatar || '/default-avatar.png'} 
                                         alt={roomUser.username}
-                                        className="user-avatar-small"
+                                        className={styles.userAvatarSmall}
                                         onError={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/35/667eea/ffffff?text=' + (roomUser.username?.[0] || '?');
+                                            e.target.src = 'https://via.placeholder.com/28/3b82f6/ffffff?text=' + (roomUser.username?.[0] || '?');
                                         }}
                                     />
-                                    <span className="username">
+                                    <span className={styles.username}>
                                         {roomUser.username}
                                         {roomUser.userId === user.id && ' (Bạn)'}
                                     </span>
-                                    <div className="user-status">
-                                        {peers[roomUser.socketId] && <span className="voice-status">🎤</span>}
-                                        {voiceActivity[roomUser.socketId] && <span className="speaking-status">📢</span>}
+                                    <div className={styles.userStatus}>
+                                        {peers[roomUser.socketId] && <span className={styles.voiceStatus}>🎤</span>}
+                                        {voiceActivity[roomUser.socketId] && <span className={styles.speakingStatus}>📢</span>}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Chat voi lich su */}
-                    <div className="chat-section">
-                        <div className="chat-header">
+                    {/* Chat Section */}
+                    <div className={styles.chatSection}>
+                        <div className={styles.chatHeader}>
                             <h4>💬 Chat</h4>
                             {hasMoreMessages && (
                                 <button 
                                     onClick={() => loadChatHistory(currentPage + 1)}
                                     disabled={isLoadingMessages}
-                                    className="load-more-btn"
+                                    className={styles.loadMoreBtn}
                                 >
                                     {isLoadingMessages ? '⏳' : '📜 Tải thêm'}
                                 </button>
                             )}
                         </div>
 
-                        <div className="chat-messages">
+                        <div className={styles.chatMessages}>
                             {messages.length === 0 ? (
-                                <p className="no-messages">Chưa có tin nhắn nào...</p>
+                                <p className={styles.noMessages}>Chưa có tin nhắn nào...</p>
                             ) : (
                                 messages.map((msg) => (
-                                    <div key={msg.id} className="message">
-                                        <div className="message-header">
-                                            <span className="message-user">{msg.user.username}</span>
-                                            <span className="message-time">
+                                    <div key={msg.id} className={styles.message}>
+                                        <div className={styles.messageHeader}>
+                                            <span className={styles.messageUser}>{msg.user.username}</span>
+                                            <span className={styles.messageTime}>
                                                 {new Date(msg.timestamp).toLocaleTimeString()}
                                             </span>
                                         </div>
-                                        <div className="message-text">{msg.message}</div>
+                                        <div className={styles.messageText}>{msg.message}</div>
                                     </div>
                                 ))
                             )}
                             <div ref={messagesEndRef} />
                         </div>
-                        <div className="chat-input">
+                        
+                        <div className={styles.chatInput}>
                             <input
                                 type="text"
                                 placeholder="Nhập tin nhắn..."
@@ -1018,7 +1022,8 @@ const MovieRoom = () => {
                             />
                             <button 
                                 onClick={sendMessage} 
-                                disabled={!newMessage.trim() || !socket?.connected}>
+                                disabled={!newMessage.trim() || !socket?.connected}
+                            >
                                 📤
                             </button>
                         </div>
@@ -1035,7 +1040,7 @@ const MovieRoom = () => {
     );
 };
 
-// Component for peer audio
+// Component for peer audio - giữ nguyên
 const PeerAudio = ({ peer }) => {
     const ref = useRef();
 

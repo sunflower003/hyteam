@@ -128,6 +128,18 @@
     gap: 10px;
 }
 
+.switchAuth {
+    font-size: 14px;
+    color: var(--grey);
+    font-weight: 500;
+}
+
+.linkButton {
+    color: black;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
 @media only screen and (max-width: 767px) 
 {
     .rightContainer {

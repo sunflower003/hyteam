@@ -95,13 +95,13 @@ const NewLogin = ({ onSwitchToRegister }) => {
                 {onSwitchToRegister && (
                     <p className={styles.switchAuth}>
                         Don't have an account?{' '}
-                        <button 
-                            type="button"
+                        <span 
+                            
                             onClick={onSwitchToRegister}
                             className={styles.linkButton}
                         >
                             Register now
-                        </button>
+                        </span>
                     </p>
                 )}
            </div>

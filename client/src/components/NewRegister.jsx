@@ -76,7 +76,7 @@ const NewRegister = ({ onSwitchToLogin }) => {
                         required
                         disabled={isLoading}
                     />
-                    
+
                     <label htmlFor="email" className={styles.label}>Email</label>
                     <input 
                         type="email" 

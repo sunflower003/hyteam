@@ -262,6 +262,31 @@
     }
 }
 
+/* Streaming cursor animation */
+.typingCursor {
+    display: inline-block;
+    width: 2px;
+    margin-left: 2px;
+    animation: blink 1s infinite;
+    font-weight: bold;
+    color: #007bff;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Loading animation for send button */
+.sendButton.loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* Scrollbar Styles */
 .chatHistory::-webkit-scrollbar {
     width: 4px;

@@ -1,15 +1,14 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Hypo from '../ai/components/Hypo';
+import Hypo from './Hypo';
 
-import hypoStyles from '../ai/styles/Hypo.module.css';          
 import layoutStyles from '../styles/components/Layout.module.css'; 
 
 const Layout = () => {
   return (
     <div className={layoutStyles.layout}>
       <Sidebar />
-      <Hypo className={hypoStyles.hypoContainer} />
+      <Hypo />
       <div className={layoutStyles.content}>
         <Outlet />
       </div>

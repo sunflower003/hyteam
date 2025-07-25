@@ -2,6 +2,7 @@ const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
             'http://localhost:5173',
+            'http://localhost:5174',
             'http://localhost:5000',
             'https://hyteam.vercel.app',
             'https://hyteam.onrender.com',

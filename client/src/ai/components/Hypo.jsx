@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import styles from '../styles/Hypo.module.css';
 
 const Hypo = () => {
-  // Existing states...
+  // States từ component gốc (đơn giản)
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  // States cho AI logic (giữ nguyên từ AI component)
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,40 +16,26 @@ const Hypo = () => {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   
-  // Enhanced animation states với better control
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [animationPhase, setAnimationPhase] = useState('idle');
-  const [shouldRender, setShouldRender] = useState(false);
-  
   const chatEndRef = useRef(null);
   const chatHistoryRef = useRef(null);
-  const animationTimeoutRef = useRef(null);
-
+  
   const images = [
     "/img/hypo/hypo.gif",
-    "/img/hypo/hypo2.gif",
+    "/img/hypo/hypo2.gif", 
   ];
-
-  // Cleanup function để prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Image rotation effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) =>
+      setCurrentImageIndex((prevIndex) => 
         prevIndex === images.length - 1 ? 0 : prevIndex + 1
       );
     }, 7000);
+
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // Smart auto-scroll effect
+  // Smart auto-scroll effect (từ AI component)
   useEffect(() => {
     const shouldAutoScroll = !userScrolled || streamingMessageId;
     
@@ -59,7 +47,7 @@ const Hypo = () => {
     }
   }, [messages, userScrolled, streamingMessageId]);
 
-  // Scroll event handler
+  // Scroll event handler (từ AI component)
   const handleScroll = () => {
     if (!chatHistoryRef.current) return;
     
@@ -83,65 +71,13 @@ const Hypo = () => {
     }
   };
 
-  // Enhanced toggle chat với better state control
+  // Giao diện đơn giản (từ component gốc)
   const toggleChat = () => {
-    if (isAnimating) {
-      console.log('🚫 Animation in progress, ignoring click');
-      return;
-    }
-    
-    if (!isChatVisible) {
-      console.log('📱 Opening chat instantly...');
-      setShouldRender(true);
-      setIsChatVisible(true);
-      setUserScrolled(false);
-      setUnreadMessages(0);
-      
-    } else {
-      console.log('🎭 Starting enhanced closing animation...');
-      
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-      
-      setIsAnimating(true);
-      setAnimationPhase('closing');
-      
-      animationTimeoutRef.current = setTimeout(() => {
-        console.log('✅ Closing animation completed');
-        setIsChatVisible(false);
-        setShouldRender(false);
-        setAnimationPhase('idle');
-        setIsAnimating(false);
-        animationTimeoutRef.current = null;
-      }, 450);
-    }
+    setIsChatVisible(!isChatVisible);
   };
 
-  // Enhanced close chat function
   const closeChat = () => {
-    if (isAnimating) {
-      console.log('🚫 Already closing, ignoring');
-      return;
-    }
-    
-    console.log('🎭 Enhanced close via button...');
-    
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-    }
-    
-    setIsAnimating(true);
-    setAnimationPhase('closing');
-    
-    animationTimeoutRef.current = setTimeout(() => {
-      console.log('✅ Close button animation completed');
-      setIsChatVisible(false);
-      setShouldRender(false);
-      setAnimationPhase('idle');
-      setIsAnimating(false);
-      animationTimeoutRef.current = null;
-    }, 450);
+    setIsChatVisible(false);
   };
 
   const handleInputFocus = () => {
@@ -152,7 +88,7 @@ const Hypo = () => {
     setIsInputFocused(false);
   };
 
-  // Enhanced streaming message sender với better error handling
+  // Logic AI streaming (giữ nguyên từ AI component)
   const sendStreamingMessage = async (retryCount = 0) => {
     if (!inputMessage.trim() || loading) return;
 
@@ -330,163 +266,104 @@ const Hypo = () => {
     }
   };
 
+  // Hàm xử lý click suggestion
+  const handleSuggestionClick = (suggestionText) => {
+    setInputMessage(suggestionText);
+    // Auto send the message
+    setTimeout(() => {
+      sendStreamingMessage();
+    }, 100);
+  };
+
   return (
     <div>
-      {/* Avatar Hypo với enhanced state checking */}
-      <img
-        src={images[currentImageIndex]}
-        alt="Hypo Logo"
-        className={`${styles.hypo} ${
-          animationPhase === 'closing' ? styles.hypoClosing : ''
-        }`}
+      <img 
+        src={images[currentImageIndex]} 
+        alt="Hypo Logo" 
+        className={styles.hypo} 
         onClick={toggleChat}
       />
-
-      {/* Enhanced conditional rendering với shouldRender control */}
-      {shouldRender && (
-        <div className={`${styles.boxchat} ${
-          animationPhase === 'closing' ? styles.chatClosing : styles.chatVisible
-        }`}>
+      {isChatVisible && (
+        <div className={styles.boxchat}>
           <div className={styles.header}>
-            <div className={styles.headerInfo}>
-              <div className={styles.headerAvatar}>
-                <img src="/img/hypo/hypo.gif" alt="Hypo" />
-                <div className={styles.onlineIndicator}></div>
-              </div>
-              <div className={styles.headerText}>
-                <h4>Hypo AI</h4>
-                <span className={styles.status}>Always here to help</span>
-              </div>
-            </div>
-            <i
-              className={`ri-close-line ${styles.closeIcon}`}
-              onClick={closeChat}
-            />
+              <i className="ri-timer-2-line"></i>
+              <i className={`ri-close-line ${styles.closeIcon}`} onClick={closeChat}></i>
           </div>
-
           <div className={styles.content}>
+            {/* Đây là lựa chọn gợi ý cho đoạn chat */}
             {messages.length === 0 && (
               <div className={styles.suggestion}>
-                <div className={styles.welcomeAvatar}>
-                  <img src="/img/hypo/hypochat.gif" alt="Hypo" />
-                </div>
-                <h3>How can I help you today?</h3>
-                <div className={styles.suggestionList}>
-                  <div className={styles.suggestionItem} onClick={() => setInputMessage("Hướng dẫn quản lý dự án")}>
-                    <i className="ri-list-check"></i>
-                    <span>Quản lý dự án</span>
-                  </div>
-                  <div className={styles.suggestionItem} onClick={() => setInputMessage("Giải thích HYTEAM là gì")}>
-                    <i className="ri-team-line"></i>
-                    <span>Về HYTEAM</span>
-                  </div>
-                  <div className={styles.suggestionItem} onClick={() => setInputMessage("Hỗ trợ kỹ thuật")}>
-                    <i className="ri-tools-line"></i>
-                    <span>Hỗ trợ kỹ thuật</span>
-                  </div>
-                </div>
+                  <img src="/img/hypo/hypochat.gif" alt="Hypo" className={styles.hypoIcon}/>
+                  <h3 className={styles.title}>How can I help you today?</h3>
+                  <ul className={styles.list}>
+                      <li className={styles.listItem} onClick={() => handleSuggestionClick("Can you help me with GitHub integration?")}>
+                        <i className="ri-github-line"></i>Get answers from connected apps
+                      </li>
+                      <li className={styles.listItem} onClick={() => handleSuggestionClick("Please summarize this page for me")}>
+                        <i className="ri-list-check"></i>Summarize this page
+                      </li>
+                      <li className={styles.listItem} onClick={() => handleSuggestionClick("Can you translate this page?")}>
+                        <i className="ri-translate-2"></i>Translate this page
+                      </li>
+                  </ul>
               </div>
             )}
-
-            <div className={styles.chatHistoryContainer}>
-              <div 
-                className={styles.chatHistory}
-                ref={chatHistoryRef}
-                onScroll={handleScroll}
-              >
-                {messages.map((msg) => (
-                  <div key={msg.id} className={styles.messageContainer}>
-                    <div className={`${styles.messageGroup} ${
-                      msg.sender === 'ai' ? styles.messageGroupAI : styles.messageGroupUser
-                    }`}>
-                      {msg.sender === 'ai' && (
-                        <div className={styles.messageAvatar}>
-                          <img src="/img/hypo/hypo.gif" alt="Hypo" />
+            
+            {/* Đây là nơi hiển thị các đoạn chat */}
+            {messages.length > 0 && (
+              <div className={styles.chatHistory} ref={chatHistoryRef} onScroll={handleScroll}>
+                {messages.map((message) => (
+                  <div key={message.id} className={`${styles.message} ${message.sender === 'user' ? styles.userMessage : styles.aiMessage}`}>
+                    {message.sender === 'ai' && (
+                      <img src="/img/hypo/hypochat.gif" alt="Hypo" className={styles.messageAvatar}/>
+                    )}
+                    <div className={styles.messageContent}>
+                      {/* Hiển thị 3 chấm nhảy khi AI đang streaming và chưa có text */}
+                      {message.sender === 'ai' && message.streaming && !message.text ? (
+                        <div className={styles.typingIndicator}>
+                          <span></span>
+                          <span></span>
+                          <span></span>
                         </div>
+                      ) : (
+                        <p className={styles.messageText}>
+                          {message.text}
+                          {message.streaming && message.text && (
+                            <span className={styles.typingCursor}>|</span>
+                          )}
+                        </p>
                       )}
-                      
-                      <div className={styles.messageContent}>
-                        <div className={`${styles.messageBubble} ${
-                          msg.sender === 'ai' ? styles.bubbleAI : styles.bubbleUser
-                        } ${msg.isError ? styles.errorBubble : ''}`}>
-                          <span className={styles.messageText}>
-                            {msg.text}
-                            {msg.streaming && (
-                              <span className={styles.typingCursor}>|</span>
-                            )}
-                          </span>
-                        </div>
-                        <div className={styles.messageTime}>
-                          {formatTime(msg.timestamp)}
-                        </div>
-                      </div>
+                      <span className={styles.messageTime}>
+                        {formatTime(message.timestamp)}
+                      </span>
                     </div>
                   </div>
                 ))}
                 
-                {loading && !streamingMessageId && (
-                  <div className={styles.messageContainer}>
-                    <div className={`${styles.messageGroup} ${styles.messageGroupAI}`}>
-                      <div className={styles.messageAvatar}>
-                        <img src="/img/hypo/hypo.gif" alt="Hypo" />
-                      </div>
-                      <div className={styles.typingIndicator}>
-                        <div className={styles.typingDots}>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
                 <div ref={chatEndRef} />
               </div>
-
-              {showScrollToBottom && (
-                <div className={styles.scrollToBottomContainer}>
-                  <button 
-                    className={styles.scrollToBottomButton}
-                    onClick={scrollToBottom}
-                    title="Scroll to bottom"
-                  >
-                    <i className="ri-arrow-down-line"></i>
-                    {unreadMessages > 0 && (
-                      <span className={styles.unreadBadge}>{unreadMessages}</span>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-
+            )}
+            
             <div className={`${styles.inputChat} ${isInputFocused ? styles.inputChatFocused : ''}`}>
-              <div className={styles.inputWrapper}>
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  className={styles.inputField}
-                  value={inputMessage}
-                  onChange={e => setInputMessage(e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  onKeyDown={handleInputKeyDown}
-                  disabled={loading}
-                />
-                <div className={styles.inputActions}>
-                  <div className={styles.attachButtons}>
-                    <i className="ri-emotion-happy-line" title="Emoji"></i>
-                    <i className="ri-attachment-2" title="Attach file"></i>
-                  </div>
-                  <button
-                    className={`${styles.sendButton} ${loading ? styles.loading : ''}`}
-                    onClick={sendStreamingMessage}
-                    disabled={loading || !inputMessage.trim()}
-                    title="Send message"
-                  >
-                    <i className="ri-send-plane-fill"></i>
-                  </button>
+              <input 
+                type="text" 
+                placeholder="Ask Hypo AI anything..." 
+                className={styles.inputField}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={handleInputKeyDown}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                disabled={loading}
+              />
+              <div className={styles.buttonList}>
+                <div className={styles.attachButton}>
+                  <i className="ri-notion-fill"></i>
+                  <i className="ri-attachment-2"></i>
+                  <i className="ri-at-line"></i>
                 </div>
+                <i className={`ri-send-plane-fill ${styles.sendButton}`} 
+                   onClick={sendStreamingMessage}></i>
               </div>
             </div>
           </div>

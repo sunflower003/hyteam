@@ -23,6 +23,9 @@ const Sidebar = () => {
             <i class="ri-notification-2-line"></i> Notification
           </li>
           <li className={styles.link}>
+            <i class="ri-add-box-line"></i> Add
+          </li>
+          <li className={styles.link}>
             <i class="ri-chat-1-line"></i> Chat
           </li>
           <li className={styles.link} onClick={() => handleNavigation('/')}>
@@ -53,8 +56,8 @@ const Sidebar = () => {
       <div className={styles.navbar}>
         <i class="ri-instagram-line"></i>
         <i class="ri-chat-1-line"></i>
-        <i class="ri-film-line" onClick={() => handleNavigation('/movie-room')}></i>
         <i class="ri-btc-line"></i>
+        <i class="ri-film-line" onClick={() => handleNavigation('/movie-room')}></i>
         <img src='/img/duongqua.jpg' className={styles.avatarCircle} alt="Avatar" />
       </div>
     </>

@@ -1,5 +1,5 @@
 .hypo {
-    position: absolute;
+    position: fixed;
     right: 20px;
     bottom: 10px;
     width: 45px;
@@ -9,11 +9,12 @@
     object-fit: cover;
     object-position: center;
     cursor: pointer;
+    z-index: 2000;
 }
 
 
 .boxchat {
-    position: absolute;
+    position: fixed;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -26,6 +27,7 @@
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     background-color: white;
+    z-index: 3000;
 }
 
 .header {

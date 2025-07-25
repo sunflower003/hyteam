@@ -17,5 +17,6 @@
   .content {
     margin-left: 0;
     padding: 1rem;
+    margin-bottom: 60px; /* Để tránh nội dung bị che bởi navbar */
   }
 }

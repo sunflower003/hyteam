@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import NewLogin from './components/NewLogin';
-import Register from './components/Register'; // Dùng Register cũ tạm thời
+import Register from './components/Register';
 import MovieRoom from './components/MovieRoom';
-import Dashboard from './components/Dashboard';
-import Home from './components/Home';
 import Profile from './components/Profile';
 import Settings from './components/Settings';
 import Layout from './components/Layout';
+import Hyfeed from './pages/Hyfeed';
 import './App.css'
 
 const AppContent = () => {
@@ -40,7 +39,7 @@ const AppContent = () => {
       <div className="app">
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
+            <Route index element={<Hyfeed />} />
             <Route path="movie-room" element={<MovieRoom />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />

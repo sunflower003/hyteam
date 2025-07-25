@@ -1,0 +1,1 @@
+Example training data for AI model.

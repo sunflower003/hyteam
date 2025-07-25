@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from '../styles/components/Story.module.css';
 
 const Story = () => {
@@ -7,6 +7,7 @@ const Story = () => {
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Check if device is mobile
   useEffect(() => {
@@ -126,8 +127,43 @@ const Story = () => {
     }
   };
 
+  // Handle add story button click
+  const handleAddStory = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle file selection
+  const handleFileSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      // Ở đây bạn có thể xử lý file ảnh đã chọn
+      console.log('Selected file:', file);
+      // TODO: Upload ảnh lên server hoặc xử lý theo logic của bạn
+      alert(`Đã chọn ảnh: ${file.name}`);
+    }
+    // Reset input value để có thể chọn lại cùng file
+    event.target.value = '';
+  };
+
   return (
     <div className={styles.story}>
+        {/* Add Story Button */}
+        <div className={styles.addStoryItem} onClick={handleAddStory}>
+          <div className={styles.addStoryCircle}>
+            <i className="ri-add-line"></i>
+          </div>
+          <p className={styles.addStoryText}>Add Story</p>
+        </div>
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          accept="image/*"
+          style={{ display: 'none' }}
+        />
+
         {stories.map((story, index) => (
           <div key={story.id} className={styles.storyItem} onClick={() => openStory(index)}>
             <div className={`${styles.storyImage} ${getStatusClass(story.status)}`}>

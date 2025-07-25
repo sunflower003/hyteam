@@ -25,6 +25,49 @@
     transition: transform 0.2s ease;
 }
 
+.addStoryItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+
+
+.addStoryCircle {
+    width: 65px;
+    height: 65px;
+    border: 2px dashed #ccc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.addStoryCircle:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.addStoryCircle i {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.addStoryText {
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 
 .storyAuthor {
     font-size: 13px;
@@ -285,7 +328,7 @@ textarea::placeholder {
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        gap: 12px;
+        gap: 5px;
         padding: 10px 15px;
         width: calc(100vw - 30px);
     }
@@ -297,19 +340,49 @@ textarea::placeholder {
     /* 
     Sử dụng calc(20vw - 10px) để mỗi item chiếm 20% viewport width, có nghĩa là sẽ có 5 story hiển thị trên 1 màn hình
     */
-    .storyItem {
+    .storyItem,
+    .addStoryItem {
         flex-shrink: 0; /* Ngăn không cho item co lại khi không đủ chỗ */
         min-width: calc(20vw - 10px);
         width: calc(20vw - 10px);
         max-width: 70px;
     }
     
-    .storyAuthor {
+    .storyAuthor,
+    .addStoryText {
         font-size: 10px;
         max-width: 65px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .addStoryCircle {
+        width: 60px;
+        height: 60px;
+        border: 2px dashed #ccc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+    }
+
+    .addStoryCircle i {
+        font-size: 20px;
+    }
+
+    /* Đảm bảo avatar story và add story có cùng kích thước */
+    .avatar {
+        width: 56px;
+        height: 56px;
+        border: 2px solid white;
+    }
+
+    .storyImage {
+        width: 60px;
+        height: 60px;
     }
 
     .viewStory {

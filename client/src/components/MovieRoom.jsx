@@ -173,7 +173,7 @@ const MovieRoom = () => {
         }
 
         // Initialize socket connection
-        const socketURL= import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+        const socketURL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
         console.log('Connecting to socket server at:', socketURL);
 
         const newSocket = io(socketURL, {
@@ -201,12 +201,27 @@ const MovieRoom = () => {
             // Auto cleanup voice chat khi mất kết nối
             if (isVoiceConnected) {
                 console.log('Auto leaving voice chat due to disconnect');
-                leaveVoiceChat();
+                // Không gọi leaveVoiceChat() vì socket đã disconnect
+                // Chỉ cleanup local state
+                if (userVideo.current && userVideo.current.srcObject) {
+                    userVideo.current.srcObject.getTracks().forEach(track => track.stop());
+                    userVideo.current.srcObject = null;
+                }
+                if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                    audioContextRef.current.close().catch(console.error);
+                }
+                peersRef.current.forEach(({ peer }) => {
+                    if (peer && !peer.destroyed) {
+                        peer.destroy();
+                    }
+                });
+                peersRef.current = [];
+                setPeers({});
+                setIsVoiceConnected(false);
+                setIsSpeaking(false);
+                setVoiceActivity({});
+                setAudioInputLevel(0);
             }
-        });
-
-        newSocket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
         });
 
         // Room events
@@ -217,8 +232,17 @@ const MovieRoom = () => {
 
         newSocket.on('user-joined', (data) => {
             console.log('User joined:', data);
-            // Tao peer connection cho voice chat
-            if (data.socketId !== newSocket.id && isVoiceConnected && userVideo.current?.srcObject) {
+            // Update users list
+            setUsers(prev => {
+                const exists = prev.find(u => u.socketId === data.socketId);
+                if (!exists) {
+                    return [...prev, data];
+                }
+                return prev;
+            });
+
+            // Tạo peer connection cho voice chat nếu user join voice
+            if (data.socketId !== newSocket.id && data.inVoiceChat && isVoiceConnected && userVideo.current?.srcObject) {
                 const peer = createPeer(data.socketId, newSocket.id, userVideo.current.srcObject);
                 peersRef.current.push({
                     peerID: data.socketId,
@@ -231,6 +255,11 @@ const MovieRoom = () => {
         // Xu ly khi user roi di
         newSocket.on('user-left', (socketId) => {
             console.log('User left:', socketId);
+            
+            // Update users list
+            setUsers(prev => prev.filter(u => u.socketId !== socketId));
+            
+            // Clean up peer
             const peerObj = peersRef.current.find(p => p.peerID === socketId);
             if (peerObj && !peerObj.peer.destroyed) {
                 peerObj.peer.destroy();
@@ -250,6 +279,58 @@ const MovieRoom = () => {
             });
         });
 
+        // Voice chat events
+        newSocket.on('user-joined-voice', (data) => {
+            console.log('User joined voice chat:', data);
+            
+            // Update user's voice status
+            setUsers(prev => prev.map(u => 
+                u.socketId === data.socketId 
+                    ? { ...u, inVoiceChat: true }
+                    : u
+            ));
+
+            // Create peer if we're also in voice
+            if (data.socketId !== newSocket.id && isVoiceConnected && userVideo.current?.srcObject) {
+                const peer = createPeer(data.socketId, newSocket.id, userVideo.current.srcObject);
+                peersRef.current.push({
+                    peerID: data.socketId,
+                    peer,
+                });
+                setPeers(prev => ({ ...prev, [data.socketId]: peer }));
+            }
+        });
+
+        newSocket.on('user-left-voice', (data) => {
+            console.log('User left voice chat:', data);
+            
+            // Update user's voice status
+            setUsers(prev => prev.map(u => 
+                u.socketId === data.socketId 
+                    ? { ...u, inVoiceChat: false }
+                    : u
+            ));
+
+            // Clean up peer
+            const peerObj = peersRef.current.find(p => p.peerID === data.socketId);
+            if (peerObj && !peerObj.peer.destroyed) {
+                peerObj.peer.destroy();
+            }
+            peersRef.current = peersRef.current.filter(p => p.peerID !== data.socketId);
+            setPeers(prev => {
+                const newPeers = { ...prev };
+                delete newPeers[data.socketId];
+                return newPeers;
+            });
+
+            // Remove from voice activity
+            setVoiceActivity(prev => {
+                const newActivity = { ...prev };
+                delete newActivity[data.socketId];
+                return newActivity;
+            });
+        });
+
         // WebRTC signaling events 
         newSocket.on('receiving-signal', (payload) => {
             console.log('Receiving signal from:', payload.callerID);
@@ -265,7 +346,6 @@ const MovieRoom = () => {
 
         newSocket.on('signal-received', (payload) => {
             console.log('Signal received from:', payload.id);
-            // Tim peer tuong ung voi callerID va gui tin hieu
             const item = peersRef.current.find(p => p.peerID === payload.id);
             if (item && !item.peer.destroyed) {
                 item.peer.signal(payload.signal);
@@ -295,9 +375,8 @@ const MovieRoom = () => {
             console.log('Received chat message', message);
             setMessages(prev => {
                 const newMessages = [...prev, message];
-                console.log('Updated message:', newMessages);
                 return newMessages;
-            })
+            });
         });
 
         // Movie change event
@@ -329,13 +408,13 @@ const MovieRoom = () => {
                 if (peer && !peer.destroyed) {
                     peer.destroy();
                 }
-            })
+            });
             
             // Disconnect socket properly
             newSocket.removeAllListeners();
             newSocket.disconnect();
         };
-    }, [user?.id]); // Chỉ khởi tạo socket khi user.id  thay đổi
+    }, [user?.id]); // Remove isVoiceConnected from dependency
 
     useEffect(() => {
         fetchTrendingMovies();
@@ -371,32 +450,46 @@ const MovieRoom = () => {
 
     // Fix WebRTC peer creation logic
     const createPeer = (userToSignal, callerID, stream) => {
-        const peer = new Peer({
-            initiator: true,
-            trickle: false,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                ]
+        try {
+            const peer = new Peer({
+                initiator: true,
+                trickle: false,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                    ]
+                }
+            });
+
+            peer.on('signal', (signal) => {
+                console.log('Sending signal to:', userToSignal);
+                if (socket && socket.connected) {
+                    socket.emit('sending-signal', { userToSignal, callerID, signal });
+                }
+            });
+
+            peer.on('error', (error) => {
+                console.error('Peer error:', error);
+                // Remove failed peer
+                peersRef.current = peersRef.current.filter(p => p.peerID !== userToSignal);
+                setPeers(prev => {
+                    const newPeers = { ...prev };
+                    delete newPeers[userToSignal];
+                    return newPeers;
+                });
+            });
+
+            // Add stream if available
+            if (stream) {
+                peer.addStream(stream);
             }
-        });
 
-        peer.on('signal', (signal) => {
-            console.log('Sending signal to:', userToSignal);
-            socket.emit('sending-signal', { userToSignal, callerID, signal });
-        });
-
-        peer.on('error', (error) => {
-            console.error('Peer error:', error);
-        });
-
-        // Add stream if available
-        if (stream) {
-            peer.addStream(stream);
+            return peer;
+        } catch (error) {
+            console.error('Error creating peer:', error);
+            throw error;
         }
-
-        return peer;
     };
 
     const addPeer = (incomingSignal, callerID, stream) => {
@@ -429,15 +522,20 @@ const MovieRoom = () => {
         return peer;
     };
 
-    const PeerAudio = ({ peer, isDeafened}) => {
+    const PeerAudio = ({ peer, isDeafened }) => {
         const ref = useRef();
 
         useEffect(() => {
             const handleStream = (stream) => {
                 console.log('Received peer audio stream');
-                if (ref.current) {
+                if (ref.current && stream) {
                     ref.current.srcObject = stream;
                     ref.current.volume = isDeafened ? 0 : 1;
+                    
+                    // Ensure audio plays
+                    ref.current.play().catch(error => {
+                        console.log('Auto-play prevented:', error);
+                    });
                 }
             };
 
@@ -445,16 +543,18 @@ const MovieRoom = () => {
                 console.error('Peer audio error:', error);
             };
 
-            peer.on('stream', handleStream);
-            peer.on('error', handleError);
+            if (peer && !peer.destroyed) {
+                peer.on('stream', handleStream);
+                peer.on('error', handleError);
 
-            return () => {
-                peer.removeListener('stream', handleStream);
-                peer.removeListener('error', handleError);
-            };
+                return () => {
+                    peer.removeListener('stream', handleStream);
+                    peer.removeListener('error', handleError);
+                };
+            }
         }, [peer, isDeafened]);
 
-        return <audio ref={ref} autoPlay playsInline />;
+        return <audio ref={ref} autoPlay playsInline controls={false} />;
     };
 
     // Fix joinVoiceChat Logic
@@ -467,80 +567,113 @@ const MovieRoom = () => {
                 throw new Error('Trình duyệt không hỗ trợ truy cập microphone');
             }
 
-            // Kiem tra permission 
-            try {
-                const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                console.log('Microphone permission status:', permissionStatus.state);
+            // Kiểm tra socket connection
+            if (!socket || !socket.connected) {
+                throw new Error('Không có kết nối socket');
             }
-            catch (permError) {
-                console.log('Permission API not supported, proceeding with getUserMedia');
-            }
-           
-        // Request microphone access voi error handling 
-        let stream;
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 44100,
-                    channelCount: 1
-                },
-                video: false
-            });
-        } catch (mediaError) {
-            console.error('Error accessing microphone:', mediaError);
 
-            //Thu lai voi constraints khac
+            // Kiểm tra roomId
+            if (!roomId) {
+                throw new Error('Chưa tham gia phòng');
+            }
+
+            // Request microphone access với error handling 
+            let stream;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 44100,
+                        channelCount: 1
+                    },
                     video: false
                 });
+            } catch (mediaError) {
+                console.error('Error accessing microphone:', mediaError);
+
+                // Thử lại với constraints đơn giản hơn
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: false
+                    });
+                } catch (fallbackError) {
+                    console.error('Fallback getUserMedia error:', fallbackError);
+                    throw new Error(`Không thể truy cập microphone: ${fallbackError.message}`);
+                }
             }
-            catch (fallbackError) {
-                console.error('Fallback getUserMedia error:', fallbackError);
-                throw fallbackError;
+
+            console.log('Microphone access granted, stream:', stream);
+
+            // Kiểm tra stream có audio track không
+            const audioTracks = stream.getAudioTracks();
+            if (audioTracks.length === 0) {
+                stream.getTracks().forEach(track => track.stop());
+                throw new Error('Không tìm thấy audio track trong microphone stream');
             }
-        }
+            console.log('Audio tracks:', audioTracks.length);
 
-        console.log('Microphone access granted, stream:', stream);
+            // Gán stream vào video element
+            if (userVideo.current) {
+                userVideo.current.srcObject = stream;
+            } else {
+                console.warn('userVideo ref is null');
+            }
 
-        //Kiem tra stream co audio track khong
-        const audioTracks = stream.getAudioTracks();
-        if (audioTracks.length === 0) {
-            throw new Error('No audio tracks found in the microphone stream');
-        }
-        console.log('Audio tracks:', audioTracks.length);
+            // Setup voice activity detection
+            try {
+                setupVoiceActivityDetection(stream);
+            } catch (vdError) {
+                console.warn('Voice activity detection setup failed:', vdError);
+            }
 
-        // Gan stream vao video element
-        if (userVideo.current) {
-            userVideo.current.srcObject = stream;
-        }
+            setIsVoiceConnected(true);
 
-        //Setup voice activity detection
-        setupVoiceActivityDetection(stream);
-        setIsVoiceConnected(true);
+            // Emit join voice chat event
+            socket.emit('join-voice-chat', {
+                roomId,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    avatar: user.avatar,
+                    socketId: socket.id
+                }
+            });
 
-        //Tao peer connections cho users hien tai
-        users.forEach(roomUser => {
-            if (roomUser.socketId && roomUser.socketId !== socket.id) {
-                const peer = createPeer(roomUser.socketId, socket.id, stream);
-                peersRef.current.push({
-                    peerID: roomUser.socketId,
-                    peer,
+            // Tạo peer connections cho users hiện tại đã trong voice
+            if (users && users.length > 0) {
+                users.forEach(roomUser => {
+                    if (roomUser.socketId && roomUser.socketId !== socket.id && roomUser.inVoiceChat) {
+                        try {
+                            const peer = createPeer(roomUser.socketId, socket.id, stream);
+                            peersRef.current.push({
+                                peerID: roomUser.socketId,
+                                peer,
+                            });
+                            setPeers(prev => ({ ...prev, [roomUser.socketId]: peer }));
+                        } catch (peerError) {
+                            console.error('Error creating peer for user:', roomUser.socketId, peerError);
+                        }
+                    }
                 });
-                setPeers(prev => ({ ...prev, [roomUser.socketId]: peer }));
             }
-        });
+
             console.log('Voice chat joined successfully');
 
         } catch (error) {
             console.error('Error joining voice chat:', error);
-            //Hien thi loi cu the
-            let errorMessage = 'Không thể truy cập microphone: ';
-        
+            
+            // Clean up nếu có lỗi
+            if (userVideo.current && userVideo.current.srcObject) {
+                userVideo.current.srcObject.getTracks().forEach(track => track.stop());
+                userVideo.current.srcObject = null;
+            }
+
+            // Hiển thị lỗi cụ thể
+            let errorMessage = 'Không thể tham gia voice chat: ';
+            
             if (error.name) {
                 switch (error.name) {
                     case 'NotAllowedError':
@@ -552,21 +685,13 @@ const MovieRoom = () => {
                     case 'NotReadableError':
                         errorMessage += 'Microphone đang được sử dụng bởi ứng dụng khác.';
                         break;
-                    case 'OverconstrainedError':
-                        errorMessage += 'Cấu hình microphone không được hỗ trợ.';
-                        break;
-                    case 'SecurityError':
-                        errorMessage += 'Lỗi bảo mật. Vui lòng sử dụng HTTPS.';
-                        break;
-                    case 'AbortError':
-                        errorMessage += 'Yêu cầu truy cập microphone bị hủy.';
-                        break;
                     default:
                         errorMessage += error.message || 'Lỗi không xác định';
                 }
             } else {
                 errorMessage += error.message || error.toString();
             }
+            
             alert(errorMessage);
             setIsVoiceConnected(false);
         }
@@ -575,23 +700,34 @@ const MovieRoom = () => {
     const leaveVoiceChat = () => {
         console.log('Leaving voice chat');
 
+        // Emit leave voice chat event TRƯỚC khi cleanup
+        if (socket && socket.connected && roomId) {
+            socket.emit('leave-voice-chat', {
+                roomId,
+                user: {
+                    id: user.id,
+                    socketId: socket.id
+                }
+            });
+        }
+
         //Stop media stream 
         if (userVideo.current && userVideo.current.srcObject) {
             const tracks = userVideo.current.srcObject.getTracks();
             tracks.forEach(track => {
                 track.stop();
-                console.log(`Stopped track: ${track.kind}`); // Log each stopped track
+                console.log(`Stopped track: ${track.kind}`);
             });
             userVideo.current.srcObject = null;
         }
 
-
         //Close audio context
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
             audioContextRef.current.close().catch(console.error);
+            audioContextRef.current = null;
         }
 
-        // Cleat timeout
+        // Clear timeout
         if (speakingTimeoutRef.current) {
             clearTimeout(speakingTimeoutRef.current);
             speakingTimeoutRef.current = null;
@@ -789,9 +925,9 @@ const MovieRoom = () => {
             return;
         }
 
-        if (!socket?.connected) {
-            console.log(' Socket not connected');
-            alert('Khong co ket noi. Vui long thu lai');
+        if (!socket || !socket.connected) {
+            console.log('Socket not connected');
+            alert('Không có kết nối. Vui lòng thử lại');
             return;
         }
 

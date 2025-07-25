@@ -1,0 +1,63 @@
+.hyfeedContent {
+    display: flex;
+    padding: 0 80px;
+}
+
+.header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.logo {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 25px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.iconHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.iconHeader i {
+    font-size: 25px;
+}
+
+.left {
+    flex: 2;
+}
+
+.right {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    
+    .header {
+        display: flex;
+        padding: 15px 20px;
+    }
+
+    .hyfeedContent {
+        padding: 0;
+        padding-top: 40px; /* Để tránh nội dung bị che bởi fixed header */
+    }
+
+    .right {
+        display: none;
+    }
+
+    .left {
+        flex: 1;
+    }
+}

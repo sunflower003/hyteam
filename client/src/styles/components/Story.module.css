@@ -1,0 +1,445 @@
+.story {
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.storyImage {
+    display: grid;
+    place-items: center;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.storyItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.addStoryItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+
+
+.addStoryCircle {
+    width: 65px;
+    height: 65px;
+    border: 2px dashed #ccc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.addStoryCircle:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.addStoryCircle i {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.addStoryText {
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.storyAuthor {
+    font-size: 13px;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.new {
+    background: linear-gradient(90deg, #d53369 0%, #daae51 100%);
+}
+
+.watched {
+    background: linear-gradient(90deg, #e3ffe7 0%, #d9e7ff 100%);
+}
+
+.none {
+    background: transparent;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+    border: 3px solid white;
+}
+
+.viewStory {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    padding: 10px 15px;
+    background-color: var(--story-bg);
+    overflow: hidden;
+    z-index: 9999;
+}
+
+
+.header {
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 25px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.close {
+    font-size: 25px;
+    cursor: pointer;
+}
+
+
+.player {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 100vh;
+    padding: 15px 0;
+}
+
+.player > i {
+    font-size: 30px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+
+
+.content {
+    width: 385px;
+    height: 100%;
+    border-radius: 8px;
+    padding: 20px 15px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 80px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.top {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+}
+
+.bottom {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+}
+
+.progressBar {
+    width: 100%;
+    height: 2.5px;
+    background-color: rgba(255, 255, 255, 0.3);
+    position: relative;
+    border-radius: 2px;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.progressFill {
+    height: 100%;
+    background-color: white;
+    border-radius: 2px;
+    transition: width 0.1s ease-out;
+}
+
+.contentHeader {
+    position: relative;
+}
+
+.authorAndButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.author {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 100;
+}
+
+.authorName {
+    font-size: 14px;
+    color: white;
+}
+
+.timeAgo {
+    font-size: 14px;
+    color: var(--grey);
+}
+
+.avatarAuthor {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.actionButtons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1001;
+    position: relative;
+}
+
+.actionButtons i {
+    font-size: 25px;
+    cursor: pointer;
+    color: white;
+    z-index: 1001;
+    position: relative;
+}
+
+
+.contentFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 100;
+}
+
+.answer {
+    flex-grow: 1;
+}
+
+textarea {
+    height: 36px;
+    width: 100%;
+    border: 1px solid var(--grey-2);
+    background: transparent;
+    border-radius: 999px;
+    color: white;
+    resize: none;
+    font-size: 14px;
+    outline: none;
+    padding: 8px 14px;
+}
+
+textarea::placeholder {
+    color: white;
+}
+
+.contentFooter > i {
+    font-size: 25px;
+    cursor: pointer;
+    color: white;
+}
+
+.contentFooter > i:hover {
+    color: var(--grey-2);
+}
+
+.mobileCloseBtn {
+    position: absolute;
+    top: -5px;
+    right: 0;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.mobileCloseBtn i {
+    color: white;
+    font-size: 18px;
+}
+
+@media (max-width: 768px) {
+    /* 
+    Thêm width: calc(100vw - 30px) và padding: 10px 15px để container có kích thước cố định
+    */
+    .story {
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        gap: 5px;
+        padding: 10px 15px;
+        width: calc(100vw - 30px);
+    }
+    
+    .story::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* 
+    Sử dụng calc(20vw - 10px) để mỗi item chiếm 20% viewport width, có nghĩa là sẽ có 5 story hiển thị trên 1 màn hình
+    */
+    .storyItem,
+    .addStoryItem {
+        flex-shrink: 0; /* Ngăn không cho item co lại khi không đủ chỗ */
+        min-width: calc(20vw - 10px);
+        width: calc(20vw - 10px);
+        max-width: 70px;
+    }
+    
+    .storyAuthor,
+    .addStoryText {
+        font-size: 10px;
+        max-width: 65px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .addStoryCircle {
+        width: 60px;
+        height: 60px;
+        border: 2px dashed #ccc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+    }
+
+    .addStoryCircle i {
+        font-size: 20px;
+    }
+
+    /* Đảm bảo avatar story và add story có cùng kích thước */
+    .avatar {
+        width: 56px;
+        height: 56px;
+        border: 2px solid white;
+    }
+
+    .storyImage {
+        width: 60px;
+        height: 60px;
+    }
+
+    .viewStory {
+        padding: 0;
+    }
+
+    .header {
+        display: none;
+    }
+
+    .player {
+        width: 100vw;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        padding: 0;
+        transform: none;
+        gap: 0;
+    }
+
+    .player > i {
+        display: none; /* Ẩn icon next/prev */
+    }
+
+    .content {
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        border-radius: 0;
+        padding: 15px;
+        position: relative;
+    }
+
+    /* Touch areas for navigation */
+    .content::before,
+    .content::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        z-index: 999;
+        background: transparent;
+    }
+
+    /* Left side for prev */
+    .content::before {
+        left: 0;
+    }
+
+    /* Right side for next */
+    .content::after {
+        right: 0;
+    }
+
+    /* Close button inside content for mobile */
+    .contentHeader {
+        position: relative;
+    }
+}

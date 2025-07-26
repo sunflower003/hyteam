@@ -1,14 +1,35 @@
-import { useState } from 'react';
+import { useContext } from 'react';
+import { AIContext } from '../context/AIContext';
 
-const useAI = () => {
-    const [response, setResponse] = useState(null);
-
-    const fetchAIResponse = async (query) => {
-        // Logic to interact with AI API
-        setResponse(`Response for: ${query}`);
-    };
-
-    return { response, fetchAIResponse };
+export const useAI = () => {
+  const context = useContext(AIContext);
+  
+  if (!context) {
+    throw new Error('useAI must be used within an AIProvider');
+  }
+  
+  return context;
 };
 
-export default useAI;
+// Additional hooks for specific AI features
+export const useConversation = () => {
+  const { messages, conversationId, clearConversation } = useAI();
+  
+  return {
+    messages,
+    conversationId,
+    clearConversation,
+    hasMessages: messages.length > 0,
+    messageCount: messages.length
+  };
+};
+
+export const useAIStatus = () => {
+  const { loading, streamingMessageId } = useAI();
+  
+  return {
+    isLoading: loading,
+    isStreaming: !!streamingMessageId,
+    canSendMessage: !loading
+  };
+};

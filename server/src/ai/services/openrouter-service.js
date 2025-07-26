@@ -1,126 +1,143 @@
 const { OpenAI } = require('openai');
 
-const client = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
-// Original non-streaming function với retry logic
-async function generateOpenRouterChat(messages, retryCount = 0) {
-  const maxRetries = 3;
-  const baseDelay = 2000;
-  
-  console.log(`🤖 OPENROUTER SERVICE START (attempt ${retryCount + 1})`);
-  
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new Error('OPENROUTER_API_KEY is not set in environment variables');
-  }
-  
-  try {
-    const completion = await client.chat.completions.create({
-      model: process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-exp:free",
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 1000,
+class OpenRouterService {
+  constructor() {
+    this.client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: process.env.OPENROUTER_API_KEY,
     });
     
-    if (!completion.choices || !completion.choices[0]) {
-      throw new Error('Invalid response format from OpenRouter API');
-    }
-    
-    const text = completion.choices[0].message.content;
-    console.log('✅ OpenRouter response:', text);
-    
-    return text;
-    
-  } catch (err) {
-    console.error(`❌ OpenRouter error (attempt ${retryCount + 1}):`, err.message);
-    
-    if (err.response?.status === 429 && retryCount < maxRetries) {
-      const delay = baseDelay * Math.pow(2, retryCount);
-      console.log(`⏳ Rate limited. Waiting ${delay}ms before retry...`);
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return generateOpenRouterChat(messages, retryCount + 1);
-    }
-    
-    throw err;
+    this.defaultModel = process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-exp:free";
+    this.maxRetries = 3;
+    this.baseDelay = 2000;
   }
-}
 
-// Enhanced streaming function với comprehensive error detection
-async function generateOpenRouterChatStream(messages, onChunk, retryCount = 0) {
-  const maxRetries = 3;
-  const baseDelay = 2000;
-  
-  console.log(`🌊 OPENROUTER STREAMING START (attempt ${retryCount + 1})`);
-  
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new Error('OPENROUTER_API_KEY is not set in environment variables');
-  }
-  
-  try {
-    const stream = await client.chat.completions.create({
-      model: process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-exp:free",
-      messages: messages,
-      stream: true,
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+  async *generateChatResponse(messages, options = {}) {
+    const {
+      model = this.defaultModel,
+      temperature = 0.7,
+      maxTokens = 1000,
+      stream = true
+    } = options;
 
-    let fullResponse = '';
+    console.log(`🤖 OpenRouter Service - Starting generation with model: ${model}`);
     
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || '';
-      if (content) {
-        fullResponse += content;
-        onChunk(content);
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY is not set in environment variables');
+    }
+
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: model,
+        messages: messages,
+        stream: stream,
+        temperature: temperature,
+        max_tokens: maxTokens,
+      });
+
+      let fullResponse = '';
+      let chunkCount = 0;
+
+      for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullResponse += content;
+          chunkCount++;
+          yield content;
+        }
       }
-    }
-    
-    console.log('✅ Streaming completed:', fullResponse);
-    return fullResponse;
-    
-  } catch (err) {
-    console.error(`❌ Streaming error (attempt ${retryCount + 1}):`, err);
-    
-    // Enhanced error detection
-    const errorMessage = err.message || '';
-    const errorResponse = err.response?.data || {};
-    const statusCode = err.response?.status || 0;
-    
-    console.log('🔍 Error details:', {
-      message: errorMessage,
-      status: statusCode,
-      responseData: errorResponse
-    });
-    
-    // Check for quota exceeded specifically
-    if (errorMessage.includes('free-models-per-day') ||
-        errorMessage.includes('Daily quota exceeded') ||
-        errorMessage.includes('quota_exceeded') ||
-        errorResponse.error?.message?.includes('quota') ||
-        statusCode === 429) {
+
+      console.log(`✅ Generation completed: ${chunkCount} chunks, ${fullResponse.length} characters`);
       
-      console.log('🚫 Quota exceeded detected');
-      throw new Error('Daily quota exceeded. Please try again tomorrow or upgrade your plan.');
-    }
-    
-    // Regular rate limiting với retry
-    if (statusCode === 429 && retryCount < maxRetries) {
-      const delay = baseDelay * Math.pow(2, retryCount);
-      console.log(`⏳ Rate limited. Waiting ${delay}ms before retry...`);
+    } catch (error) {
+      console.error('❌ OpenRouter Service error:', error);
       
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return generateOpenRouterChatStream(messages, onChunk, retryCount + 1);
+      // Enhanced error handling
+      const errorMessage = error.message || '';
+      const statusCode = error.response?.status || 0;
+      
+      if (errorMessage.includes('free-models-per-day') ||
+          errorMessage.includes('Daily quota exceeded') ||
+          errorMessage.includes('quota_exceeded') ||
+          statusCode === 429) {
+        throw new Error('quota_exceeded');
+      }
+      
+      if (statusCode === 503 || errorMessage.includes('service_unavailable')) {
+        throw new Error('model_unavailable');
+      }
+      
+      if (errorMessage.includes('context_length_exceeded')) {
+        throw new Error('context_too_long');
+      }
+      
+      throw error;
     }
-    
-    // Re-throw with original error for proper handling
-    throw err;
+  }
+
+  async generateSingleResponse(messages, options = {}) {
+    const {
+      model = this.defaultModel,
+      temperature = 0.7,
+      maxTokens = 1000
+    } = options;
+
+    console.log(`🤖 OpenRouter Service - Single response generation`);
+
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: model,
+        messages: messages,
+        temperature: temperature,
+        max_tokens: maxTokens,
+      });
+
+      const response = completion.choices[0]?.message?.content || '';
+      console.log(`✅ Single response generated: ${response.length} characters`);
+      
+      return response;
+      
+    } catch (error) {
+      console.error('❌ Single response error:', error);
+      throw error;
+    }
+  }
+
+  async validateConnection() {
+    try {
+      const testMessages = [
+        { role: "user", content: "Hello, this is a test message." }
+      ];
+      
+      const response = await this.generateSingleResponse(testMessages, {
+        maxTokens: 10
+      });
+      
+      return { success: true, response: response };
+      
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Keep backward compatibility with existing functions
+  async generateOpenRouterChatStream(messages, onChunk) {
+    try {
+      for await (const chunk of this.generateChatResponse(messages)) {
+        if (onChunk) onChunk(chunk);
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 }
 
-module.exports = { 
-  generateOpenRouterChat, 
-  generateOpenRouterChatStream 
+// Export singleton instance
+const openRouterService = new OpenRouterService();
+
+module.exports = {
+  default: openRouterService,
+  OpenRouterService,
+  // Keep backward compatibility
+  generateOpenRouterChatStream: openRouterService.generateOpenRouterChatStream.bind(openRouterService)
 };

@@ -343,28 +343,29 @@ const Hypo = () => {
                 <div ref={chatEndRef} />
               </div>
             )}
-            
-            <div className={`${styles.inputChat} ${isInputFocused ? styles.inputChatFocused : ''}`}>
-              <input 
-                type="text" 
-                placeholder="Ask Hypo AI anything..." 
-                className={styles.inputField}
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={handleInputKeyDown}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                disabled={loading}
-              />
-              <div className={styles.buttonList}>
-                <div className={styles.attachButton}>
-                  <i className="ri-notion-fill"></i>
-                  <i className="ri-attachment-2"></i>
-                  <i className="ri-at-line"></i>
-                </div>
-                <i className={`ri-send-plane-fill ${styles.sendButton}`} 
-                   onClick={sendStreamingMessage}></i>
+          </div>
+          
+          {/* Input area moved outside content to stick to bottom */}
+          <div className={`${styles.inputChat} ${isInputFocused ? styles.inputChatFocused : ''}`}>
+            <input 
+              type="text" 
+              placeholder="Ask Hypo AI anything..." 
+              className={styles.inputField}
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={handleInputKeyDown}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              disabled={loading}
+            />
+            <div className={styles.buttonList}>
+              <div className={styles.attachButton}>
+                <i className="ri-notion-fill"></i>
+                <i className="ri-attachment-2"></i>
+                <i className="ri-at-line"></i>
               </div>
+              <i className={`ri-send-plane-fill ${styles.sendButton}`} 
+                 onClick={sendStreamingMessage}></i>
             </div>
           </div>
         </div>

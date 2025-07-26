@@ -366,7 +366,6 @@ textarea::placeholder {
         align-items: center;
         justify-content: center;
         background: #f8f9fa;
-        transition: all 0.2s ease;
     }
 
     .addStoryCircle i {

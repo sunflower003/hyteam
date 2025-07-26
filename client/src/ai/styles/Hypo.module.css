@@ -1,4 +1,4 @@
-x.hypo {
+.hypo {
     position: fixed;
     right: 20px;
     bottom: 10px;
@@ -17,7 +17,6 @@ x.hypo {
     position: fixed;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     right: 20px;
     bottom: 10px;
     width: 450px;
@@ -56,6 +55,7 @@ x.hypo {
     overflow-x: hidden;
     flex: 1;
     min-height: 0;
+    margin-bottom: 20px;
 }
 
 .suggestion {
@@ -109,6 +109,8 @@ x.hypo {
     border: 1px solid var(--grey-2);
     padding: 10px 15px;
     border-radius: 15px;
+    margin-top: auto;
+    flex-shrink: 0;
 }
 
 .inputChatFocused {
@@ -331,6 +333,7 @@ x.hypo {
         display: flex;
         flex-direction: column;
         gap: 15px;
+        margin-bottom: 15px;
     }
     
     .chatHistory {

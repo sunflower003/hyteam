@@ -57,15 +57,20 @@ const MovieRoom = () => {
     //Voice activity detection - fix audio context issue
     const setupVoiceActivityDetection = (stream) => {
         try {
+            console.log('Setting up voice activity detection');
+            
             // Kiem tra stream co audio track
             const audioTracks = stream.getAudioTracks();
             if (audioTracks.length === 0) {
                 console.log('No audio tracks found in the stream');
                 return;
             }
+            
+            console.log('Audio tracks available:', audioTracks.map(t => t.label));
 
             // cleanup existing audio context
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                console.log('Closing existing AudioContext');
                 audioContextRef.current.close().catch(console.error);
             }
 
@@ -77,14 +82,35 @@ const MovieRoom = () => {
             }
             
             const audioContext = new AudioContext();
-            //Cho context duoc khoi tao
+            console.log('AudioContext created, state:', audioContext.state);
+            
+            //Cho context duoc khoi tao - thêm click handler để đảm bảo resume
             if (audioContext.state === 'suspended') {
+                // Cách xử lý tốt hơn cho AudioContext suspended
+                const resumeAudio = () => {
+                    console.log('Trying to resume AudioContext on user interaction');
+                    audioContext.resume().then(() => {
+                        console.log('AudioContext resumed successfully');
+                    }).catch(error => {
+                        console.error('Error resuming AudioContext:', error);
+                    });
+                    
+                    // Remove event listeners after one successful attempt
+                    document.removeEventListener('click', resumeAudio);
+                    document.removeEventListener('touchstart', resumeAudio);
+                };
+                
+                document.addEventListener('click', resumeAudio);
+                document.addEventListener('touchstart', resumeAudio);
+                
+                // Cũng thử resume luôn (có thể sẽ thành công nếu đã có tương tác người dùng trước đó)
                 audioContext.resume().then(() => {
-                    console.log('AudioContext resumed');
-                }).catch(error => {
-                    console.error('Error resuming AudioContext:', error);
+                    console.log('AudioContext resumed immediately');
+                }).catch(e => {
+                    console.log('Could not resume AudioContext immediately, waiting for user interaction');
                 });
             }
+            
             const analyser = audioContext.createAnalyser();
             let microphone;
 
@@ -449,8 +475,10 @@ const MovieRoom = () => {
     };
 
     // Fix WebRTC peer creation logic
+    // Cải thiện phần createPeer - thêm logging và xử lý sự kiện
     const createPeer = (userToSignal, callerID, stream) => {
         try {
+            console.log('Creating peer connection to:', userToSignal);
             const peer = new Peer({
                 initiator: true,
                 trickle: false,
@@ -458,19 +486,27 @@ const MovieRoom = () => {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
                         { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
                     ]
                 }
             });
 
             peer.on('signal', (signal) => {
-                console.log('Sending signal to:', userToSignal);
+                console.log('Generated signal for peer:', userToSignal);
                 if (socket && socket.connected) {
                     socket.emit('sending-signal', { userToSignal, callerID, signal });
                 }
             });
 
+            // Thêm sự kiện connect để biết khi kết nối thành công
+            peer.on('connect', () => {
+                console.log('Peer connection established successfully with:', userToSignal);
+            });
+
             peer.on('error', (error) => {
-                console.error('Peer error:', error);
+                console.error('Peer connection error with', userToSignal, error);
                 // Remove failed peer
                 peersRef.current = peersRef.current.filter(p => p.peerID !== userToSignal);
                 setPeers(prev => {
@@ -480,9 +516,14 @@ const MovieRoom = () => {
                 });
             });
 
-            // Add stream if available
+            // Add stream if available - cải thiện cách thêm stream
             if (stream) {
-                peer.addStream(stream);
+                console.log('Adding local stream to peer');
+                try {
+                    peer.addStream(stream);
+                } catch (streamError) {
+                    console.error('Error adding stream to peer:', streamError);
+                }
             }
 
             return peer;
@@ -524,18 +565,96 @@ const MovieRoom = () => {
 
     const PeerAudio = ({ peer, isDeafened }) => {
         const ref = useRef();
+        const [connected, setConnected] = useState(false);
+        const [audioLevel, setAudioLevel] = useState(0);
+        const audioContextRef = useRef(null);
+        const audioAnalyserRef = useRef(null);
+        const animationRef = useRef(null);
 
         useEffect(() => {
             const handleStream = (stream) => {
-                console.log('Received peer audio stream');
+                console.log('🎵 Received peer audio stream with tracks:', stream.getTracks().length);
+                console.log('Track details:', stream.getTracks().map(t => ({
+                    kind: t.kind,
+                    enabled: t.enabled,
+                    muted: t.muted,
+                    readyState: t.readyState
+                })));
+                
                 if (ref.current && stream) {
+                    // Thiết lập volume cao hơn
                     ref.current.srcObject = stream;
                     ref.current.volume = isDeafened ? 0 : 1;
                     
-                    // Ensure audio plays
-                    ref.current.play().catch(error => {
-                        console.log('Auto-play prevented:', error);
-                    });
+                    // Force output to device speakers
+                    if (typeof ref.current.setSinkId === 'function') {
+                        ref.current.setSinkId('default').catch(err => 
+                            console.warn('Cannot set audio output device:', err)
+                        );
+                    }
+                    
+                    // Add visualization để debug
+                    try {
+                        const AudioContext = window.AudioContext || window.webkit.AudioContext;
+                        if (AudioContext) {
+                            audioContextRef.current = new AudioContext();
+                            const source = audioContextRef.current.createMediaStreamSource(stream);
+                            audioAnalyserRef.current = audioContextRef.current.createAnalyser();
+                            audioAnalyserRef.current.fftSize = 64;
+                            source.connect(audioAnalyserRef.current);
+                            
+                            const detectAudio = () => {
+                                if (!audioAnalyserRef.current) return;
+                                const data = new Uint8Array(audioAnalyserRef.current.frequencyBinCount);
+                                audioAnalyserRef.current.getByteFrequencyData(data);
+                                const average = data.reduce((a, b) => a + b) / data.length;
+                                setAudioLevel(average);
+                                animationRef.current = requestAnimationFrame(detectAudio);
+                            };
+                            detectAudio();
+                        }
+                    } catch (err) {
+                        console.log('Audio visualization setup error:', err);
+                    }
+                    
+                    // Play with user interaction handling
+                    const playWithFullVolume = () => {
+                        console.log('🔊 Attempting to play audio...');
+                        const playPromise = ref.current.play();
+                        
+                        if (playPromise) {
+                            playPromise.then(() => {
+                                console.log('🔊 Audio playing successfully');
+                                ref.current.volume = isDeafened ? 0 : 1;
+                            }).catch(err => {
+                                console.warn('🔇 Autoplay prevented:', err);
+                                
+                                // Create a visible button for user to click
+                                const unlockButton = document.createElement('button');
+                                unlockButton.textContent = '🔊 Click to enable audio';
+                                unlockButton.style.position = 'fixed';
+                                unlockButton.style.top = '10px';
+                                unlockButton.style.right = '10px';
+                                unlockButton.style.zIndex = '9999';
+                                unlockButton.style.padding = '8px';
+                                unlockButton.style.background = '#f00';
+                                unlockButton.style.color = 'white';
+                                
+                                unlockButton.onclick = () => {
+                                    ref.current.play().catch(console.error);
+                                    document.body.removeChild(unlockButton);
+                                };
+                                
+                                document.body.appendChild(unlockButton);
+                            });
+                        }
+                    };
+                    
+                    playWithFullVolume();
+                    
+                    // Also try to play when window gets focus
+                    window.addEventListener('focus', playWithFullVolume);
+                    document.addEventListener('click', playWithFullVolume, {once: true});
                 }
             };
 
@@ -543,18 +662,56 @@ const MovieRoom = () => {
                 console.error('Peer audio error:', error);
             };
 
+            const handleConnect = () => {
+                console.log('Peer audio connection established');
+                setConnected(true);
+            };
+
             if (peer && !peer.destroyed) {
                 peer.on('stream', handleStream);
                 peer.on('error', handleError);
+                peer.on('connect', handleConnect);
 
                 return () => {
+                    if (animationRef.current) {
+                        cancelAnimationFrame(animationRef.current);
+                    }
+                    if (audioContextRef.current) {
+                        audioContextRef.current.close().catch(console.error);
+                    }
                     peer.removeListener('stream', handleStream);
                     peer.removeListener('error', handleError);
+                    peer.removeListener('connect', handleConnect);
+                    window.removeEventListener('focus', () => {});
                 };
             }
         }, [peer, isDeafened]);
 
-        return <audio ref={ref} autoPlay playsInline controls={false} />;
+        // Update volume when isDeafened changes
+        useEffect(() => {
+            if (ref.current) {
+                ref.current.volume = isDeafened ? 0 : 1;
+            }
+        }, [isDeafened]);
+
+        return (
+            <div className={styles.peerAudioContainer}>
+                <audio 
+                    ref={ref} 
+                    autoPlay 
+                    playsInline 
+                    controls={true} // Tạm thời hiện controls để debug
+                />
+                {!connected && <div className={styles.hiddenInfo}>Đang kết nối audio...</div>}
+                {connected && <div 
+                    className={styles.audioIndicator} 
+                    style={{
+                        width: `${Math.min(audioLevel * 2, 100)}%`,
+                        background: audioLevel > 0 ? '#4CAF50' : '#ccc'
+                    }}
+                />}
+            </div>
+        );
     };
 
     // Fix joinVoiceChat Logic
@@ -662,6 +819,26 @@ const MovieRoom = () => {
 
             console.log('Voice chat joined successfully');
 
+            // Log thêm thông tin về stream và audio devices
+            console.log('Stream audio tracks:', stream.getAudioTracks().map(track => ({
+                enabled: track.enabled,
+                muted: track.muted,
+                readyState: track.readyState,
+                label: track.label
+            })));
+
+            // Kiểm tra audio output devices
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
+                    console.log('Available audio output devices:', audioOutputs);
+                    
+                    // Nếu có nhiều output device, log thông tin
+                    if (audioOutputs.length > 1) {
+                        console.log('Multiple audio outputs available - make sure correct one is selected');
+                    }
+                })
+                .catch(err => console.error('Error getting audio devices:', err));
         } catch (error) {
             console.error('Error joining voice chat:', error);
             
@@ -695,6 +872,27 @@ const MovieRoom = () => {
             alert(errorMessage);
             setIsVoiceConnected(false);
         }
+
+        // Thêm vào đây
+        const unblockAudio = () => {
+            // Tạo một AudioContext tạm thời để trigger user gesture
+            const tempContext = new (window.AudioContext || window.webkit.AudioContext)();
+            tempContext.resume().then(() => {
+                console.log('Audio unblocked via user interaction');
+                tempContext.close();
+                
+                // Attempt to play all audio elements
+                document.querySelectorAll('audio').forEach(audio => {
+                    if (audio.paused) {
+                        audio.play().catch(() => {});
+                    }
+                });
+            });
+        };
+
+        // Thêm vào joinVoiceChat ngay sau khi user click nút join
+        document.addEventListener('click', unblockAudio, {once: true});
+        document.addEventListener('touchstart', unblockAudio, {once: true});
     };
 
     const leaveVoiceChat = () => {
@@ -753,26 +951,33 @@ const MovieRoom = () => {
     };
 
     const toggleMute = () => {
-        if (userVideo.current && userVideo.current.srcObject) {
-            const audioTrack = userVideo.current.srcObject.getAudioTracks();
-            if (audioTrack.length > 0) {
-                const newMutedState = !isMuted;
-                audioTrack.forEach(track => {
-                    track.enabled = !newMutedState;
-                });
-                setIsMuted(newMutedState);
-                console.log('Audio muted:', newMutedState);
+    if (userVideo.current && userVideo.current.srcObject) {
+        const audioTracks = userVideo.current.srcObject.getAudioTracks();
+        console.log('Audio tracks before mute toggle:', audioTracks.map(t => t.enabled));
+        
+        if (audioTracks.length > 0) {
+            const newMutedState = !isMuted;
+            audioTracks.forEach(track => {
+                track.enabled = !newMutedState;
+                console.log(`Track ${track.label} ${newMutedState ? 'muted' : 'unmuted'}`);
+            });
+            setIsMuted(newMutedState);
+            console.log('Audio muted state changed to:', newMutedState);
 
-                // Emit mute state to server
-                if (socket && roomId){
-                    socket.emit('toggle-mute', {
-                        roomId,
-                        isMuted: newMutedState
-                    });
-                }
+            // Emit mute state to server
+            if (socket && roomId) {
+                socket.emit('toggle-mute', {
+                    roomId,
+                    isMuted: newMutedState
+                });
             }
+        } else {
+            console.warn('No audio tracks found to mute/unmute');
         }
-    };
+    } else {
+        console.warn('No media stream found');
+    }
+};
 
     const toggleDeafen = () => {
         const newDeafenedState = !isDeafened;
@@ -1298,10 +1503,37 @@ const MovieRoom = () => {
             {Object.entries(peers).map(([peerId, peer]) => (
                 <PeerAudio key={peerId} peer={peer} isDeafened={isDeafened} />
             ))}
+
+            {/* Debugging helper - Thêm button debug vào UI */}
+            <button onClick={debugAudioState} className={styles.debugBtn}>Debug Audio</button>
         </div>
     );
 };
 
-
+// Thêm debugging helper
+const debugAudioState = () => {
+    console.group('🎵 Audio Debug');
+    
+    // Check all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    console.log(`Found ${audioElements.length} audio elements`);
+    
+    audioElements.forEach((audio, i) => {
+        console.log(`Audio ${i}:`, {
+            paused: audio.paused,
+            muted: audio.muted, 
+            volume: audio.volume,
+            currentTime: audio.currentTime,
+            hasStream: audio.srcObject !== null,
+            tracks: audio.srcObject?.getTracks().length || 0
+        });
+    });
+    
+    // Check peers
+    console.log('Active peers:', Object.keys(peers).length);
+    console.log('PeersRef:', peersRef.current.length);
+    
+    console.groupEnd();
+};
 
 export default MovieRoom;

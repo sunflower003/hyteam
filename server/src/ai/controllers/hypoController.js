@@ -1,4 +1,5 @@
 const { generateOpenRouterChatStream } = require('../services/openrouter-service');
+const openaiService = require('../services/openai-service.js').default;
 
 // Simple in-memory rate limiting
 const lastRequestTime = new Map();
@@ -99,10 +100,10 @@ exports.chatStream = async (req, res) => {
     try {
       console.log('📤 Starting streaming response...');
       
-      await generateOpenRouterChatStream(messages, (chunk) => {
+      for await (const chunk of openaiService.generateChatResponse(messages)) {
         responseText += chunk;
         res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
-      });
+      }
 
       console.log('✅ Streaming completed');
       res.write(`data: ${JSON.stringify({ type: 'done', fullText: responseText })}\n\n`);

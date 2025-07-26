@@ -1,4 +1,4 @@
-.hypo {
+x.hypo {
     position: fixed;
     right: 20px;
     bottom: 10px;
@@ -53,6 +53,9 @@
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
 }
 
 .suggestion {
@@ -161,7 +164,10 @@
     gap: 15px;
     max-height: 300px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 10px 0;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
 .message {
@@ -200,6 +206,11 @@
     font-size: 14px;
     line-height: 1.4;
     margin: 0;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .userMessage .messageText {
@@ -299,11 +310,92 @@
     .hypo {
         bottom: 80px;
     }
+    
     .boxchat {
-        width: 100%;
-        height: 100%;
+        width: 100vw;
+        height: 100vh;
         top: 0;
         left: 0;
+        right: 0;
+        bottom: 0;
         border-radius: 0;
+        border: none;
+        padding: 15px;
+        max-height: 100vh;
+        overflow: hidden;
+    }
+    
+    .content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .chatHistory {
+        flex: 1;
+        max-height: none;
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 10px 0;
+    }
+    
+    .suggestion {
+        flex: 1;
+        justify-content: center;
+        gap: 15px;
+        overflow-y: auto;
+    }
+    
+    .inputChat {
+        margin-top: auto;
+        flex-shrink: 0;
+        gap: 15px;
+        padding: 12px 15px;
+    }
+    
+    .message {
+        max-width: 90%;
+    }
+    
+    .messageText {
+        font-size: 15px;
+        padding: 10px 14px;
+        line-height: 1.5;
+        word-wrap: break-word;
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+    
+    .inputField {
+        font-size: 16px;
+        padding: 8px 0;
+        appearance: none;
+        -webkit-appearance: none;
+        border-radius: 0;
+    }
+    
+    .header {
+        margin-bottom: 10px;
+        flex-shrink: 0;
+    }
+    
+    .title {
+        font-size: 20px;
+        text-align: center;
+    }
+    
+    .listItem {
+        padding: 12px;
+        font-size: 15px;
+        border-radius: 10px;
+    }
+    
+    .hypoIcon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
     }
 }

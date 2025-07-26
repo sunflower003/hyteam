@@ -11,6 +11,7 @@ const Story = () => {
   const [currentStoryIndex, setCurrentStory]  = useState(0);
   const [progress, setProgress]               = useState(0);
   const [isPaused, setIsPaused]               = useState(false);
+  const [isManuallyPaused, setIsManuallyPaused] = useState(false); // ← NEW: track manual pause
   const [isMobile, setIsMobile]               = useState(false);
   const [showUpload, setShowUpload]           = useState(false); // ← NEW
 
@@ -41,7 +42,7 @@ const Story = () => {
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     let interval;
-    if (isViewingStory && !isPaused) {
+    if (isViewingStory && !isPaused && !isManuallyPaused) {
       interval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
@@ -53,7 +54,7 @@ const Story = () => {
       }, 150);
     }
     return () => clearInterval(interval);
-  }, [isViewingStory, currentStoryIndex, isPaused]);
+  }, [isViewingStory, currentStoryIndex, isPaused, isManuallyPaused]);
 
   /* ------------------------------------------------------------------ */
   /*  VIEW / NAVIGATE STORY                                              */
@@ -69,6 +70,10 @@ const Story = () => {
       closeStory();
     }
   };
+  const handlePlayPause = () => {
+    setIsManuallyPaused(prev => !prev);
+  };
+
   const handlePrevStory = () => {
     if (currentStoryIndex > 0) {
       setCurrentStory(idx => idx - 1);
@@ -230,7 +235,10 @@ const Story = () => {
                       <i className="ri-close-large-line" onClick={closeStory}></i>
                     ) : (
                       <>
-                        <i className="ri-play-fill"></i>
+                        <i 
+                          className={isManuallyPaused ? "ri-play-fill" : "ri-pause-fill"}
+                          onClick={handlePlayPause}
+                        ></i>
                         <i className="ri-more-fill"></i>
                       </>
                     )}

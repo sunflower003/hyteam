@@ -3,6 +3,8 @@ const conversationManager = require('./conversation-manager');
 class ContextManager {
   constructor() {
     this.userProfiles = new Map();
+    this.promptCache = new Map(); // 🆕 Cache cho system prompts
+    this.maxCacheSize = 50;
     this.systemPrompts = {
       default: `Bạn là Hypo, AI Assistant thông minh của team HYTEAM - nền tảng quản lý team hiện đại.
 
@@ -69,32 +71,45 @@ IMPORTANT: User is communicating in English, respond in English.
 - Provide practical advice for project management
 - Maintain friendly but professional tone
 - Use relevant emojis appropriately
-- Focus on actionable insights`
+- Focus on actionable insights`,
+
+      // 🆕 Optimized prompt for faster processing
+      speed_optimized: `Bạn là Hypo, AI Assistant của HYTEAM. 
+
+🚀 ĐÃ TỐI ỰU TỐC ĐỘ:
+- Trả lời ngắn gọn, đi thẳng vào vấn đề
+- Tránh lặp lại, tập trung vào thông tin mới
+- Sử dụng tiếng Việt thuần túy khi user dùng tiếng Việt
+
+Chuyên môn: Quản lý dự án, team work, productivity.`
     };
   }
 
+  // 🆕 IMPROVED: Cached system prompt building
   buildSystemPrompt(conversationId) {
     try {
       const conversation = conversationManager.getConversation(conversationId);
       const messageCount = conversation.messages.length;
+      
+      // 🚀 Generate cache key based on conversation state
+      const cacheKey = this.generatePromptCacheKey(conversationId, messageCount);
+      
+      // Check cache first
+      if (this.promptCache.has(cacheKey)) {
+        const cached = this.promptCache.get(cacheKey);
+        if (Date.now() - cached.timestamp < 60000) { // 1 minute cache
+          console.log(`⚡ Prompt cache HIT for ${conversationId}`);
+          return cached.prompt;
+        } else {
+          this.promptCache.delete(cacheKey);
+        }
+      }
+
       const userMessages = conversation.messages.filter(m => m.sender === 'user');
       
       // Detect primary language from recent messages
       const primaryLanguage = this.detectPrimaryLanguage(userMessages.slice(-3));
-      let promptType = 'default';
-      
-      if (messageCount === 0) {
-        promptType = 'firstTime';
-      } else if (messageCount > 2) {
-        promptType = 'continuing';
-      }
-
-      // Override with language-specific prompt if detected
-      if (primaryLanguage === 'vietnamese' && messageCount > 0) {
-        promptType = 'vietnamese_focused';
-      } else if (primaryLanguage === 'english' && messageCount > 0) {
-        promptType = 'english_focused';
-      }
+      let promptType = this.selectPromptType(messageCount, primaryLanguage);
 
       let systemPrompt = this.systemPrompts[promptType];
 
@@ -109,20 +124,23 @@ IMPORTANT: User is communicating in English, respond in English.
         }
       }
 
-      // Add conversation stats
+      // Add conversation stats (simplified for speed)
       if (messageCount > 5) {
         const statsText = primaryLanguage === 'vietnamese'
-          ? `\n\nBạn đã trò chuyện ${messageCount} tin nhắn với user này.`
-          : `\n\nYou have exchanged ${messageCount} messages with this user.`;
+          ? `\n\nCuộc trò chuyện: ${messageCount} tin nhắn.`
+          : `\n\nConversation: ${messageCount} messages.`;
         systemPrompt += statsText;
       }
 
       // Add language preference reminder
       if (primaryLanguage === 'vietnamese') {
-        systemPrompt += `\n\n⚠️ QUAN TRỌNG: User đang dùng tiếng Việt, bạn PHẢI trả lời hoàn toàn bằng tiếng Việt.`;
+        systemPrompt += `\n\n⚠️ QUAN TRỌNG: Trả lời hoàn toàn bằng tiếng Việt.`;
       } else if (primaryLanguage === 'english') {
-        systemPrompt += `\n\n⚠️ IMPORTANT: User is using English, respond entirely in English.`;
+        systemPrompt += `\n\n⚠️ IMPORTANT: Respond entirely in English.`;
       }
+
+      // 💾 Cache the generated prompt
+      this.cachePrompt(cacheKey, systemPrompt);
 
       console.log(`🧠 Built system prompt for conversation ${conversationId} (${promptType}, lang: ${primaryLanguage})`);
       return systemPrompt;
@@ -133,125 +151,173 @@ IMPORTANT: User is communicating in English, respond in English.
     }
   }
 
-  // NEW: Language detection method
+  // 🆕 Generate cache key for prompts
+  generatePromptCacheKey(conversationId, messageCount) {
+    // Cache key based on conversation ID and message count range
+    const messageRange = Math.floor(messageCount / 5) * 5; // Group by 5s
+    return `${conversationId}_${messageRange}`;
+  }
+
+  // 🆕 Cache prompt
+  cachePrompt(key, prompt) {
+    // Implement LRU eviction
+    if (this.promptCache.size >= this.maxCacheSize) {
+      const oldestKey = this.promptCache.keys().next().value;
+      this.promptCache.delete(oldestKey);
+    }
+
+    this.promptCache.set(key, {
+      prompt,
+      timestamp: Date.now()
+    });
+  }
+
+  // 🆕 IMPROVED: Faster prompt type selection
+  selectPromptType(messageCount, primaryLanguage) {
+    if (messageCount === 0) {
+      return 'firstTime';
+    } else if (messageCount > 10) {
+      // Use speed-optimized prompt for long conversations
+      return 'speed_optimized';
+    } else if (primaryLanguage === 'vietnamese' && messageCount > 0) {
+      return 'vietnamese_focused';
+    } else if (primaryLanguage === 'english' && messageCount > 0) {
+      return 'english_focused';
+    } else if (messageCount > 2) {
+      return 'continuing';
+    }
+    return 'default';
+  }
+
+  // 🆕 OPTIMIZED: Faster language detection with caching
   detectPrimaryLanguage(messages) {
     if (!messages || messages.length === 0) return 'mixed';
 
+    // Simple but fast language detection
     let vietnameseScore = 0;
     let englishScore = 0;
-    let totalChars = 0;
 
-    const vietnameseKeywords = [
-      'là', 'của', 'có', 'được', 'này', 'cho', 'với', 'tôi', 'bạn', 'như',
-      'khi', 'về', 'trong', 'một', 'các', 'và', 'để', 'không', 'sẽ', 'đã',
-      'dự án', 'công việc', 'nhóm', 'team', 'làm việc', 'quản lý', 'thời gian',
-      'chào', 'xin chào', 'cảm ơn', 'vậy', 'rồi', 'nè', 'nhé', 'ạ', 'em', 'anh'
+    // Optimized Vietnamese indicators
+    const vietnameseIndicators = [
+      /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g,
+      /\b(là|của|có|được|này|cho|với|tôi|bạn|như|khi|về|trong|một|các|và|để|không|sẽ|đã)\b/g,
+      /\b(dự án|công việc|nhóm|team|làm việc|quản lý|thời gian|chào|cảm ơn|vậy|rồi)\b/g
     ];
 
-    const vietnameseChars = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;
+    const englishIndicators = [
+      /\b(the|and|is|are|was|were|have|has|had|will|would|could|should|can|may|might)\b/gi,
+      /\b(project|team|work|manage|time|task|meeting|development|github)\b/gi
+    ];
 
     messages.forEach(msg => {
       const text = msg.text.toLowerCase();
-      totalChars += text.length;
-
-      // Check Vietnamese diacritics
-      const vietnameseCharMatches = text.match(vietnameseChars);
-      if (vietnameseCharMatches) {
-        vietnameseScore += vietnameseCharMatches.length * 3; // Weight diacritics heavily
-      }
-
-      // Check Vietnamese keywords
-      vietnameseKeywords.forEach(keyword => {
-        if (text.includes(keyword)) {
-          vietnameseScore += keyword.length * 2;
-        }
+      
+      vietnameseIndicators.forEach(pattern => {
+        const matches = text.match(pattern);
+        if (matches) vietnameseScore += matches.length;
       });
 
-      // Check English patterns
-      const englishWords = text.match(/\b[a-z]+\b/g) || [];
-      englishWords.forEach(word => {
-        if (word.length > 3 && !vietnameseKeywords.includes(word)) {
-          englishScore += 1;
-        }
+      englishIndicators.forEach(pattern => {
+        const matches = text.match(pattern);
+        if (matches) englishScore += matches.length;
       });
     });
 
-    // Calculate ratios
-    const vietnameseRatio = vietnameseScore / Math.max(totalChars, 1);
-    const englishRatio = englishScore / Math.max(totalChars, 1);
+    console.log(`🔍 Language detection - VN: ${vietnameseScore}, EN: ${englishScore}`);
 
-    console.log(`🔍 Language detection - VN: ${vietnameseRatio.toFixed(3)}, EN: ${englishRatio.toFixed(3)}`);
-
-    if (vietnameseRatio > englishRatio * 1.5) {
+    if (vietnameseScore > englishScore * 1.2) {
       return 'vietnamese';
-    } else if (englishRatio > vietnameseRatio * 1.5) {
+    } else if (englishScore > vietnameseScore * 1.2) {
       return 'english';
     } else {
       return 'mixed';
     }
   }
 
+  // 🆕 OPTIMIZED: Faster topic extraction
   extractTopics(messages) {
     if (!messages || messages.length === 0) return [];
 
     const topics = new Set();
     
-    // Enhanced keywords with Vietnamese focus
-    const keywords = {
-      'dự án': ['dự án', 'project', 'kế hoạch', 'plan', 'planning'],
-      'nhóm': ['team', 'nhóm', 'thành viên', 'member', 'đồng đội', 'cộng sự'],
-      'công việc': ['task', 'công việc', 'nhiệm vụ', 'việc', 'job', 'work'],
-      'deadline': ['deadline', 'hạn chót', 'thời hạn', 'due date', 'hạn nộp'],
-      'họp': ['meeting', 'họp', 'cuộc họp', 'gặp mặt', 'thảo luận'],
-      'phát triển': ['development', 'phát triển', 'develop', 'code', 'lập trình'],
-      'github': ['github', 'git', 'repository', 'repo', 'version control'],
-      'quản lý': ['quản lý', 'management', 'manage', 'điều hành', 'vận hành'],
-      'báo cáo': ['report', 'báo cáo', 'reporting', 'thống kê', 'dashboard'],
-      'khách hàng': ['client', 'khách hàng', 'customer', 'user', 'người dùng']
+    // Simplified topic detection for speed
+    const topicPatterns = {
+      'dự án': /dự án|project|kế hoạch|plan/gi,
+      'nhóm': /team|nhóm|thành viên|member/gi,
+      'công việc': /task|công việc|nhiệm vụ|job|work/gi,
+      'deadline': /deadline|hạn chót|thời hạn|due date/gi,
+      'họp': /meeting|họp|cuộc họp|gặp mặt/gi,
+      'phát triển': /development|phát triển|code|lập trình/gi,
+      'github': /github|git|repository|repo/gi,
+      'quản lý': /quản lý|management|manage|điều hành/gi
     };
 
-    messages.forEach(msg => {
-      const text = msg.text.toLowerCase();
-      Object.entries(keywords).forEach(([topic, terms]) => {
-        if (terms.some(term => text.includes(term.toLowerCase()))) {
-          topics.add(topic);
-        }
-      });
+    const combinedText = messages.map(m => m.text).join(' ').toLowerCase();
+
+    Object.entries(topicPatterns).forEach(([topic, pattern]) => {
+      if (pattern.test(combinedText)) {
+        topics.add(topic);
+      }
     });
 
-    return Array.from(topics);
+    return Array.from(topics).slice(0, 5); // Limit to 5 topics for speed
   }
 
-  // Enhanced entity extraction with Vietnamese support
+  // 🆕 Simplified entity extraction for performance
   extractEntities(message) {
     const entities = {
       dates: [],
       times: [],
-      people: [],
-      projects: [],
-      tasks: [],
-      organizations: []
+      people: []
     };
 
+    // Simplified patterns for better performance
     const patterns = {
-      dates: /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}\s+(tháng\s+)?\d{1,2}|ngày\s+\d{1,2})\b/gi,
-      times: /\b(\d{1,2}:\d{2}|\d{1,2}h\d{0,2}|\d{1,2}\s*giờ)\b/gi,
-      people: /@([a-zA-Z0-9_]+)|anh\s+([A-Z][a-z]+)|chị\s+([A-Z][a-z]+)/g,
-      projects: /dự án\s+([a-zA-Z0-9\s]+)|project\s+([a-zA-Z0-9\s]+)/gi,
-      organizations: /công ty\s+([A-Z][a-zA-Z\s]+)|team\s+([A-Z][a-zA-Z\s]+)/gi
+      dates: /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/gi,
+      times: /\b\d{1,2}:\d{2}\b/gi,
+      people: /@([a-zA-Z0-9_]+)/g
     };
 
     Object.entries(patterns).forEach(([type, pattern]) => {
-      const matches = message.match(pattern);
-      if (matches) {
-        entities[type] = matches.map(match => match.trim());
-      }
+      const matches = message.match(pattern) || [];
+      entities[type] = matches.slice(0, 3); // Limit results for speed
     });
 
     return entities;
   }
 
-  // Rest of the methods remain the same...
+  // 🆕 OPTIMIZED: Faster context summary
+  buildContextSummary(conversationId) {
+    try {
+      const conversation = conversationManager.getConversation(conversationId);
+      const messages = conversation.messages;
+      
+      if (messages.length === 0) {
+        return "Cuộc trò chuyện mới bắt đầu.";
+      }
+
+      const userMessages = messages.filter(m => m.sender === 'user');
+      if (userMessages.length === 0) {
+        return "Chưa có tin nhắn từ user.";
+      }
+
+      const lastUserMessage = userMessages[userMessages.length - 1];
+      const language = this.detectPrimaryLanguage(userMessages.slice(-2));
+      
+      // Simplified summary for better performance
+      if (language === 'english') {
+        return `Conversation: ${messages.length} messages. Latest: "${lastUserMessage.text.substring(0, 30)}..."`;
+      } else {
+        return `Cuộc trò chuyện: ${messages.length} tin nhắn. Gần nhất: "${lastUserMessage.text.substring(0, 30)}..."`;
+      }
+
+    } catch (error) {
+      console.error('❌ Error building context summary:', error);
+      return "Không thể tạo tóm tắt ngữ cảnh.";
+    }
+  }
+
+  // Keep existing methods
   updateUserProfile(userId, data) {
     if (!this.userProfiles.has(userId)) {
       this.userProfiles.set(userId, {
@@ -276,44 +342,19 @@ IMPORTANT: User is communicating in English, respond in English.
     return this.userProfiles.get(userId) || null;
   }
 
-  buildContextSummary(conversationId) {
-    try {
-      const conversation = conversationManager.getConversation(conversationId);
-      const messages = conversation.messages;
-      
-      if (messages.length === 0) {
-        return "Cuộc trò chuyện mới bắt đầu.";
-      }
+  // 🆕 Clear caches
+  clearCaches() {
+    this.promptCache.clear();
+    console.log('🗑️ Cleared context manager caches');
+  }
 
-      const userMessages = messages.filter(m => m.sender === 'user');
-      const topics = this.extractTopics(userMessages);
-      const lastUserMessage = userMessages[userMessages.length - 1];
-      const language = this.detectPrimaryLanguage(userMessages.slice(-3));
-      
-      if (language === 'english') {
-        let summary = `Conversation has ${messages.length} messages. `;
-        if (topics.length > 0) {
-          summary += `Topics: ${topics.join(', ')}. `;
-        }
-        if (lastUserMessage) {
-          summary += `Latest question about: "${lastUserMessage.text.substring(0, 50)}..."`;
-        }
-        return summary;
-      } else {
-        let summary = `Cuộc trò chuyện có ${messages.length} tin nhắn. `;
-        if (topics.length > 0) {
-          summary += `Chủ đề: ${topics.join(', ')}. `;
-        }
-        if (lastUserMessage) {
-          summary += `Câu hỏi gần nhất về: "${lastUserMessage.text.substring(0, 50)}..."`;
-        }
-        return summary;
-      }
-
-    } catch (error) {
-      console.error('❌ Error building context summary:', error);
-      return "Không thể tạo tóm tắt ngữ cảnh.";
-    }
+  // 🆕 Get cache stats
+  getCacheStats() {
+    return {
+      promptCacheSize: this.promptCache.size,
+      promptCacheMax: this.maxCacheSize,
+      userProfilesCount: this.userProfiles.size
+    };
   }
 
   async validateSetup() {

@@ -2,21 +2,15 @@ const express = require('express');
 const router = express.Router();
 const hypoController = require('../controllers/hypoController');
 
-console.log('🛣️ AI Routes file loaded');
+console.log('🛣️ Optimized AI Routes loaded');
 
-// Streaming chat endpoint (primary)
+// Main streaming chat endpoint
 router.post('/chat-stream', (req, res, next) => {
-  console.log('🦙 Ollama streaming chat route hit!');
+  console.log('🚀 Optimized streaming chat route hit!');
   hypoController.chatStream(req, res, next);
 });
 
-// Legacy chat endpoint (keep for compatibility)
-router.post('/chat', (req, res, next) => {
-  console.log('📥 Legacy chat route hit!');
-  hypoController.chat(req, res, next);
-});
-
-// Conversation management endpoints
+// Conversation management
 router.get('/conversation/:conversationId/history', (req, res, next) => {
   console.log('📖 Get conversation history route hit!');
   hypoController.getConversationHistory(req, res, next);
@@ -27,24 +21,18 @@ router.delete('/conversation/:conversationId', (req, res, next) => {
   hypoController.clearConversation(req, res, next);
 });
 
-// NEW: Ollama model management routes
-router.post('/models/manage', (req, res, next) => {
-  console.log('🦙 Model management route hit!');
-  hypoController.manageModels(req, res, next);
-});
-
-// Enhanced health check endpoint
+// Health check with cache stats
 router.get('/health', (req, res, next) => {
   console.log('🏥 Health check route hit!');
   hypoController.healthCheck(req, res, next);
 });
 
-// Enhanced stats endpoint
-router.get('/stats', (req, res, next) => {
-  console.log('📊 Stats route hit!');
-  hypoController.getStats(req, res, next);
+// NEW: Cache management endpoint
+router.post('/cache/manage', (req, res, next) => {
+  console.log('💾 Cache management route hit!');
+  hypoController.managCache(req, res, next);
 });
 
-console.log('✅ All AI routes registered (Ollama ready)');
+console.log('✅ All optimized AI routes registered');
 
 module.exports = router;

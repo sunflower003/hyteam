@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         validate: {
             validator: function(v) {
-                if (!v) return true; // Allow empty values
+                if (!v || v === '') return true; // Allow empty values
                 return /^https?:\/\/.+/.test(v);
             },
             message: 'Website must be a valid URL starting with http:// or https://'
@@ -67,7 +67,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         validate: {
             validator: function(v) {
-                if (!v) return true; // Allow empty values
+                if (!v || v === '') return true; // Allow empty values
                 return /^https?:\/\/(www\.)?facebook\.com\//.test(v);
             },
             message: 'Facebook must be a valid Facebook URL'
@@ -78,7 +78,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         validate: {
             validator: function(v) {
-                if (!v) return true; // Allow empty values
+                if (!v || v === '') return true; // Allow empty values
                 return /^https?:\/\/(www\.)?instagram\.com\//.test(v);
             },
             message: 'Instagram must be a valid Instagram URL'
@@ -89,11 +89,32 @@ const userSchema = new mongoose.Schema({
         trim: true,
         validate: {
             validator: function(v) {
-                if (!v) return true; // Allow empty values
+                if (!v || v === '') return true; // Allow empty values
                 return /^https?:\/\/(t\.me|telegram\.me)\//.test(v) || /^@[a-zA-Z0-9_]+$/.test(v);
             },
             message: 'Telegram must be a valid Telegram URL or username starting with @'
         }
+    },
+    // Social stats
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    followersCount: {
+        type: Number,
+        default: 0
+    },
+    followingCount: {
+        type: Number,
+        default: 0
+    },
+    postsCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true});
 

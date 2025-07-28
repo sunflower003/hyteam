@@ -35,7 +35,16 @@ api.interceptors.response.use(
   (error) => {
     console.error('API Response Error:', error.response?.status, error.config?.url, error.response?.data);
 
+    // Only auto-logout for auth-related endpoints or when token is clearly invalid
     if (error.response?.status === 401) {
+      const url = error.config?.url;
+      
+      // Don't auto-logout for profile-related operations - let component handle it
+      if (url?.includes('/api/profile') || url?.includes('/api/auth/profile')) {
+        console.log('Profile operation failed with 401, not auto-logging out');
+        return Promise.reject(error);
+      }
+      
       console.log('Token expired, logging out ...');
       localStorage.removeItem('token');
       window.location.href = '/login';

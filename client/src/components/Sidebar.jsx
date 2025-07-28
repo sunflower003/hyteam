@@ -4,10 +4,15 @@ import styles from '../styles/components/Sidebar.module.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleNavigation = (path) => {
     navigate(path);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login'); // Navigate to login page after logout
   };
 
   // Generate random color for avatar background
@@ -58,31 +63,34 @@ const Sidebar = () => {
         </div>
         <ul className={styles.links}>
           <li className={styles.link} onClick={() => handleNavigation('/')}>
-            <i class="ri-instagram-line"></i> Hyfeed
+            <i className="ri-instagram-line"></i> Hyfeed
           </li>
-          <li className={styles.link}>
-            <i class="ri-notification-2-line"></i> Notification
+          <li className={styles.link} onClick={() => handleNavigation('/notifications')}>
+            <i className="ri-notification-2-line"></i> Notification
           </li>
-          <li className={styles.link}>
-            <i class="ri-add-box-line"></i> Add
+          <li className={styles.link} onClick={() => handleNavigation('/create')}>
+            <i className="ri-add-box-line"></i> Add
           </li>
-          <li className={styles.link}>
-            <i class="ri-chat-1-line"></i> Chat
+          <li className={styles.link} onClick={() => handleNavigation('/chat')}>
+            <i className="ri-chat-1-line"></i> Chat
           </li>
-          <li className={styles.link}>
-            <i class="ri-task-line"></i> Project
+          <li className={styles.link} onClick={() => handleNavigation('/projects')}>
+            <i className="ri-task-line"></i> Project
           </li>
-          <li className={styles.link}>
-            <i class="ri-btc-line"></i> Funding
+          <li className={styles.link} onClick={() => handleNavigation('/funding')}>
+            <i className="ri-btc-line"></i> Funding
           </li>
-          <li className={styles.link}>
-            <i class="ri-drive-line"></i> Document
+          <li className={styles.link} onClick={() => handleNavigation('/documents')}>
+            <i className="ri-drive-line"></i> Document
           </li>
           <li className={styles.link} onClick={() => handleNavigation('/movie-room')}>
-            <i class="ri-film-line"></i> Movie Room
+            <i className="ri-film-line"></i> Movie Room
+          </li>
+          <li className={styles.link} onClick={handleLogout}>
+            <i className="ri-logout-circle-line"></i> Logout
           </li>
         </ul>
-        <div className={styles.account}>
+        <div className={styles.account} onClick={() => handleNavigation('/profile')}>
           {renderAvatar(user, styles.avatar)}
           <div className={styles.accountInfo}>
             <p className={styles.accountName}>{user?.username || 'Guest User'}</p>
@@ -92,11 +100,13 @@ const Sidebar = () => {
         </div>
       </div>
       <div className={styles.navbar}>
-        <i className="ri-instagram-line"></i>
-        <i className="ri-chat-1-line"></i>
-        <i className="ri-btc-line"></i>
+        <i className="ri-instagram-line" onClick={() => handleNavigation('/')}></i>
+        <i className="ri-chat-1-line" onClick={() => handleNavigation('/chat')}></i>
+        <i className="ri-btc-line" onClick={() => handleNavigation('/funding')}></i>
         <i className="ri-film-line" onClick={() => handleNavigation('/movie-room')}></i>
-        {renderAvatar(user, styles.avatarCircle)}
+        <div onClick={() => handleNavigation('/profile')}>
+          {renderAvatar(user, styles.avatarCircle)}
+        </div>
       </div>
     </>
   );

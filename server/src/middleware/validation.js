@@ -12,35 +12,17 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 const validateRegister = [
-  body('username')
-    .isLength({ min: 3, max: 30 })
-    .withMessage('Username must be between 3-30 characters')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  
-  body('email')
-    .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail(),
-  
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase, one uppercase, and one number'),
+  // Bỏ hết validation, chỉ kiểm tra có dữ liệu
+  body('username').notEmpty().withMessage('Username is required'),
+  body('email').notEmpty().withMessage('Email is required'),
+  body('password').notEmpty().withMessage('Password is required'),
   
   handleValidationErrors
 ];
 
 const validateLogin = [
-  body('email')
-    .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail(),
-  
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required'),
+  body('email').notEmpty().withMessage('Email is required'),
+  body('password').notEmpty().withMessage('Password is required'),
   
   handleValidationErrors
 ];

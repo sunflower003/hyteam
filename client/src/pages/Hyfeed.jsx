@@ -19,6 +19,7 @@ const Hyfeed = () => {
         </div>
         <div className={styles.right}>
           <h1>Right Side</h1>
+          <p>Đang  phát triển thêm</p>
         </div>
       </div>
     </div>

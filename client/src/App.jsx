@@ -4,7 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import NewLogin from './components/NewLogin';
 import Register from './components/Register';
 import MovieRoom from './components/MovieRoom';
-import Profile from './components/Profile';
+import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 import Settings from './components/Settings';
 import Layout from './components/Layout';
 import Hyfeed from './pages/Hyfeed';
@@ -42,6 +43,8 @@ const AppContent = () => {
             <Route index element={<Hyfeed />} />
             <Route path="movie-room" element={<MovieRoom />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="profile/:userId" element={<Profile />} />
+            <Route path="edit-profile" element={<EditProfile />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

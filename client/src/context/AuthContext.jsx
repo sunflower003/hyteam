@@ -29,12 +29,27 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
         try {
             const response = await api.get('/api/auth/profile');
+            console.log('Auth check response:', response.data);
+            
             if (response.data.success) {
-                setUser(response.data.data.user);
+                const userData = response.data.data?.user || response.data.user;
+                if (userData) {
+                    setUser(userData);
+                } else {
+                    console.error('No user data in auth check response');
+                    logout();
+                }
+            } else {
+                console.error('Auth check failed:', response.data.message);
+                logout();
             }
         } catch (error) {
             console.error('Auth check failed:', error);
-            logout();
+            
+            // Only logout if it's actually an auth error (401)
+            if (error.response?.status === 401) {
+                logout();
+            }
         } finally {
             setLoading(false);
         }
@@ -80,7 +95,12 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.log("Register error:", error.response?.data || error.message);
             const message = error.response?.data?.message || 'Registration failed';
-            return { success: false, message };
+            const errorDetails = error.response?.data?.error || null;
+            return { 
+                success: false, 
+                message,
+                error: errorDetails
+            };
         }
     };
 
@@ -91,13 +111,34 @@ export const AuthProvider = ({ children }) => {
         delete api.defaults.headers.common['Authorization'];
     }
 
+    // Function to refresh user data without logout
+    const refreshUser = async () => {
+        try {
+            if (!token) return;
+            
+            const response = await api.get('/api/auth/profile');
+            if (response.data.success) {
+                const userData = response.data.data?.user || response.data.user;
+                if (userData) {
+                    setUser(userData);
+                    return userData;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to refresh user:', error);
+        }
+        return null;
+    };
+
     const value = {
         user,
+        setUser,
         token,
         loading,
         login,
         register,
         logout,
+        refreshUser,
         isAuthenticated: !!user
     };
 

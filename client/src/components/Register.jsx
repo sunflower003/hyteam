@@ -26,17 +26,17 @@ const Register = ({ onSwitchToLogin }) => {
         setIsLoading(true);
         setError('');
 
-        // Kiem tra mat khau 
+        // Kiểm tra mật khẩu
         if (formData.password !== formData.confirmPassword) {
-            setError('Mat khau khong khop');
+            setError('Mật khẩu không khớp');
             setIsLoading(false);
             return;
         }
 
         const result = await register(formData.username, formData.email, formData.password);
 
-        if(!result.success) {
-        // Nếu BE trả về mảng error:
+        if (!result.success) {
+            // Nếu BE trả về mảng error:
             if (result.error && Array.isArray(result.error)) {
                 setError(result.error.map(err => err.msg).join('. '));
             } else {
@@ -59,19 +59,19 @@ const Register = ({ onSwitchToLogin }) => {
 
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">
-                        <label htmlFor="name">Name</label>
+                        <label htmlFor="username">NAME</label>
                         <input
                             type="text"
-                            id="name"
-                            name="name"
-                            value={formData.name}
+                            id="username"
+                            name="username"
+                            value={formData.username}
                             onChange={handleChange}
                             required
-                            placeholder='Enter your name'
+                            placeholder='Enter your username'
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="email">Email</label>
+                        <label htmlFor="email">EMAIL</label>
                         <input
                             type="email"
                             id="email"
@@ -83,7 +83,7 @@ const Register = ({ onSwitchToLogin }) => {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="password">Password</label>
+                        <label htmlFor="password">PASSWORD</label>
                         <input
                             type="password"
                             id="password"
@@ -91,11 +91,11 @@ const Register = ({ onSwitchToLogin }) => {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            placeholder='Enter your password (at least 6 characters)'
+                            placeholder='Enter your password'
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="confirmPassword">Confirm Password</label>
+                        <label htmlFor="confirmPassword">CONFIRM PASSWORD</label>
                         <input
                             type="password"
                             id="confirmPassword"
@@ -107,17 +107,19 @@ const Register = ({ onSwitchToLogin }) => {
                         />
                     </div>
                     <button type="submit" className="auth-button" disabled={isLoading}>
-                        {isLoading ? 'Registering...' : 'Register'}
+                        {isLoading ? 'Registering...' : 'REGISTER'}
                     </button>
                 </form>
 
                 <p className="auth-switch">
-                    Already have an account?
+                    Already have an account?{' '}
                     <button 
-                     type="button"
-                     onClick={onSwitchToLogin}
-                     className="link-button"
-                     >Login now</button>
+                        type="button"
+                        onClick={onSwitchToLogin}
+                        className="link-button"
+                    >
+                        Login now
+                    </button>
                 </p>
             </div>
         </div>

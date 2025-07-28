@@ -20,6 +20,7 @@ const authRoutes = require('./routes/auth');
 const movieRoutes = require('./routes/movies');
 const roomRoutes = require('./routes/rooms');
 const messageRoutes = require('./routes/messages');
+const profileRoutes = require('./routes/profile');
 // Thêm route dành cho AI Hypo (bạn cần file này ở src/ai/routes/hypo.js)
 const hypoRoutes = require('./ai/routes/hypo');
 
@@ -52,6 +53,7 @@ app.use(limiter);
 
 // Phân tích body cho json
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Route mặc định (test server sống)
 app.get('/', (req, res) => {
@@ -63,6 +65,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/profile', profileRoutes);
 // Đăng ký endpoint AI chat: FE sẽ POST lên api/ai/hypo/chat
 app.use('/api/ai/hypo', hypoRoutes);
 

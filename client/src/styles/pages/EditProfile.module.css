@@ -1,0 +1,328 @@
+.editContainer {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0 30px 0;
+    border-bottom: 1px solid var(--grey-2);
+    margin-bottom: 30px;
+}
+
+.cancelButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+    color: var(--grey);
+}
+
+.cancelButton:hover {
+    color: black;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.saveButton {
+    background-color: #0095f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+    background-color: #0084e6;
+}
+
+.saveButton:disabled {
+    background-color: var(--grey);
+    cursor: not-allowed;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.avatarSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.avatarWrapper {
+    position: relative;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.removeAvatarButton {
+    background: none;
+    border: none;
+    color: #ed4956;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 5px 0;
+}
+
+.removeAvatarButton:hover {
+    text-decoration: underline;
+}
+
+.userInfo {
+    text-align: center;
+    padding: 0 20px 20px 20px;
+}
+
+.displayName {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: #262626;
+}
+
+.userPosition {
+    font-size: 14px;
+    color: var(--grey);
+    margin: 0 0 6px 0;
+    line-height: 1.4;
+}
+
+.userLocation {
+    font-size: 14px;
+    color: var(--grey);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.userLocation i {
+    font-size: 16px;
+}
+
+.statsSection {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--grey-2);
+    margin-bottom: 20px;
+}
+
+.statItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.statNumber {
+    font-size: 20px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.statLabel {
+    font-size: 14px;
+    color: var(--grey);
+    text-transform: capitalize;
+}
+
+.avatarPreview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.avatarDefault {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 40px;
+    text-transform: uppercase;
+}
+
+.avatarOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-size: 14px;
+    gap: 5px;
+}
+
+.avatarWrapper:hover .avatarOverlay {
+    opacity: 1;
+}
+
+.avatarOverlay i {
+    font-size: 24px;
+}
+
+.fileInput {
+    display: none;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--grey-3);
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--grey-3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.label i {
+    font-size: 16px;
+}
+
+.input {
+    padding: 12px 16px;
+    border: 1px solid var(--grey-2);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.input:focus {
+    border-color: #0095f6;
+    box-shadow: 0 0 0 1px #0095f6;
+}
+
+.input::placeholder {
+    color: var(--grey);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .editContainer {
+        padding: 16px;
+        max-width: 100%;
+    }
+    
+    .header {
+        padding: 16px 0 20px 0;
+        margin-bottom: 20px;
+    }
+    
+    .title {
+        font-size: 18px;
+    }
+    
+    .cancelButton {
+        font-size: 20px;
+    }
+    
+    .saveButton {
+        font-size: 14px;
+        padding: 6px 12px;
+    }
+    
+    .avatarPreview,
+    .avatarDefault {
+        width: 100px;
+        height: 100px;
+        font-size: 32px;
+    }
+    
+    .userInfo {
+        padding: 0 16px 16px 16px;
+    }
+    
+    .displayName {
+        font-size: 20px;
+    }
+    
+    .userPosition,
+    .userLocation {
+        font-size: 13px;
+    }
+    
+    .statsSection {
+        gap: 24px;
+        padding: 16px 0;
+    }
+    
+    .statNumber {
+        font-size: 18px;
+    }
+    
+    .statLabel {
+        font-size: 12px;
+    }
+    
+    .section {
+        gap: 16px;
+    }
+    
+    .sectionTitle {
+        font-size: 16px;
+    }
+    
+    .input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .form {
+        gap: 24px;
+    }
+}

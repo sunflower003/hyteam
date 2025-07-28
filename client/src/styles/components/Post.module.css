@@ -1,0 +1,117 @@
+.post {
+    margin-top: 30px;
+}
+
+.postCard {
+    padding: 0 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 30px;;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.authorAndTime {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.authorName {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.postTime {
+    font-size: 14px;
+    color: var(--grey);
+}
+
+.postImage {
+    width: 100%;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 5px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.buttons i {
+    font-size: 26px;
+    cursor: pointer;
+}
+
+.buttonList {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.postLike {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.postCaption {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.captionAuthor {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.captionText {
+    font-size: 14px;
+}
+
+.allComments {
+    font-size: 14px;
+    color: var(--grey);
+    cursor: pointer;
+}
+
+.commentInput {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+.commentInput::placeholder {
+    font-size: 14px;
+    color: var(--grey);
+}
+
+.borderBottom {
+    border-bottom: 1px solid var(--grey);
+}
+
+@media (max-width: 768px) {
+    .postCard {
+        padding: 0
+    }
+    
+    .borderBottom {
+        border-bottom: none;
+    }
+}

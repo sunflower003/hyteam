@@ -64,6 +64,7 @@
     border: 2px solid var(--grey-2);
     padding: 8px;
     border-radius: 10px;
+    position: relative;
 }
 
 .accountName {
@@ -83,11 +84,25 @@
     border-radius: 5px;
 }
 
+.avatarDefault {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
 .account i {
     cursor: pointer;
     color: var(--grey);
-    position: relative;
-    top: -10px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
 }
 
 
@@ -119,6 +134,19 @@
         height: 30px;
         border-radius: 50%;
         object-fit: cover;
+    }
+
+    .avatarCircle.avatarDefault {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
     }
 
     .navbar i {

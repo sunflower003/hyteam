@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Email is required'],
         unique: true,
-        Lowercase: true,
+        lowercase: true, // Fixed: should be lowercase, not Lowercase
         match : [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
     },
     password: {
@@ -39,6 +39,61 @@ const userSchema = new mongoose.Schema({
     lastLogin: {
         type: Date,
         default: Date.now
+    },
+    // New fields added
+    position: {
+        type: String,
+        trim: true,
+        maxlength: 100
+    },
+    address: {
+        type: String,
+        trim: true,
+        maxlength: 200
+    },
+    website: {
+        type: String,
+        trim: true,
+        validate: {
+            validator: function(v) {
+                if (!v) return true; // Allow empty values
+                return /^https?:\/\/.+/.test(v);
+            },
+            message: 'Website must be a valid URL starting with http:// or https://'
+        }
+    },
+    facebook: {
+        type: String,
+        trim: true,
+        validate: {
+            validator: function(v) {
+                if (!v) return true; // Allow empty values
+                return /^https?:\/\/(www\.)?facebook\.com\//.test(v);
+            },
+            message: 'Facebook must be a valid Facebook URL'
+        }
+    },
+    instagram: {
+        type: String,
+        trim: true,
+        validate: {
+            validator: function(v) {
+                if (!v) return true; // Allow empty values
+                return /^https?:\/\/(www\.)?instagram\.com\//.test(v);
+            },
+            message: 'Instagram must be a valid Instagram URL'
+        }
+    },
+    telegram: {
+        type: String,
+        trim: true,
+        validate: {
+            validator: function(v) {
+                if (!v) return true; // Allow empty values
+                return /^https?:\/\/(t\.me|telegram\.me)\//.test(v) || /^@[a-zA-Z0-9_]+$/.test(v);
+            },
+            message: 'Telegram must be a valid Telegram URL or username starting with @'
+        }
     }
 }, { timestamps: true});
 

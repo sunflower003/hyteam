@@ -1,5 +1,6 @@
 import Story from "../components/Story";
 import styles from '../styles/pages/Hyfeed.module.css';
+import Post from "../components/Post";
 
 const Hyfeed = () => {
   return (
@@ -14,6 +15,7 @@ const Hyfeed = () => {
       <div className={styles.hyfeedContent}>
         <div className={styles.left}>
           <Story />
+          <Post />
         </div>
         <div className={styles.right}>
           <h1>Right Side</h1>

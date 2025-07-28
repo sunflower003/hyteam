@@ -136,8 +136,7 @@ const HypoComponent = () => {
         <div className={styles.boxchat}>
           <div className={styles.header}>
             <div className={styles.headerInfo}>
-              <i className="ri-robot-line"></i>
-              <span>Hypo AI</span>
+             
               {messages.length > 0 && (
                 <button 
                   className={styles.clearButton}

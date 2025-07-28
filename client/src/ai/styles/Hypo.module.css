@@ -275,6 +275,13 @@
     }
 }
 
+.clearButton {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    font-size: 20px;
+}
+
 /* Streaming cursor animation */
 .typingCursor {
     display: inline-block;

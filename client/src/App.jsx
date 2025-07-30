@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PostProvider } from './context/PostContext';
 import NewLogin from './components/NewLogin';
 import Register from './components/Register';
 import MovieRoom from './components/MovieRoom';
@@ -9,19 +10,21 @@ import EditProfile from './pages/EditProfile';
 import Settings from './components/Settings';
 import Layout from './components/Layout';
 import Hyfeed from './pages/Hyfeed';
+import PostDetail from './pages/PostDetail';
+import CreatePost from './pages/CreatePost';
 import './App.css'
 
 const AppContent = () => {
-    const {user, loading} = useAuth();
+    const { user, loading } = useAuth();
     const [authMode, setAuthMode] = useState('login');
 
     if (loading) {
-      return (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-        </div>
-      );
+        return (
+            <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading...</p>
+            </div>
+        );
     }
 
     if (!user) {
@@ -37,30 +40,35 @@ const AppContent = () => {
     }
 
     return (
-      <div className="app">
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Hyfeed />} />
-            <Route path="movie-room" element={<MovieRoom />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="profile/:userId" element={<Profile />} />
-            <Route path="edit-profile" element={<EditProfile />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+        <div className="app">
+            <PostProvider>
+                <Routes>
+                    <Route path="/" element={<Layout />}>
+                        <Route index element={<Hyfeed />} />
+                        <Route path="movie-room" element={<MovieRoom />} />
+                        <Route path="profile" element={<Profile />} />
+                        <Route path="profile/:userId" element={<Profile />} />
+                        <Route path="edit-profile" element={<EditProfile />} />
+                        <Route path="settings" element={<Settings />} />
+                        {/* Post-related routes */}
+                        <Route path="post/:id" element={<PostDetail />} />
+                        <Route path="create-post" element={<CreatePost />} />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </PostProvider>
+        </div>
     );
 };
 
 function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
-  );
+    return (
+        <AuthProvider>
+            <Router>
+                <AppContent />
+            </Router>
+        </AuthProvider>
+    );
 }
 
 export default App

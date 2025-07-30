@@ -1,6 +1,9 @@
+/* ===================== ORIGINAL HYFEED STYLES ===================== */
 .hyfeedContent {
     display: flex;
     padding: 0 80px;
+    gap: 20px;
+    min-height: 100vh;
 }
 
 .header {
@@ -14,6 +17,8 @@
     background: white;
     z-index: 1000;
     backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .logo {
@@ -21,6 +26,12 @@
     font-size: 25px;
     font-weight: 800;
     cursor: pointer;
+    color: #262626;
+    transition: color 0.2s ease;
+}
+
+.logo:hover {
+    color: #1877f2;
 }
 
 .iconHeader {
@@ -31,26 +42,371 @@
 
 .iconHeader i {
     font-size: 25px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    color: #262626;
+}
+
+.iconHeader i:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.1);
+    color: #1877f2;
 }
 
 .left {
     flex: 2;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .right {
     flex: 1;
+    padding-left: 20px;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
 }
 
+/* ===================== POST FUNCTIONALITY ADDITIONS ===================== */
+
+/* Create Post Icon in Header */
+.createPostIcon {
+    background: none !important;
+    border: none !important;
+    font-size: 24px !important;
+    margin-right: 8px !important;
+    padding: 8px !important;
+    border-radius: 50% !important;
+    transition: all 0.2s ease !important;
+    color: #262626 !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.createPostIcon:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    transform: scale(1.1) !important;
+    color: #1877f2 !important;
+}
+
+/* Refresh Button */
+.refreshBtn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #262626;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.refreshBtn:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.1);
+    color: #1877f2;
+}
+
+.refreshBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Spin animation for refresh icon */
+.ri-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===================== SEARCH SECTION ===================== */
+.searchContainer {
+    margin-bottom: 24px;
+    padding: 0 16px;
+}
+
+/* ===================== POST SECTIONS ===================== */
+.newPostsSection,
+.originalPostSection {
+    margin-top: 20px;
+}
+
+.newPostsSection {
+    animation: fadeIn 0.3s ease;
+}
+
+.originalPostSection {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== ERROR HANDLING ===================== */
+.errorMessage {
+    background: linear-gradient(135deg, #fee, #fdd);
+    border: 1px solid #fcc;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+}
+
+.errorMessage p {
+    margin: 0 0 12px 0;
+    color: #c33;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.retryBtn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.retryBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== LOADING STATES ===================== */
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.loadingSpinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1877f2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+.loadingContainer p {
+    color: #8e8e8e;
+    font-size: 16px;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ===================== POSTS CONTAINER ===================== */
+.postsContainer {
+    min-height: 400px;
+    animation: fadeIn 0.5s ease;
+}
+
+.postsList {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== NO POSTS STATE ===================== */
+.noPosts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(248, 249, 250, 0.1));
+    border: 2px dashed #e0e0e0;
+    border-radius: 16px;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+.noPosts:hover {
+    border-color: #1877f2;
+    background: linear-gradient(135deg, rgba(24, 119, 242, 0.05), rgba(24, 119, 242, 0.02));
+}
+
+.noPostsIcon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.6;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+.noPosts h3 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+    color: #262626;
+    font-weight: 600;
+}
+
+.noPosts p {
+    margin: 0 0 32px 0;
+    color: #8e8e8e;
+    font-size: 16px;
+    line-height: 1.5;
+    max-width: 300px;
+}
+
+/* ===================== REFRESHING INDICATOR ===================== */
+.refreshingIndicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    padding: 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    z-index: 2000;
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1877f2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.refreshingIndicator p {
+    margin: 0;
+    color: #262626;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+/* ===================== RIGHT SIDEBAR ENHANCEMENTS ===================== */
+.right h1 {
+    font-size: 20px;
+    margin: 0 0 12px 0;
+    color: #262626;
+    font-weight: 600;
+}
+
+.right p {
+    color: #8e8e8e;
+    font-size: 14px;
+    margin: 0 0 24px 0;
+    line-height: 1.5;
+}
+
+/* Post Statistics */
+.postStats {
+    margin-top: 24px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 249, 250, 0.8));
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.postStats:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #1877f2;
+}
+
+.postStats h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: #262626;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stats p {
+    margin: 0;
+    font-size: 14px;
+    color: #262626;
+    opacity: 0.8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stats p:last-child {
+    border-bottom: none;
+}
+
+.stats p:hover {
+    opacity: 1;
+    color: #1877f2;
+}
+
+/* ===================== RESPONSIVE DESIGN ===================== */
 @media (max-width: 768px) {
-    
     .header {
         display: flex;
         padding: 15px 20px;
+        border-bottom: 1px solid #e0e0e0;
     }
 
     .hyfeedContent {
         padding: 0;
-        padding-top: 40px; /* Để tránh nội dung bị che bởi fixed header */
+        padding-top: 70px; /* Increased for better spacing */
+        gap: 0;
     }
 
     .right {
@@ -59,5 +415,290 @@
 
     .left {
         flex: 1;
+        max-width: none;
+        margin: 0;
+    }
+
+    .searchContainer {
+        padding: 0 12px;
+        margin-bottom: 20px;
+    }
+
+    .loadingContainer {
+        padding: 40px 20px;
+    }
+
+    .loadingSpinner {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+    }
+
+    .noPosts {
+        padding: 60px 16px;
+        margin: 16px 12px;
+    }
+
+    .noPostsIcon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+
+    .noPosts h3 {
+        font-size: 20px;
+    }
+
+    .noPosts p {
+        font-size: 15px;
+        margin-bottom: 24px;
+    }
+
+    .postsList {
+        gap: 16px;
+        padding: 0 12px;
+    }
+
+    .errorMessage {
+        margin: 16px 12px 20px;
+        padding: 16px;
+    }
+
+    .refreshingIndicator {
+        padding: 20px 24px;
+        margin: 0 20px;
+    }
+
+    .iconHeader {
+        gap: 8px;
+    }
+
+    .iconHeader i,
+    .refreshBtn,
+    .createPostIcon {
+        font-size: 22px !important;
+        padding: 6px !important;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 12px 16px;
+    }
+
+    .hyfeedContent {
+        padding-top: 60px;
+    }
+
+    .logo {
+        font-size: 20px;
+    }
+
+    .iconHeader i,
+    .refreshBtn,
+    .createPostIcon {
+        font-size: 20px !important;
+        padding: 4px !important;
+    }
+
+    .iconHeader {
+        gap: 6px;
+    }
+
+    .loadingContainer {
+        padding: 30px 16px;
+    }
+
+    .loadingSpinner {
+        width: 35px;
+        height: 35px;
+    }
+
+    .noPosts {
+        padding: 40px 12px;
+        margin: 12px 8px;
+    }
+
+    .noPostsIcon {
+        font-size: 40px;
+    }
+
+    .noPosts h3 {
+        font-size: 18px;
+    }
+
+    .noPosts p {
+        font-size: 14px;
+    }
+
+    .postsList {
+        padding: 0 8px;
+        gap: 12px;
+    }
+
+    .errorMessage {
+        margin: 12px 8px 16px;
+        padding: 12px;
+    }
+
+    .refreshingIndicator {
+        padding: 16px 20px;
+        margin: 0 16px;
+    }
+
+    .spinner {
+        width: 28px;
+        height: 28px;
+        border-width: 2px;
+    }
+}
+
+/* ===================== ACCESSIBILITY ===================== */
+@media (prefers-reduced-motion: reduce) {
+    .loadingSpinner,
+    .spinner,
+    .ri-spin {
+        animation: none;
+    }
+    
+    .newPostsSection,
+    .originalPostSection,
+    .postsList,
+    .refreshingIndicator {
+        animation: none;
+    }
+    
+    .noPostsIcon {
+        animation: none;
+    }
+}
+
+/* Focus states for keyboard navigation */
+.refreshBtn:focus,
+.retryBtn:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+}
+
+.logo:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ===================== DARK MODE SUPPORT ===================== */
+@media (prefers-color-scheme: dark) {
+    .header {
+        background: #1a1a1a;
+        border-bottom-color: #333;
+    }
+    
+    .logo,
+    .iconHeader i,
+    .refreshBtn {
+        color: #ffffff;
+    }
+    
+    .iconHeader i:hover,
+    .refreshBtn:hover:not(:disabled),
+    .logo:hover {
+        color: #1877f2;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .loadingContainer p,
+    .right h1,
+    .noPosts h3,
+    .postStats h3 {
+        color: #ffffff;
+    }
+    
+    .right p,
+    .noPosts p {
+        color: #cccccc;
+    }
+    
+    .noPosts {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+        border-color: #333;
+    }
+    
+    .noPosts:hover {
+        border-color: #1877f2;
+        background: linear-gradient(135deg, rgba(24, 119, 242, 0.1), rgba(24, 119, 242, 0.05));
+    }
+    
+    .postStats {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+        border-color: #333;
+    }
+    
+    .postStats:hover {
+        border-color: #1877f2;
+    }
+    
+    .refreshingIndicator {
+        background: rgba(26, 26, 26, 0.98);
+    }
+    
+    .refreshingIndicator p {
+        color: #ffffff;
+    }
+}
+
+/* ===================== HIGH CONTRAST MODE ===================== */
+@media (prefers-contrast: high) {
+    .header {
+        border-bottom: 2px solid #000;
+    }
+    
+    .noPosts {
+        border-width: 3px;
+        border-color: #000;
+    }
+    
+    .postStats {
+        border-width: 2px;
+        border-color: #000;
+    }
+    
+    .errorMessage {
+        border-width: 2px;
+        border-color: #c33;
+    }
+}
+
+/* ===================== PRINT STYLES ===================== */
+@media print {
+    .header,
+    .refreshBtn,
+    .createPostIcon,
+    .iconHeader,
+    .refreshingIndicator,
+    .errorMessage .retryBtn {
+        display: none !important;
+    }
+    
+    .hyfeedContent {
+        padding: 0;
+        padding-top: 0;
+        display: block;
+    }
+    
+    .left,
+    .right {
+        flex: none;
+        width: 100%;
+    }
+    
+    .postsList {
+        gap: 20px;
+    }
+    
+    .noPosts {
+        border: 1px solid #000;
     }
 }

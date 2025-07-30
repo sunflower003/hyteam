@@ -1,0 +1,705 @@
+/* ===================== CREATE POST PAGE ===================== */
+.createPost {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    background: #fafafa;
+}
+
+.container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===================== HEADER ===================== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    background: linear-gradient(135deg, #1877f2, #42a5f5);
+    color: white;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: white;
+}
+
+.cancelBtn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.cancelBtn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ===================== FORM ===================== */
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===================== ERROR MESSAGE ===================== */
+.error {
+    background: linear-gradient(135deg, #fee, #fdd);
+    border-left: 4px solid #e74c3c;
+    color: #c0392b;
+    padding: 16px 24px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* ===================== UPLOAD SECTION ===================== */
+.uploadSection {
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #e0e0e0;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.uploadArea {
+    text-align: center;
+    padding: 80px 40px;
+    border: 3px dashed #dee2e6;
+    border-radius: 16px;
+    margin: 40px;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.uploadArea:hover {
+    border-color: #1877f2;
+    background: rgba(24, 119, 242, 0.02);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(24, 119, 242, 0.1);
+}
+
+.fileInput {
+    display: none;
+}
+
+.uploadLabel {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.2s ease;
+}
+
+.uploadLabel:hover .uploadIcon {
+    transform: scale(1.1);
+}
+
+.uploadIcon {
+    font-size: 80px;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+.uploadLabel p {
+    margin: 0;
+    font-size: 20px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.selectBtn {
+    background: linear-gradient(135deg, #1877f2, #42a5f5);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.selectBtn:hover {
+    background: linear-gradient(135deg, #166fe5, #2196f3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(24, 119, 242, 0.4);
+}
+
+.selectBtn:active {
+    transform: translateY(0);
+}
+
+/* ===================== PREVIEW SECTION ===================== */
+.previewSection {
+    padding: 40px;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.preview {
+    margin-bottom: 24px;
+    position: relative;
+    display: inline-block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.preview:hover {
+    transform: scale(1.02);
+}
+
+.previewImage {
+    max-width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    display: block;
+}
+
+.changeBtn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.changeBtn:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* ===================== DETAILS SECTION ===================== */
+.detailsSection {
+    padding: 32px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    border-left: 4px solid #1877f2;
+}
+
+.userAvatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.userAvatar:hover {
+    transform: scale(1.05);
+}
+
+.username {
+    font-weight: 700;
+    font-size: 16px;
+    color: #262626;
+}
+
+/* ===================== FORM FIELDS ===================== */
+.field {
+    margin-bottom: 24px;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 120px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.textarea:focus {
+    border-color: #1877f2;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1);
+}
+
+.input {
+    width: 100%;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.input:focus {
+    border-color: #1877f2;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1);
+}
+
+.charCount {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.hint {
+    display: block;
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 8px;
+    font-style: italic;
+    padding: 8px 12px;
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 6px;
+}
+
+/* ===================== SUBMIT BUTTON ===================== */
+.submitBtn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.submitBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #218838, #1ea080);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(40, 167, 69, 0.4);
+}
+
+.submitBtn:disabled {
+    background: #adb5bd;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.submitBtn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ===================== SPINNER ===================== */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===================== RESPONSIVE DESIGN ===================== */
+@media (max-width: 768px) {
+    .createPost {
+        padding: 12px;
+        background: white;
+    }
+    
+    .container {
+        border-radius: 8px;
+    }
+    
+    .header {
+        padding: 16px;
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+        text-align: center;
+    }
+    
+    .cancelBtn {
+        align-self: flex-start;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .uploadSection {
+        min-height: 400px;
+    }
+    
+    .uploadArea {
+        padding: 60px 20px;
+        margin: 20px;
+        border-width: 2px;
+    }
+    
+    .uploadIcon {
+        font-size: 60px;
+    }
+    
+    .uploadLabel p {
+        font-size: 16px;
+    }
+    
+    .selectBtn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    .previewSection {
+        padding: 20px;
+    }
+    
+    .preview {
+        margin-bottom: 16px;
+    }
+    
+    .previewImage {
+        max-height: 300px;
+    }
+    
+    .detailsSection {
+        padding: 20px;
+    }
+    
+    .userInfo {
+        gap: 12px;
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .userAvatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .username {
+        font-size: 14px;
+    }
+    
+    .field {
+        margin-bottom: 20px;
+    }
+    
+    .textarea {
+        min-height: 100px;
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    .input {
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    .submitBtn {
+        padding: 14px 24px;
+        font-size: 16px;
+        margin-top: 12px;
+    }
+    
+    .charCount {
+        font-size: 11px;
+        margin-top: 6px;
+    }
+    
+    .hint {
+        font-size: 12px;
+        margin-top: 6px;
+        padding: 6px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .createPost {
+        padding: 8px;
+    }
+    
+    .header {
+        padding: 12px;
+    }
+    
+    .header h1 {
+        font-size: 16px;
+    }
+    
+    .uploadArea {
+        padding: 40px 12px;
+        margin: 12px;
+    }
+    
+    .uploadIcon {
+        font-size: 48px;
+    }
+    
+    .uploadLabel p {
+        font-size: 14px;
+    }
+    
+    .selectBtn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .detailsSection {
+        padding: 16px;
+    }
+    
+    .textarea {
+        min-height: 80px;
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    .input {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    .submitBtn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    .userAvatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .username {
+        font-size: 13px;
+    }
+}
+
+/* ===================== ACCESSIBILITY ===================== */
+.uploadLabel:focus-within {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+}
+
+.textarea:focus,
+.input:focus,
+.submitBtn:focus,
+.cancelBtn:focus,
+.selectBtn:focus,
+.changeBtn:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+}
+
+/* ===================== DARK MODE SUPPORT ===================== */
+@media (prefers-color-scheme: dark) {
+    .createPost {
+        background: #121212;
+    }
+    
+    .container {
+        background: #1e1e1e;
+    }
+    
+    .uploadSection {
+        background: linear-gradient(135deg, #2a2a2a, #1e1e1e);
+    }
+    
+    .uploadArea {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #ffffff;
+    }
+    
+    .uploadArea:hover {
+        border-color: #1877f2;
+        background: rgba(24, 119, 242, 0.1);
+    }
+    
+    .uploadLabel p {
+        color: #ffffff;
+    }
+    
+    .previewSection,
+    .detailsSection {
+        background: #1e1e1e;
+    }
+    
+    .userInfo {
+        background: linear-gradient(135deg, #2a2a2a, #333);
+    }
+    
+    .username {
+        color: #ffffff;
+    }
+    
+    .textarea,
+    .input {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #ffffff;
+    }
+    
+    .textarea:focus,
+    .input:focus {
+        background: #333;
+        border-color: #1877f2;
+    }
+    
+    .textarea::placeholder,
+    .input::placeholder {
+        color: #aaa;
+    }
+    
+    .charCount,
+    .hint {
+        color: #aaa;
+    }
+    
+    .hint {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .changeBtn {
+        background: #555;
+        color: #ffffff;
+    }
+    
+    .changeBtn:hover {
+        background: #666;
+    }
+}
+
+/* ===================== HIGH CONTRAST MODE ===================== */
+@media (prefers-contrast: high) {
+    .container,
+    .uploadArea,
+    .textarea,
+    .input {
+        border: 2px solid #000;
+    }
+    
+    .header {
+        border-bottom: 2px solid #000;
+    }
+    
+    .uploadLabel p,
+    .username {
+        color: #000;
+    }
+    
+    .selectBtn,
+    .submitBtn {
+        border: 2px solid #000;
+    }
+}
+
+/* ===================== PRINT STYLES ===================== */
+@media print {
+    .createPost {
+        background: white;
+        padding: 0;
+    }
+    
+    .header {
+        background: white;
+        color: black;
+        border-bottom: 2px solid #000;
+    }
+    
+    .cancelBtn,
+    .selectBtn,
+    .changeBtn,
+    .submitBtn {
+        display: none;
+    }
+    
+    .container {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .preview {
+        box-shadow: none;
+    }
+    
+    .uploadArea {
+        display: none;
+    }
+}

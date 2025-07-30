@@ -1,0 +1,358 @@
+/* ===================== COMMENT LIST CONTAINER ===================== */
+.commentList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 0;
+}
+
+/* ===================== NO COMMENTS STATE ===================== */
+.noComments {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    margin: 16px 0;
+}
+
+.noCommentsIcon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+
+.noComments p {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.noComments span {
+    margin: 0;
+    font-size: 14px;
+    color: #8e8e8e;
+}
+
+/* ===================== COMMENT ITEM ===================== */
+.commentItem {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.commentItem:last-child {
+    border-bottom: none;
+}
+
+.commentItem:hover {
+    background-color: rgba(0, 0, 0, 0.01);
+    border-radius: 8px;
+    padding: 12px 8px;
+    margin: 0 -8px;
+}
+
+/* ===================== AVATAR ===================== */
+.avatarLink {
+    text-decoration: none;
+    display: block;
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.avatar:hover {
+    transform: scale(1.05);
+    border-color: rgba(24, 119, 242, 0.2);
+}
+
+/* ===================== COMMENT CONTENT ===================== */
+.commentContent {
+    flex: 1;
+    min-width: 0; /* Prevents flex item from overflowing */
+}
+
+.commentHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.username {
+    font-weight: 600;
+    font-size: 14px;
+    color: #262626;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.username:hover {
+    color: #1877f2;
+    text-decoration: underline;
+}
+
+.commentTime {
+    font-size: 12px;
+    color: #8e8e8e;
+    font-weight: normal;
+}
+
+.commentText {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #262626;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+/* ===================== COMMENT ACTIONS ===================== */
+.commentActions {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.actionBtn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8e8e8e;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.actionBtn:hover {
+    color: #262626;
+}
+
+.deleteBtn {
+    color: #ed4956;
+}
+
+.deleteBtn:hover {
+    color: #c13584;
+}
+
+.likesCount {
+    font-size: 12px;
+    color: #8e8e8e;
+    font-weight: 600;
+}
+
+/* ===================== RESPONSIVE DESIGN ===================== */
+@media (max-width: 768px) {
+    .commentList {
+        gap: 12px;
+        padding: 12px 0;
+    }
+    
+    .commentItem {
+        padding: 8px 0;
+    }
+    
+    .commentItem:hover {
+        padding: 8px 6px;
+        margin: 0 -6px;
+    }
+    
+    .avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .username {
+        font-size: 13px;
+    }
+    
+    .commentText {
+        font-size: 13px;
+    }
+    
+    .commentTime {
+        font-size: 11px;
+    }
+    
+    .actionBtn {
+        font-size: 11px;
+    }
+    
+    .commentActions {
+        gap: 12px;
+    }
+    
+    .noComments {
+        padding: 30px 16px;
+    }
+    
+    .noCommentsIcon {
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
+    
+    .noComments p {
+        font-size: 15px;
+    }
+    
+    .noComments span {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .commentHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .avatar {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .commentText {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    
+    .commentActions {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .actionBtn {
+        font-size: 10px;
+    }
+}
+
+/* ===================== ACCESSIBILITY ===================== */
+.commentItem:focus-within {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+.actionBtn:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.avatarLink:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+.username:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ===================== DARK MODE SUPPORT ===================== */
+@media (prefers-color-scheme: dark) {
+    .noComments {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .commentItem:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+    
+    .username,
+    .commentText {
+        color: #ffffff;
+    }
+    
+    .commentTime,
+    .actionBtn,
+    .likesCount {
+        color: #b3b3b3;
+    }
+    
+    .actionBtn:hover {
+        color: #ffffff;
+    }
+    
+    .noComments p {
+        color: #ffffff;
+    }
+    
+    .noComments span {
+        color: #b3b3b3;
+    }
+    
+    .avatar:hover {
+        border-color: rgba(24, 119, 242, 0.4);
+    }
+}
+
+/* ===================== HIGH CONTRAST MODE ===================== */
+@media (prefers-contrast: high) {
+    .commentItem {
+        border-bottom-width: 2px;
+        border-bottom-color: #000;
+    }
+    
+    .avatar {
+        border-width: 2px;
+        border-color: #000;
+    }
+    
+    .username {
+        color: #0000EE;
+    }
+    
+    .commentText,
+    .noComments p {
+        color: #000;
+    }
+    
+    .actionBtn {
+        color: #666;
+    }
+    
+    .deleteBtn {
+        color: #CC0000;
+    }
+}
+
+/* ===================== PRINT STYLES ===================== */
+@media print {
+    .commentActions {
+        display: none;
+    }
+    
+    .commentItem {
+        break-inside: avoid;
+        border-bottom: 1px solid #000;
+    }
+    
+    .avatar {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .noComments {
+        display: none;
+    }
+}

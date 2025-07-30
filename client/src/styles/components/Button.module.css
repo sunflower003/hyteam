@@ -1,0 +1,51 @@
+/* ===================== BUTTON COMPONENTS ===================== */
+.primaryBtn {
+    background: linear-gradient(135deg, #1877f2, #42a5f5);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(24, 119, 242, 0.2);
+}
+
+.primaryBtn:hover {
+    background: linear-gradient(135deg, #166fe5, #2196f3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.primaryBtn:active {
+    transform: translateY(0);
+}
+
+.secondaryBtn {
+    background: #f5f5f5;
+    color: #262626;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.secondaryBtn:hover {
+    background: #e0e0e0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

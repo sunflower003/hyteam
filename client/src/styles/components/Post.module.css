@@ -1,3 +1,4 @@
+/* ===================== ORIGINAL POST STYLES ===================== */
 .post {
     margin-top: 30px;
 }
@@ -7,13 +8,25 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-bottom: 30px;;
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.postCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .authorAndTime {
@@ -28,16 +41,35 @@
     border-radius: 50%;
     object-fit: cover;
     object-position: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.avatar:hover {
+    transform: scale(1.05);
 }
 
 .authorName {
     font-size: 14px;
     font-weight: 600;
+    color: #262626;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.authorName:hover {
+    text-decoration: underline;
 }
 
 .postTime {
     font-size: 14px;
-    color: var(--grey);
+    color: var(--grey, #8e8e8e);
+}
+
+/* ===================== MEDIA CONTAINER ===================== */
+.mediaContainer {
+    position: relative;
+    width: 100%;
 }
 
 .postImage {
@@ -45,18 +77,48 @@
     aspect-ratio: 4/5;
     object-fit: cover;
     object-position: center;
-    border-radius: 5px;
+    border-radius: 0;
+    display: block;
+    cursor: pointer;
 }
 
+.postMedia {
+    width: 100%;
+    height: auto;
+    max-height: 600px;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+}
+
+/* Video specific styles */
+.postVideo {
+    width: 100%;
+    height: auto;
+    max-height: 600px;
+    object-fit: cover;
+    display: block;
+}
+
+/* ===================== POST ACTIONS ===================== */
 .buttons {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 12px 16px;
 }
 
 .buttons i {
     font-size: 26px;
     cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.buttons i:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.1);
 }
 
 .buttonList {
@@ -65,53 +127,457 @@
     align-items: center;
 }
 
+/* Action buttons specific styles */
+.actionBtn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actionBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.1);
+}
+
+.actionBtn.liked {
+    animation: likeAnimation 0.3s ease;
+}
+
+@keyframes likeAnimation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* ===================== POST STATS & CONTENT ===================== */
+.postStats {
+    padding: 0 16px;
+}
+
 .postLike {
     font-size: 14px;
     font-weight: 600;
+    color: #262626;
+    margin: 0;
+}
+
+.postContent {
+    padding: 8px 16px;
 }
 
 .postCaption {
     display: flex;
     gap: 5px;
-    align-items: center;
+    align-items: flex-start;
+    margin: 0;
+    line-height: 1.4;
 }
 
 .captionAuthor {
     font-size: 14px;
     font-weight: 600;
+    color: #262626;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.captionAuthor:hover {
+    text-decoration: underline;
 }
 
 .captionText {
     font-size: 14px;
+    color: #262626;
+    flex: 1;
+    word-wrap: break-word;
+}
+
+/* ===================== TAGS & LOCATION ===================== */
+.tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    color: #1877f2;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.tag:hover {
+    text-decoration: underline;
+}
+
+.location {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--grey, #8e8e8e);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ===================== COMMENTS SECTION ===================== */
+.commentsSection {
+    padding: 0 16px;
 }
 
 .allComments {
     font-size: 14px;
-    color: var(--grey);
+    color: var(--grey, #8e8e8e);
     cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 8px 0;
+}
+
+.allComments:hover {
+    color: #262626;
+}
+
+.commentsPreview {
+    margin: 8px 0;
+}
+
+.commentItem {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.commentAuthor {
+    font-weight: 600;
+    color: #262626;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.commentAuthor:hover {
+    text-decoration: underline;
+}
+
+.commentText {
+    color: #262626;
+    flex: 1;
+    word-wrap: break-word;
+}
+
+.commentTime {
+    font-size: 12px;
+    color: var(--grey, #8e8e8e);
+    margin-left: auto;
+}
+
+/* ===================== COMMENT INPUT ===================== */
+.commentInputContainer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid #f0f0f0;
 }
 
 .commentInput {
     background-color: transparent;
     border: none;
     outline: none;
+    flex: 1;
+    font-size: 14px;
+    color: #262626;
 }
 
 .commentInput::placeholder {
     font-size: 14px;
-    color: var(--grey);
+    color: var(--grey, #8e8e8e);
 }
 
+.commentSubmit {
+    background: none;
+    border: none;
+    color: #1877f2;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.commentSubmit:hover {
+    opacity: 0.7;
+}
+
+.commentSubmit:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ===================== POST OPTIONS ===================== */
+.postOptions {
+    position: relative;
+}
+
+.optionsBtn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.optionsBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.optionsMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.optionItem {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.optionItem:hover {
+    background-color: #f5f5f5;
+}
+
+.optionItem.danger {
+    color: #e74c3c;
+}
+
+.optionItem.danger:hover {
+    background-color: #ffeaea;
+}
+
+/* ===================== LOADING & ERROR STATES ===================== */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1877f2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px;
+    text-align: center;
+    color: #c33;
+}
+
+/* ===================== BORDERS ===================== */
 .borderBottom {
-    border-bottom: 1px solid var(--grey);
+    border-bottom: 1px solid var(--grey, #e0e0e0);
 }
 
+/* ===================== RESPONSIVE DESIGN ===================== */
 @media (max-width: 768px) {
     .postCard {
-        padding: 0
+        padding: 0;
+        margin-bottom: 20px;
+        border-radius: 0;
+    }
+    
+    .header {
+        padding: 12px;
+    }
+    
+    .buttons {
+        padding: 8px 12px;
+    }
+    
+    .buttons i {
+        font-size: 22px;
+    }
+    
+    .postStats,
+    .postContent,
+    .commentsSection {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    
+    .commentInputContainer {
+        padding: 8px 12px;
+    }
+    
+    .location {
+        padding: 8px 12px;
     }
     
     .borderBottom {
         border-bottom: none;
+    }
+    
+    .postImage,
+    .postMedia {
+        aspect-ratio: 1/1;
+    }
+    
+    .actionBtn {
+        font-size: 18px;
+        padding: 6px;
+    }
+    
+    .buttonList {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .postCard {
+        margin-bottom: 16px;
+    }
+    
+    .header {
+        padding: 10px;
+    }
+    
+    .avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .authorName,
+    .postTime,
+    .postLike,
+    .captionText,
+    .allComments {
+        font-size: 13px;
+    }
+    
+    .buttons i {
+        font-size: 20px;
+    }
+    
+    .actionBtn {
+        font-size: 16px;
+        padding: 4px;
+    }
+    
+    .buttonList {
+        gap: 10px;
+    }
+    
+    .postStats,
+    .postContent,
+    .commentsSection {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .commentInputContainer {
+        padding: 6px 10px;
+    }
+}
+
+/* ===================== ACCESSIBILITY ===================== */
+.postCard:focus-within {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+}
+
+.actionBtn:focus,
+.optionsBtn:focus,
+.commentSubmit:focus {
+    outline: 2px solid #1877f2;
+    outline-offset: 2px;
+}
+
+.commentInput:focus {
+    outline: none;
+    border-bottom: 1px solid #1877f2;
+}
+
+/* ===================== DARK MODE SUPPORT ===================== */
+@media (prefers-color-scheme: dark) {
+    .postCard {
+        background: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .header {
+        border-bottom-color: #333;
+    }
+    
+    .authorName,
+    .captionAuthor,
+    .commentAuthor,
+    .captionText,
+    .commentText {
+        color: #ffffff;
+    }
+    
+    .commentInputContainer {
+        border-top-color: #333;
+    }
+    
+    .optionsMenu {
+        background: #1a1a1a;
+        border-color: #333;
+    }
+    
+    .optionItem:hover {
+        background-color: #333;
+    }
+}
+
+/* ===================== PRINT STYLES ===================== */
+@media print {
+    .postCard {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .buttons,
+    .commentInputContainer,
+    .optionsBtn {
+        display: none;
     }
 }

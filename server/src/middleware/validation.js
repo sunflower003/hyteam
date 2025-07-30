@@ -47,3 +47,69 @@ module.exports = {
   validateRoom,
   handleValidationErrors
 };
+// Post validations
+const validateCreatePost = (req, res, next) => {
+    const { content } = req.body;
+    
+    if (!req.file && !content) {
+        return res.status(400).json({
+            success: false,
+            message: 'Either image or content is required',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    if (content && content.length > 2200) {
+        return res.status(400).json({
+            success: false,
+            message: 'Content must not exceed 2200 characters',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    next();
+};
+
+const validateUpdatePost = (req, res, next) => {
+    const { content } = req.body;
+    
+    if (content && content.length > 2200) {
+        return res.status(400).json({
+            success: false,
+            message: 'Content must not exceed 2200 characters',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    next();
+};
+
+const validateComment = (req, res, next) => {
+    const { content } = req.body;
+    
+    if (!content || content.trim().length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Comment content is required',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    if (content.length > 500) {
+        return res.status(400).json({
+            success: false,
+            message: 'Comment must not exceed 500 characters',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    next();
+};
+
+// Export thêm các validation mới
+module.exports = {
+    ...module.exports, // Giữ lại exports hiện tại
+    validateCreatePost,
+    validateUpdatePost,
+    validateComment
+};

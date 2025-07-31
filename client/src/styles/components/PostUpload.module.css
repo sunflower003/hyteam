@@ -1,0 +1,464 @@
+/* PostUpload.module.css - Instagram-style Post Upload Component */
+
+.uploadOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.uploadContainer {
+  background: #000;
+  border-radius: 12px;
+  width: 90vw;
+  max-width: 1024px;
+  height: 90vh;
+  max-height: 768px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #262626;
+  background: #000;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.nextButton,
+.shareButton {
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.nextButton:hover,
+.shareButton:hover {
+  opacity: 0.7;
+}
+
+.shareButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Step 1: Upload Area */
+.uploadArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  text-align: center;
+  padding: 40px;
+}
+
+.uploadIcon {
+  font-size: 96px;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+
+.uploadTitle {
+  font-size: 20px;
+  font-weight: 300;
+  margin: 0 0 24px 0;
+  color: #fff;
+}
+
+.selectButton {
+  background: #0095f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.selectButton:hover {
+  background: #1877f2;
+}
+
+/* Step 2: Edit Area */
+.editArea {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  padding: 20px;
+}
+
+.previewContainer {
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewImage,
+.previewVideo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Step 3: Details Area */
+.detailsArea {
+  flex: 1;
+  display: flex;
+  background: #000;
+}
+
+.previewSection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  padding: 20px;
+}
+
+.finalPreview {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.detailsSection {
+  width: 340px;
+  border-left: 1px solid #262626;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #262626;
+}
+
+.userAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarDefault {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.username {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.captionSection {
+  padding: 16px;
+  border-bottom: 1px solid #262626;
+}
+
+.captionInput {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.captionInput::placeholder {
+  color: #8e8e8e;
+}
+
+.captionCount {
+  color: #8e8e8e;
+  font-size: 12px;
+  text-align: right;
+  margin-top: 8px;
+}
+
+.locationSection {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #262626;
+  gap: 12px;
+}
+
+.locationInput {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.locationInput::placeholder {
+  color: #8e8e8e;
+}
+
+.locationSection i {
+  color: #8e8e8e;
+  font-size: 16px;
+}
+
+.accessibilitySection,
+.advancedSection {
+  padding: 16px;
+  border-bottom: 1px solid #262626;
+}
+
+.sectionTitle {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.altTextSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.altTextSection span {
+  color: #fff;
+  font-size: 14px;
+}
+
+.altTextInput {
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-size: 14px;
+  outline: none;
+  text-align: right;
+  width: 120px;
+}
+
+.altTextInput::placeholder {
+  color: #8e8e8e;
+}
+
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settingItem span {
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #262626;
+  transition: 0.2s;
+  border-radius: 24px;
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #fff;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+.toggle input:checked + .toggleSlider {
+  background-color: #0095f6;
+}
+
+.toggle input:checked + .toggleSlider:before {
+  transform: translateX(20px);
+}
+
+/* Footer */
+.footer {
+  padding: 12px 16px;
+  border-top: 1px solid #262626;
+  background: #000;
+  display: flex;
+  justify-content: center;
+}
+
+.discardButton {
+  background: none;
+  border: none;
+  color: #ed4956;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.discardButton:hover {
+  opacity: 0.7;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .uploadContainer {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .detailsArea {
+    flex-direction: column;
+  }
+
+  .previewSection {
+    height: 50%;
+  }
+
+  .detailsSection {
+    width: 100%;
+    height: 50%;
+    border-left: none;
+    border-top: 1px solid #262626;
+  }
+
+  .uploadArea {
+    padding: 20px;
+  }
+
+  .uploadIcon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+
+  .uploadTitle {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 14px;
+  }
+
+  .header {
+    padding: 8px 12px;
+  }
+
+  .uploadIcon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .uploadTitle {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .uploadArea {
+    padding: 16px;
+  }
+}

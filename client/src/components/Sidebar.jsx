@@ -1,13 +1,28 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import PostUpload from './PostUpload';
 import styles from '../styles/components/Sidebar.module.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [showPostUpload, setShowPostUpload] = useState(false);
 
   const handleNavigation = (path) => {
     navigate(path);
+  };
+
+  const handleCreatePost = () => {
+    setShowPostUpload(true);
+  };
+
+  const handlePostUpload = (newPost) => {
+    // Refresh feed or handle new post
+    console.log('New post created:', newPost);
+    setShowPostUpload(false);
+    // Optionally navigate to home feed
+    navigate('/');
   };
 
   const handleLogout = () => {
@@ -68,7 +83,7 @@ const Sidebar = () => {
           <li className={styles.link} onClick={() => handleNavigation('/notifications')}>
             <i className="ri-notification-2-line"></i> Notification
           </li>
-          <li className={styles.link} onClick={() => handleNavigation('/create')}>
+          <li className={styles.link} onClick={handleCreatePost}>
             <i className="ri-add-box-line"></i> Add
           </li>
           <li className={styles.link} onClick={() => handleNavigation('/chat')}>
@@ -108,6 +123,13 @@ const Sidebar = () => {
           {renderAvatar(user, styles.avatarCircle)}
         </div>
       </div>
+
+      {/* Post Upload Modal */}
+      <PostUpload
+        isOpen={showPostUpload}
+        onClose={() => setShowPostUpload(false)}
+        onUpload={handlePostUpload}
+      />
     </>
   );
 };

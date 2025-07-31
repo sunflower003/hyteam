@@ -27,6 +27,45 @@ const storySchema = new mongoose.Schema({
     enum: ['image', 'video'],
     required: true
   },
+
+  // Metadata cho file
+  mediaMetadata: {
+    originalName: String,
+    fileSize: Number,
+    dimensions: {
+      width: Number,
+      height: Number
+    },
+    publicId: String // For Cloudinary
+  },
+
+  // Thời gian hiển thị (10s, 15s, 30s)
+  duration: {
+    type: Number,
+    enum: [10, 15, 30],
+    default: 15,
+    required: true
+  },
+
+  // Filters và effects
+  filters: {
+    brightness: { type: Number, default: 0, min: -100, max: 100 },
+    contrast: { type: Number, default: 0, min: -100, max: 100 },
+    saturation: { type: Number, default: 0, min: -100, max: 100 },
+    blur: { type: Number, default: 0, min: 0, max: 10 },
+    vintage: { type: Boolean, default: false },
+    blackAndWhite: { type: Boolean, default: false }
+  },
+
+  // Text overlays
+  textOverlays: [{
+    text: { type: String, maxLength: 100 },
+    x: { type: Number, default: 0 }, // position
+    y: { type: Number, default: 0 },
+    fontSize: { type: Number, default: 24, min: 12, max: 48 },
+    color: { type: String, default: '#FFFFFF' },
+    fontFamily: { type: String, default: 'Arial' }
+  }],
   
   // Danh sách người đã xem story
   viewers: [{

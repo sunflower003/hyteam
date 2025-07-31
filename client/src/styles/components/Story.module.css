@@ -6,7 +6,6 @@
     gap: 15px;
     padding: 10px 0;
 }
-
 .storyImage {
     display: grid;
     place-items: center;
@@ -15,7 +14,6 @@
     border-radius: 50%;
     padding: 2px;
 }
-
 .storyItem {
     display: flex;
     flex-direction: column;
@@ -24,7 +22,6 @@
     cursor: pointer;
     transition: transform 0.2s ease;
 }
-
 .addStoryItem {
     display: flex;
     flex-direction: column;
@@ -33,9 +30,6 @@
     cursor: pointer;
     transition: transform 0.2s ease;
 }
-
-
-
 .addStoryCircle {
     width: 65px;
     height: 65px;
@@ -47,17 +41,14 @@
     background: #f8f9fa;
     transition: all 0.2s ease;
 }
-
 .addStoryCircle:hover {
     border-color: #667eea;
     background: #f0f4ff;
 }
-
 .addStoryCircle i {
     font-size: 24px;
     color: #667eea;
 }
-
 .addStoryText {
     font-size: 13px;
     color: #667eea;
@@ -67,8 +58,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-
 .storyAuthor {
     font-size: 13px;
     white-space: nowrap;
@@ -76,19 +65,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
 .new {
     background: linear-gradient(90deg, #d53369 0%, #daae51 100%);
 }
-
 .watched {
     background: linear-gradient(90deg, #e3ffe7 0%, #d9e7ff 100%);
 }
-
 .none {
     background: transparent;
 }
-
 .avatar {
     width: 60px;
     height: 60px;
@@ -97,7 +82,6 @@
     object-position: center;
     border: 3px solid white;
 }
-
 .avatarDefault {
     display: flex;
     align-items: center;
@@ -107,7 +91,6 @@
     font-size: 24px;
     text-transform: uppercase;
 }
-
 .loadingUsers {
     display: flex;
     align-items: center;
@@ -115,7 +98,6 @@
     padding: 20px;
     color: #666;
 }
-
 .viewStory {
     position: fixed;
     top: 0;
@@ -127,28 +109,22 @@
     overflow: hidden;
     z-index: 9999;
 }
-
-
 .header {
     color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
-
 .logo {
     font-family: 'Open Sans', sans-serif;
     font-size: 25px;
     font-weight: 800;
     cursor: pointer;
 }
-
 .close {
     font-size: 25px;
     cursor: pointer;
 }
-
-
 .player {
     position: absolute;
     top: 0;
@@ -160,7 +136,6 @@
     height: 100vh;
     padding: 15px 0;
 }
-
 .player > i {
     font-size: 30px;
     cursor: pointer;
@@ -168,9 +143,6 @@
     transition: all 0.2s ease;
     user-select: none;
 }
-
-
-
 .content {
     width: 385px;
     height: 100%;
@@ -184,7 +156,6 @@
     cursor: pointer;
     user-select: none;
 }
-
 .overlay {
     position: absolute;
     left: 0;
@@ -193,17 +164,14 @@
     z-index: 1;
     pointer-events: none;
 }
-
 .top {
     top: 0;
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
 }
-
 .bottom {
     bottom: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
 }
-
 .progressBar {
     width: 100%;
     height: 2.5px;
@@ -213,25 +181,21 @@
     overflow: hidden;
     z-index: 10;
 }
-
 .progressFill {
     height: 100%;
     background-color: white;
     border-radius: 2px;
     transition: width 0.1s ease-out;
 }
-
 .contentHeader {
     position: relative;
 }
-
 .authorAndButton {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-top: 10px;
 }
-
 .author {
     cursor: pointer;
     display: flex;
@@ -240,17 +204,14 @@
     gap: 10px;
     z-index: 100;
 }
-
 .authorName {
     font-size: 14px;
     color: white;
 }
-
 .timeAgo {
     font-size: 14px;
     color: var(--grey);
 }
-
 .avatarAuthor {
     width: 35px;
     height: 35px;
@@ -258,7 +219,6 @@
     object-fit: cover;
     object-position: center;
 }
-
 .actionButtons {
     display: flex;
     align-items: center;
@@ -266,7 +226,6 @@
     z-index: 1001;
     position: relative;
 }
-
 .actionButtons i {
     font-size: 25px;
     cursor: pointer;
@@ -274,8 +233,6 @@
     z-index: 1001;
     position: relative;
 }
-
-
 .contentFooter {
     display: flex;
     align-items: center;
@@ -283,11 +240,9 @@
     gap: 10px;
     z-index: 100;
 }
-
 .answer {
     flex-grow: 1;
 }
-
 textarea {
     height: 36px;
     width: 100%;
@@ -300,21 +255,17 @@ textarea {
     outline: none;
     padding: 8px 14px;
 }
-
 textarea::placeholder {
     color: white;
 }
-
 .contentFooter > i {
     font-size: 25px;
     cursor: pointer;
     color: white;
 }
-
 .contentFooter > i:hover {
     color: var(--grey-2);
 }
-
 .mobileCloseBtn {
     position: absolute;
     top: -5px;
@@ -329,14 +280,84 @@ textarea::placeholder {
     cursor: pointer;
     z-index: 1000;
 }
-
 .mobileCloseBtn i {
     color: white;
     font-size: 18px;
 }
 
+/* ================================ */
+/* PROGRESS BAR ENHANCEMENTS */
+/* ================================ */
+
+.progressContainer {
+    display: flex;
+    gap: 2px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.progressSegment {
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 1.5px;
+    overflow: hidden;
+}
+
+.progressSegment .progressFill {
+    height: 100%;
+    background: white;
+    transition: width 0.1s linear;
+    border-radius: 1.5px;
+}
+
+/* ================================ */
+/* TEXT OVERLAY STYLES */
+/* ================================ */
+
+.textOverlay {
+    position: absolute;
+    white-space: nowrap;
+    user-select: none;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    font-weight: 600;
+    z-index: 2;
+}
+
+/* ================================ */
+/* STORY CONTENT */
+/* ================================ */
+
+.storyContent {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 12px 16px;
+    border-radius: 8px;
+    z-index: 3;
+}
+
+.storyContent p {
+    margin: 0;
+    color: white;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* ================================ */
+/* AUTHOR INFO ENHANCEMENTS */
+/* ================================ */
+
+.authorInfo {
+    display: flex;
+    flex-direction: column;
+    margin-left: 8px;
+}
+
 @media (max-width: 768px) {
-    /* 
+    /*
     Thêm width: calc(100vw - 30px) và padding: 10px 15px để container có kích thước cố định
     */
     .story {
@@ -350,12 +371,11 @@ textarea::placeholder {
         padding: 10px 15px;
         width: calc(100vw - 30px);
     }
-    
+
     .story::-webkit-scrollbar {
         display: none;
     }
-
-    /* 
+    /*
     Sử dụng calc(20vw - 10px) để mỗi item chiếm 20% viewport width, có nghĩa là sẽ có 5 story hiển thị trên 1 màn hình
     */
     .storyItem,
@@ -365,7 +385,7 @@ textarea::placeholder {
         width: calc(20vw - 10px);
         max-width: 70px;
     }
-    
+
     .storyAuthor,
     .addStoryText {
         font-size: 10px;
@@ -374,7 +394,6 @@ textarea::placeholder {
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
     .addStoryCircle {
         width: 60px;
         height: 60px;
@@ -385,31 +404,25 @@ textarea::placeholder {
         justify-content: center;
         background: #f8f9fa;
     }
-
     .addStoryCircle i {
         font-size: 20px;
     }
-
     /* Đảm bảo avatar story và add story có cùng kích thước */
     .avatar {
         width: 56px;
         height: 56px;
         border: 2px solid white;
     }
-
     .storyImage {
         width: 60px;
         height: 60px;
     }
-
     .viewStory {
         padding: 0;
     }
-
     .header {
         display: none;
     }
-
     .player {
         width: 100vw;
         height: 100vh;
@@ -419,11 +432,9 @@ textarea::placeholder {
         transform: none;
         gap: 0;
     }
-
     .player > i {
         display: none; /* Ẩn icon next/prev */
     }
-
     .content {
         width: 100vw;
         height: 100vh;
@@ -432,7 +443,6 @@ textarea::placeholder {
         padding: 15px;
         position: relative;
     }
-
     /* Touch areas for navigation */
     .content::before,
     .content::after {
@@ -444,17 +454,14 @@ textarea::placeholder {
         z-index: 999;
         background: transparent;
     }
-
     /* Left side for prev */
     .content::before {
         left: 0;
     }
-
     /* Right side for next */
     .content::after {
         right: 0;
     }
-
     /* Close button inside content for mobile */
     .contentHeader {
         position: relative;

@@ -10,73 +10,114 @@ const Story = () => {
   /*  STATE                                                              */
   /* ------------------------------------------------------------------ */
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState([]); // ← NEW: Danh sách tất cả users
+  const [users, setUsers] = useState([]);
+  const [allStories, setAllStories] = useState([]); // ← NEW: All story data from API
   const [isViewingStory, setIsViewingStory]   = useState(false);
   const [currentStoryIndex, setCurrentStory]  = useState(0);
+  const [currentStoryInGroup, setCurrentStoryInGroup] = useState(0); // ← NEW: current story in user's stories
   const [progress, setProgress]               = useState(0);
   const [isPaused, setIsPaused]               = useState(false);
-  const [isManuallyPaused, setIsManuallyPaused] = useState(false); // ← NEW: track manual pause
+  const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isMobile, setIsMobile]               = useState(false);
-  const [showUpload, setShowUpload]           = useState(false); // ← NEW
-  const [loading, setLoading]                 = useState(true); // ← NEW: loading state
+  const [showUpload, setShowUpload]           = useState(false);
+  const [loading, setLoading]                 = useState(true);
 
-  /* Danh sách story (mock) – sau này bạn thay bằng data từ API */
-  const [stories, setStories] = useState([
-    { id: 1, author: 'duongqua',      avatar: '/img/duongqua.jpg', image: '/img/duongqua.jpg', time: '1 hour', status: 'new'     },
-    { id: 2, author: 'duongqua',      avatar: '/img/duongqua.jpg', image: '/img/duongqua.jpg', time: '2 hours', status: 'new'     },
-    { id: 3, author: 'duongqua',      avatar: '/img/duongqua.jpg', image: '/img/duongqua.jpg', time: '3 hours', status: 'watched' },
-    { id: 4, author: 'duongqua',      avatar: '/img/duongqua.jpg', image: '/img/duongqua.jpg', time: '4 hours', status: 'watched' },
-    { id: 5, author: 'duongqua',      avatar: '/img/duongqua.jpg', image: '/img/duongqua.jpg', time: '5 hours', status: 'none'    },
-    { id: 6, author: 'duongquagavcl', avatar: '/img/duongqua.jpg', image: '/img/duongqua.jpg', time: '6 hours', status: 'none'    }
-  ]);
-
-  const fileInputRef = useRef(null); // fallback nếu cần upload file thô
+  const fileInputRef = useRef(null);
 
   /* ------------------------------------------------------------------ */
-  /*  FETCH USERS                                                        */
+  /*  FETCH STORIES FROM API                                            */
   /* ------------------------------------------------------------------ */
-  const fetchAllUsers = async () => {
+  const fetchAllStories = async () => {
     try {
       setLoading(true);
-      // Lấy tất cả users từ API
-      const response = await api.get('/api/profile/users');
-      if (response.data.success) {
-        const allUsers = response.data.data.users;
-        console.log('Fetched users:', allUsers);
-        
-        // Tạm thời set hasStory ngẫu nhiên để demo
-        // Sau này sẽ có API riêng để check user nào có story
-        const usersWithStoryStatus = allUsers.map((user, index) => ({
-          ...user,
-          hasStory: index % 3 === 0, // Mỗi user thứ 3 có story
-          storyStatus: index % 3 === 0 ? (index % 2 === 0 ? 'new' : 'watched') : 'none'
-        }));
-        
-        // Sắp xếp theo ưu tiên: chưa xem (new) -> đã xem (watched) -> không có story (none)
-        const sortedUsers = usersWithStoryStatus.sort((a, b) => {
-          const priorityOrder = { 'new': 0, 'watched': 1, 'none': 2 };
-          return priorityOrder[a.storyStatus] - priorityOrder[b.storyStatus];
-        });
-        
-        setUsers(sortedUsers);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      // Fallback với empty array nếu API fail - cũng sắp xếp theo priority
-      const fallbackUsers = [
-        { _id: 'user1', username: 'duongqua', avatar: '/img/duongqua.jpg', hasStory: true, storyStatus: 'new' },
-        { _id: 'user3', username: 'user3', avatar: '/img/duongqua.jpg', hasStory: true, storyStatus: 'watched' },
-        { _id: 'user2', username: 'user2', avatar: '/img/duongqua.jpg', hasStory: false, storyStatus: 'none' },
-        { _id: 'user4', username: 'user4', avatar: '/img/duongqua.jpg', hasStory: false, storyStatus: 'none' },
-      ];
       
-      // Sắp xếp fallback data cũng theo priority
-      const sortedFallback = fallbackUsers.sort((a, b) => {
+      // Fetch all users first
+      const usersResponse = await api.get('/api/profile/users');
+      if (!usersResponse.data.success) {
+        throw new Error('Failed to fetch users');
+      }
+      
+      const allUsers = usersResponse.data.data.users;
+      
+      // Fetch stories from API
+      const storiesResponse = await api.get('/api/stories');
+      let storiesWithUsers = [];
+      
+      if (storiesResponse.data.success) {
+        storiesWithUsers = storiesResponse.data.data.stories;
+        setAllStories(storiesWithUsers);
+        console.log('Fetched stories:', storiesWithUsers);
+      }
+
+      // Merge all users with story data
+      const usersWithStoryData = allUsers.map(user => {
+        // Tìm story data cho user này
+        const userStoryData = storiesWithUsers.find(storyGroup => 
+          storyGroup.user._id === user._id
+        );
+        
+        if (userStoryData) {
+          // User có story - sử dụng data từ API
+          return {
+            ...user,
+            hasStory: true,
+            storyStatus: userStoryData.storyStatus,
+            stories: userStoryData.stories
+          };
+        } else {
+          // User chưa có story
+          return {
+            ...user,
+            hasStory: false,
+            storyStatus: 'none',
+            stories: []
+          };
+        }
+      });
+
+      // Sort users theo priority: new stories > watched stories > no stories
+      const sortedUsers = usersWithStoryData.sort((a, b) => {
         const priorityOrder = { 'new': 0, 'watched': 1, 'none': 2 };
         return priorityOrder[a.storyStatus] - priorityOrder[b.storyStatus];
       });
       
-      setUsers(sortedFallback);
+      setUsers(sortedUsers);
+      
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+      
+      // Fallback: still show users even if stories API fails
+      try {
+        const usersResponse = await api.get('/api/profile/users');
+        if (usersResponse.data.success) {
+          const allUsers = usersResponse.data.data.users.map(user => ({
+            ...user,
+            hasStory: false,
+            storyStatus: 'none',
+            stories: []
+          }));
+          setUsers(allUsers);
+        }
+      } catch (userError) {
+        console.error('Error fetching users:', userError);
+        // Complete fallback với current user
+        const currentUserData = currentUser ? {
+          _id: currentUser._id || 'current',
+          username: currentUser.username || 'You',
+          avatar: currentUser.avatar || '/img/duongqua.jpg',
+          hasStory: false,
+          storyStatus: 'none',
+          stories: []
+        } : null;
+        
+        const fallbackUsers = [
+          ...(currentUserData ? [currentUserData] : []),
+          { _id: 'user1', username: 'duongqua', avatar: '/img/duongqua.jpg', hasStory: false, storyStatus: 'none', stories: [] },
+          { _id: 'user2', username: 'user2', avatar: '/img/duongqua.jpg', hasStory: false, storyStatus: 'none', stories: [] },
+        ];
+        setUsers(fallbackUsers);
+      }
+      setAllStories([]);
     } finally {
       setLoading(false);
     }
@@ -86,7 +127,7 @@ const Story = () => {
   /*  RESPONSIVE CHECK                                                   */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
-    fetchAllUsers();
+    fetchAllStories();
   }, []);
 
   useEffect(() => {
@@ -102,51 +143,123 @@ const Story = () => {
   useEffect(() => {
     let interval;
     if (isViewingStory && !isPaused && !isManuallyPaused) {
+      const usersWithStories = users.filter(user => user.hasStory);
+      const currentUser = usersWithStories[currentStoryIndex];
+      const currentStory = currentUser?.stories[currentStoryInGroup];
+      const duration = currentStory?.duration || 15; // Default 15s
+      
       interval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
-            handleNextStory();
+            handleNextStoryInSequence();
             return 0;
           }
-          return prev + 1;
+          return prev + (100 / (duration * 10)); // Update every 100ms
         });
-      }, 150);
+      }, 100);
     }
     return () => clearInterval(interval);
-  }, [isViewingStory, currentStoryIndex, isPaused, isManuallyPaused]);
+  }, [isViewingStory, currentStoryIndex, currentStoryInGroup, isPaused, isManuallyPaused]);
 
   /* ------------------------------------------------------------------ */
   /*  VIEW / NAVIGATE STORY                                              */
   /* ------------------------------------------------------------------ */
-  const openStory  = (userIndex) => { 
-    // Tìm index trong danh sách users có story
+  const openStory = async (userIndex) => { 
     const usersWithStories = users.filter(user => user.hasStory);
     const targetUser = users[userIndex];
     const storyIndex = usersWithStories.findIndex(user => user._id === targetUser._id);
     
-    setCurrentStory(storyIndex >= 0 ? storyIndex : 0); 
-    setIsViewingStory(true); 
-    setProgress(0); 
-  };
-  const closeStory = ()      => { setIsViewingStory(false); setProgress(0); setIsPaused(false);   };
+    setCurrentStory(storyIndex >= 0 ? storyIndex : 0);
+    setCurrentStoryInGroup(0); // Start with first story in group
+    setIsViewingStory(true);
+    setProgress(0);
 
-  const handleNextStory = () => {
-    const usersWithStories = users.filter(user => user.hasStory);
-    if (currentStoryIndex < usersWithStories.length - 1) {
-      setCurrentStory(idx => idx + 1);
-      setProgress(0);
-    } else {
-      closeStory();
+    // Mark first story as viewed
+    const firstStoryId = targetUser.stories[0]?._id;
+    if (firstStoryId) {
+      markStoryAsViewed(firstStoryId);
     }
   };
+
+  const closeStory = () => { 
+    setIsViewingStory(false); 
+    setProgress(0); 
+    setIsPaused(false);
+    setCurrentStoryInGroup(0);
+  };
+
+  const handleNextStoryInSequence = async () => {
+    const usersWithStories = users.filter(user => user.hasStory);
+    const currentUser = usersWithStories[currentStoryIndex];
+    
+    // Check if there are more stories for current user
+    if (currentStoryInGroup < currentUser.stories.length - 1) {
+      // Move to next story of same user
+      setCurrentStoryInGroup(prev => prev + 1);
+      setProgress(0);
+      
+      // Mark as viewed
+      const nextStoryId = currentUser.stories[currentStoryInGroup + 1]?._id;
+      if (nextStoryId) {
+        markStoryAsViewed(nextStoryId);
+      }
+    } else {
+      // Move to next user's stories
+      if (currentStoryIndex < usersWithStories.length - 1) {
+        setCurrentStory(idx => idx + 1);
+        setCurrentStoryInGroup(0);
+        setProgress(0);
+        
+        // Mark first story of next user as viewed
+        const nextUser = usersWithStories[currentStoryIndex + 1];
+        const firstStoryId = nextUser?.stories[0]?._id;
+        if (firstStoryId) {
+          markStoryAsViewed(firstStoryId);
+        }
+      } else {
+        closeStory();
+      }
+    }
+  };
+
+  const handlePrevStoryInSequence = () => {
+    if (currentStoryInGroup > 0) {
+      // Previous story of same user
+      setCurrentStoryInGroup(prev => prev - 1);
+      setProgress(0);
+    } else if (currentStoryIndex > 0) {
+      // Previous user's last story
+      const usersWithStories = users.filter(user => user.hasStory);
+      const prevUser = usersWithStories[currentStoryIndex - 1];
+      setCurrentStory(idx => idx - 1);
+      setCurrentStoryInGroup(prevUser.stories.length - 1);
+      setProgress(0);
+    }
+  };
+
   const handlePlayPause = () => {
     setIsManuallyPaused(prev => !prev);
   };
 
-  const handlePrevStory = () => {
-    if (currentStoryIndex > 0) {
-      setCurrentStory(idx => idx - 1);
-      setProgress(0);
+  // Legacy functions for compatibility
+  const handleNextStory = handleNextStoryInSequence;
+  const handlePrevStory = handlePrevStoryInSequence;
+
+  // Mark story as viewed via API
+  const markStoryAsViewed = async (storyId) => {
+    try {
+      await api.post(`/api/stories/${storyId}/view`);
+      // Update local state to reflect view status
+      setAllStories(prev => prev.map(userStory => ({
+        ...userStory,
+        stories: userStory.stories.map(story => 
+          story._id === storyId 
+            ? { ...story, hasViewed: true }
+            : story
+        )
+      })));
+    } catch (error) {
+      console.error('Error marking story as viewed:', error);
     }
   };
 
@@ -173,9 +286,14 @@ const Story = () => {
   /* ------------------------------------------------------------------ */
   /*  UPLOAD STORY                                                       */
   /* ------------------------------------------------------------------ */
-  const handleAddStory   = () => setShowUpload(true);           // mở modal upload
-  const handleStoryUpload = (newStory) => {                     // callback khi upload thành công
-    setStories(prev => [newStory, ...prev]);
+  const handleAddStory = () => {
+    // Auto-trigger file picker when clicking Add Story
+    setShowUpload(true);
+  };
+  
+  const handleStoryUpload = (newStory) => {
+    // Refresh stories after upload
+    fetchAllStories();
     setShowUpload(false);
   };
 
@@ -280,7 +398,9 @@ const Story = () => {
             <div className={`${styles.storyImage} ${getStatusClass(user.storyStatus)}`}>
               {renderAvatar(user)}
             </div>
-            <p className={styles.storyAuthor}>{user.username}</p>
+            <p className={styles.storyAuthor}>
+              {user.username}
+            </p>
           </div>
         ))
       )}
@@ -289,6 +409,49 @@ const Story = () => {
       {isViewingStory && users.length > 0 && (() => {
         const usersWithStories = users.filter(user => user.hasStory);
         const currentStoryUser = usersWithStories[currentStoryIndex];
+        const currentStory = currentStoryUser?.stories[currentStoryInGroup];
+        
+        if (!currentStory) return null;
+
+        // Calculate progress bars for multiple stories
+        const progressBars = currentStoryUser.stories.map((_, index) => {
+          let progressValue = 0;
+          if (index < currentStoryInGroup) {
+            progressValue = 100; // Completed
+          } else if (index === currentStoryInGroup) {
+            progressValue = progress; // Current progress
+          }
+          // Future stories remain at 0
+          
+          return (
+            <div key={index} className={styles.progressSegment}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progressValue}%` }}
+              />
+            </div>
+          );
+        });
+
+        // Generate filters style
+        const getFilterStyle = () => {
+          const filters = currentStory.filters || {};
+          let filterString = '';
+          
+          if (filters.brightness !== 0) filterString += `brightness(${100 + filters.brightness}%) `;
+          if (filters.contrast !== 0) filterString += `contrast(${100 + filters.contrast}%) `;
+          if (filters.saturation !== 0) filterString += `saturate(${100 + filters.saturation}%) `;
+          if (filters.blur > 0) filterString += `blur(${filters.blur}px) `;
+          if (filters.blackAndWhite) filterString += 'grayscale(100%) ';
+          if (filters.vintage) filterString += 'sepia(50%) ';
+
+          return {
+            backgroundImage: `url(${currentStory.mediaUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: filterString.trim()
+          };
+        };
         
         return (
           <div className={styles.viewStory}>
@@ -306,18 +469,14 @@ const Story = () => {
                 <i
                   className="ri-arrow-left-s-line"
                   onClick={handlePrevStory}
-                  style={{ opacity: currentStoryIndex > 0 ? 1 : 0.3 }}
+                  style={{ opacity: (currentStoryIndex > 0 || currentStoryInGroup > 0) ? 1 : 0.3 }}
                 />
               )}
 
               {/* Content */}
               <div
                 className={styles.content}
-                style={{
-                  backgroundImage: `url(${currentStoryUser?.avatar || '/img/duongqua.jpg'})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
+                style={getFilterStyle()}
                 onMouseDown={() => !isMobile && setIsPaused(true)}
                 onMouseUp={() => !isMobile && setIsPaused(false)}
                 onMouseLeave={() => !isMobile && setIsPaused(false)}
@@ -325,18 +484,35 @@ const Story = () => {
                 onTouchEnd={() => setIsPaused(false)}
                 onClick={handleContentClick}
               >
+                {/* Text Overlays */}
+                {currentStory.textOverlays?.map((textOverlay, index) => (
+                  <div
+                    key={index}
+                    className={styles.textOverlay}
+                    style={{
+                      position: 'absolute',
+                      left: `${textOverlay.x}%`,
+                      top: `${textOverlay.y}%`,
+                      fontSize: `${textOverlay.fontSize}px`,
+                      color: textOverlay.color,
+                      fontFamily: textOverlay.fontFamily,
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                      userSelect: 'none'
+                    }}
+                  >
+                    {textOverlay.text}
+                  </div>
+                ))}
+
                 {/* Gradient overlays */}
                 <div className={`${styles.overlay} ${styles.top}`}></div>
                 <div className={`${styles.overlay} ${styles.bottom}`}></div>
 
                 {/* Header info inside viewer */}
                 <div className={styles.contentHeader}>
-                  {/* Progress bar */}
-                  <div className={styles.progressBar}>
-                    <div
-                      className={styles.progressFill}
-                      style={{ width: `${progress}%` }}
-                    />
+                  {/* Progress bars for multiple stories */}
+                  <div className={styles.progressContainer}>
+                    {progressBars}
                   </div>
 
                   <div className={styles.authorAndButton}>
@@ -355,8 +531,12 @@ const Story = () => {
                           {getInitial(currentStoryUser?.username)}
                         </div>
                       )}
-                      <p className={styles.authorName}>{currentStoryUser?.username}</p>
-                      <p className={styles.timeAgo}>2 hours ago</p>
+                      <div className={styles.authorInfo}>
+                        <p className={styles.authorName}>{currentStoryUser?.username}</p>
+                        <p className={styles.timeAgo}>
+                          {new Date(currentStory.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </p>
+                      </div>
                     </div>
 
                     <div className={styles.actionButtons}>
@@ -375,10 +555,17 @@ const Story = () => {
                   </div>
                 </div>
 
+                {/* Story Content/Caption */}
+                {currentStory.content && (
+                  <div className={styles.storyContent}>
+                    <p>{currentStory.content}</p>
+                  </div>
+                )}
+
                 {/* Footer (reply, like, share) */}
                 <div className={styles.contentFooter}>
                   <div className={styles.answer}>
-                    <textarea placeholder="Type your answer..." />
+                    <textarea placeholder="Reply to story..." />
                   </div>
                   <i className="ri-heart-line"></i>
                   <i className="ri-send-plane-fill"></i>
@@ -390,7 +577,10 @@ const Story = () => {
                 <i
                   className="ri-arrow-right-s-line"
                   onClick={handleNextStory}
-                  style={{ opacity: currentStoryIndex < usersWithStories.length - 1 ? 1 : 0.3 }}
+                  style={{ 
+                    opacity: (currentStoryIndex < usersWithStories.length - 1 || 
+                             currentStoryInGroup < currentStoryUser.stories.length - 1) ? 1 : 0.3 
+                  }}
                 />
               )}
             </div>

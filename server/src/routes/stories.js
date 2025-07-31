@@ -1,73 +1,48 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const Story = require('../models/Story');
-const auth = require('../middleware/auth');
+const { upload } = require('../middleware/upload');
+const { protect } = require('../middleware/auth');
+const {
+  createStory,
+  getAllStories,
+  getUserStories,
+  viewStory,
+  deleteStory,
+  getStoryViewers
+} = require('../controllers/storyController');
 
 const router = express.Router();
 
-// Cấu hình multer cho upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/stories/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `story-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
+// Protect all routes
+router.use(protect);
 
-const upload = multer({
-  storage: storage,
-  limits: { 
-    fileSize: 10 * 1024 * 1024 // 10MB cho video
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image and video files allowed'), false);
-    }
-  }
-});
+// @route   GET /api/stories
+// @desc    Get all active stories
+// @access  Private
+router.get('/', getAllStories);
 
-// GET /api/stories - Lấy danh sách stories
-router.get('/', auth, async (req, res) => {
-  try {
-    const stories = await Story.find({
-      expiresAt: { $gt: new Date() } // Chỉ lấy story chưa hết hạn
-    })
-    .populate('userId', 'username avatar')
-    .sort({ createdAt: -1 });
+// @route   POST /api/stories
+// @desc    Create new story
+// @access  Private
+router.post('/', upload.single('media'), createStory);
 
-    res.json(stories);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching stories', error });
-  }
-});
+// @route   GET /api/stories/user/:userId
+// @desc    Get user stories
+// @access  Private
+router.get('/user/:userId', getUserStories);
 
-// POST /api/stories - Tạo story mới
-router.post('/', auth, upload.single('media'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
+// @route   POST /api/stories/:storyId/view
+// @desc    Mark story as viewed
+// @access  Private
+router.post('/:storyId/view', viewStory);
 
-    const story = new Story({
-      userId: req.user.id,
-      mediaUrl: `/uploads/stories/${req.file.filename}`,
-      mediaType: req.body.type || (req.file.mimetype.startsWith('image/') ? 'image' : 'video'),
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 giờ
-    });
+// @route   DELETE /api/stories/:storyId
+// @desc    Delete story
+// @access  Private
+router.delete('/:storyId', deleteStory);
 
-    await story.save();
-    await story.populate('userId', 'username avatar');
-
-    res.status(201).json(story);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating story', error });
-  }
-});
+// @route   GET /api/stories/:storyId/viewers
+// @desc    Get story viewers
+// @access  Private
+router.get('/:storyId/viewers', getStoryViewers);
 
 module.exports = router;

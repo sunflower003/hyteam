@@ -14,6 +14,7 @@ const corsOptions = require('./config/cors');
 const errorHandler = require('./middleware/errorHandler');
 const { createResponse } = require('./utils/response');
 const { initializeSocket } = require('./config/socket');
+const { scheduleStoryCleanup } = require('./utils/storyCleanup');
 
 // Import các route chính
 const authRoutes = require('./routes/auth');
@@ -21,6 +22,8 @@ const movieRoutes = require('./routes/movies');
 const roomRoutes = require('./routes/rooms');
 const messageRoutes = require('./routes/messages');
 const profileRoutes = require('./routes/profile');
+const storyRoutes = require('./routes/stories');
+const postRoutes = require('./routes/posts');
 // Thêm route dành cho AI Hypo (bạn cần file này ở src/ai/routes/hypo.js)
 const hypoRoutes = require('./ai/routes/hypo');
 
@@ -32,6 +35,9 @@ const server = http.createServer(app);
 
 // Initialize Socket.io nếu dùng tính năng socket
 const io = initializeSocket(server);
+
+// Initialize story cleanup scheduler
+scheduleStoryCleanup();
 
 // Thêm security middlewares
 app.use(helmet({ crossOriginEmbedderPolicy: false }));
@@ -66,6 +72,8 @@ app.use('/api/movies', movieRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/stories', storyRoutes);
+app.use('/api/posts', postRoutes);
 // Đăng ký endpoint AI chat: FE sẽ POST lên api/ai/hypo/chat
 app.use('/api/ai/hypo', hypoRoutes);
 

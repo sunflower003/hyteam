@@ -73,6 +73,25 @@ const Profile = () => {
         return name ? name.charAt(0).toUpperCase() : 'U';
     };
 
+    // Get random thumbnail
+    const getRandomThumbnail = () => {
+        const thumbnails = [
+            'https://images.unsplash.com/photo-1750651114048-36cf47ab4fca?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1752520316137-f9818b95ff9f?q=80&w=1856&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1740676176897-e4878ca7cecd?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1743082063778-bb0c2b04d2eb?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1749576908349-e98eb04821a8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1749680287741-243118ed6b2c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1731335059661-bf7fb8e5eeb6?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'https://images.unsplash.com/photo-1706737141648-2a95d33d2a63?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+        ];
+        
+        // Use random number for different thumbnail each reload
+        const randomIndex = Math.floor(Math.random() * thumbnails.length);
+        
+        return thumbnails[randomIndex];
+    };
+
     // Format number for display
     const formatNumber = (num) => {
         if (num >= 1000000) {
@@ -144,7 +163,7 @@ const Profile = () => {
     return (
         <div className={styles.profileContainer}>
             <img 
-                src="https://images.unsplash.com/photo-1656248396925-ec086a35c568?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src={getRandomThumbnail()} 
                 alt="thumbnail" 
                 className={styles.thumbnail}
             />

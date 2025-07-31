@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import { formatTimeAgo, formatNumber } from '../utils/formatters';
@@ -6,9 +7,19 @@ import styles from '../styles/components/Post.module.css';
 
 const Post = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Navigate to user profile
+    const handleUserClick = (userId) => {
+        if (userId === user?._id) {
+            navigate('/profile');
+        } else {
+            navigate(`/profile/${userId}`);
+        }
+    };
 
     // Fetch posts from API
     useEffect(() => {
@@ -140,6 +151,7 @@ const Post = () => {
                     post={post} 
                     onLike={handleLike}
                     onComment={handleComment}
+                    onUserClick={handleUserClick}
                     renderAvatar={renderAvatar}
                 />
             ))}
@@ -148,7 +160,7 @@ const Post = () => {
 };
 
 // Individual Post Card Component
-const PostCard = ({ post, onLike, onComment, renderAvatar }) => {
+const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
     const [commentText, setCommentText] = useState('');
     const [showAllComments, setShowAllComments] = useState(false);
 
@@ -162,10 +174,17 @@ const PostCard = ({ post, onLike, onComment, renderAvatar }) => {
         <div className={styles.postCard}>
             <div className={styles.header}>
                 <div className={styles.authorAndTime}>
-                    {renderAvatar(post.user, styles.avatar)}
+                    <div onClick={() => onUserClick(post.user?._id)}>
+                        {renderAvatar(post.user, styles.avatar)}
+                    </div>
                     <div className={styles.authorInfo}>
                         <div className={styles.nameAndTime}>
-                            <p className={styles.authorName}>{post.user?.username}</p>
+                            <p 
+                                className={styles.authorName}
+                                onClick={() => onUserClick(post.user?._id)}
+                            >
+                                {post.user?.username}
+                            </p>
                             <span className={styles.postTime}>• {formatTimeAgo(post.createdAt)}</span>
                         </div>
                         {post.location && (
@@ -203,7 +222,12 @@ const PostCard = ({ post, onLike, onComment, renderAvatar }) => {
 
             {post.caption && (
                 <div className={styles.postCaption}>
-                    <span className={styles.captionAuthor}>{post.user?.username}</span>
+                    <span 
+                        className={styles.captionAuthor}
+                        onClick={() => onUserClick(post.user?._id)}
+                    >
+                        {post.user?.username}
+                    </span>
                     <span className={styles.captionText}>{post.caption}</span>
                 </div>
             )}

@@ -49,7 +49,11 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
       // Lock body scroll
       document.body.style.overflow = 'hidden';
       
-      if (currentStep === 'select') {
+      // iOS Safari needs user gesture to trigger file input
+      // Don't auto-trigger on iOS, let user click manually
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (currentStep === 'select' && !isIOS) {
         setTimeout(() => {
           fileInputRef.current?.click();
         }, 200);
@@ -89,6 +93,9 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setCurrentStep('edit');
+    
+    // Reset input value để có thể chọn cùng file nhiều lần
+    event.target.value = '';
   };
 
   const handleUpload = async () => {
@@ -107,7 +114,8 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
       const response = await api.post('/api/stories', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 60000 // Increase timeout for iOS
       });
 
       if (response.data.success) {
@@ -116,7 +124,18 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
       }
     } catch (error) {
       console.error('Error uploading story:', error);
-      alert('Upload failed. Please try again.');
+      
+      // Better error handling for iOS
+      let errorMessage = 'Upload failed. Please try again.';
+      if (error.response?.status === 413) {
+        errorMessage = 'File is too large. Please choose a smaller file.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Invalid file format. Please choose a different file.';
+      } else if (error.code === 'NETWORK_ERROR') {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -368,6 +387,13 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
     setTextOverlays(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Handle click/touch events properly on iOS
+  const handleButtonClick = (e, callback) => {
+    e.preventDefault();
+    e.stopPropagation();
+    callback();
+  };
+
   // Generate preview style with filters
   const getPreviewStyle = () => {
     let filterString = '';
@@ -417,12 +443,18 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
         {/* Content */}
         <div className={styles.content}>
           {currentStep === 'select' && !selectedFile && (
-            <div className={styles.uploadArea} onClick={() => fileInputRef.current?.click()}>
+            <div className={styles.uploadArea}>
               <div className={styles.uploadIcon}>
                 <i className="ri-camera-line"></i>
                 <h4 className={styles.uploadText}>Create a story</h4>
                 <p className={styles.uploadSubtext}>Share a photo or video</p>
-                <button className={styles.uploadButton}>Select from device</button>
+                <button 
+                  className={styles.uploadButton}
+                  onClick={(e) => handleButtonClick(e, () => fileInputRef.current?.click())}
+                  onTouchEnd={(e) => handleButtonClick(e, () => fileInputRef.current?.click())}
+                >
+                  Select from device
+                </button>
               </div>
             </div>
           )}
@@ -763,6 +795,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
           onChange={handleFileSelect}
           accept="image/*,video/*"
           style={{ display: 'none' }}
+          capture="environment"
         />
       </div>
     </div>

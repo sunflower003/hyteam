@@ -163,11 +163,15 @@ const PostCard = ({ post, onLike, onComment, renderAvatar }) => {
             <div className={styles.header}>
                 <div className={styles.authorAndTime}>
                     {renderAvatar(post.user, styles.avatar)}
-                    <p className={styles.authorName}>{post.user?.username}</p>
-                    <span className={styles.postTime}>• {formatTimeAgo(post.createdAt)}</span>
-                    {post.location && (
-                        <span className={styles.location}>• {post.location}</span>
-                    )}
+                    <div className={styles.authorInfo}>
+                        <div className={styles.nameAndTime}>
+                            <p className={styles.authorName}>{post.user?.username}</p>
+                            <span className={styles.postTime}>• {formatTimeAgo(post.createdAt)}</span>
+                        </div>
+                        {post.location && (
+                            <p className={styles.location}>{post.location}</p>
+                        )}
+                    </div>
                 </div>
                 <i className="ri-more-fill"></i>
             </div>

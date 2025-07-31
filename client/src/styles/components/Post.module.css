@@ -22,6 +22,18 @@
     gap: 10px;
 }
 
+.authorInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nameAndTime {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .avatar {
     width: 40px;
     height: 40px;
@@ -42,6 +54,7 @@
 .authorName {
     font-size: 14px;
     font-weight: 600;
+    margin: 0;
 }
 
 .postTime {
@@ -50,8 +63,10 @@
 }
 
 .location {
-    font-size: 14px;
-    color: var(--grey);
+    font-size: 12px;
+    color: #000;
+    margin: 0;
+    font-weight: 400;
 }
 
 .postImage {

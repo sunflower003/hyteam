@@ -95,13 +95,30 @@ const PostUpload = ({ isOpen, onClose, onUpload }) => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 30000, // 30 seconds timeout for file upload
       });
 
+      console.log('Post created successfully:', response.data);
       onUpload?.(response.data);
       onClose();
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = 'Failed to create post. Please try again.';
+      
+      if (error.response?.status === 413) {
+        errorMessage = 'File is too large. Please choose a smaller file.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'You are not authorized. Please login again.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.error || 'Invalid file format or missing data.';
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsUploading(false);
     }

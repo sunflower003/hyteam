@@ -67,7 +67,14 @@ const getAllPosts = async (req, res) => {
       postObj.likesCount = post.likes ? post.likes.length : 0;
       postObj.commentsCount = post.comments ? post.comments.length : 0;
       postObj.viewsCount = post.views ? post.views.length : 0;
-      postObj.isLiked = post.likes && req.user ? post.likes.some(like => like.user && like.user.toString() === req.user._id.toString()) : false;
+      // Check if current user has liked this post
+      postObj.isLiked = false;
+      if (post.likes && req.user) {
+        postObj.isLiked = post.likes.some(like => {
+          const likeUserId = like.user._id ? like.user._id.toString() : like.user.toString();
+          return likeUserId === req.user._id.toString();
+        });
+      }
       return postObj;
     });
 
@@ -98,7 +105,14 @@ const getPostsByUser = async (req, res) => {
       postObj.likesCount = post.likes.length;
       postObj.commentsCount = post.comments.length;
       postObj.viewsCount = post.views.length;
-      postObj.isLiked = post.likes.some(like => like.user.toString() === req.user._id.toString());
+      // Check if current user has liked this post
+      postObj.isLiked = false;
+      if (post.likes && req.user) {
+        postObj.isLiked = post.likes.some(like => {
+          const likeUserId = like.user._id ? like.user._id.toString() : like.user.toString();
+          return likeUserId === req.user._id.toString();
+        });
+      }
       return postObj;
     });
 
@@ -134,7 +148,14 @@ const getPost = async (req, res) => {
     postObj.likesCount = post.likes.length;
     postObj.commentsCount = post.comments.length;
     postObj.viewsCount = post.views.length;
-    postObj.isLiked = post.likes.some(like => like.user.toString() === req.user._id.toString());
+    // Check if current user has liked this post
+    postObj.isLiked = false;
+    if (post.likes && req.user) {
+      postObj.isLiked = post.likes.some(like => {
+        const likeUserId = like.user._id ? like.user._id.toString() : like.user.toString();
+        return likeUserId === req.user._id.toString();
+      });
+    }
 
     res.json(postObj);
   } catch (error) {

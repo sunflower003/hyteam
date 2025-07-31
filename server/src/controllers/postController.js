@@ -12,20 +12,29 @@ const createPost = async (req, res) => {
       return res.status(400).json({ error: 'Image is required' });
     }
 
-    // Upload image to cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'hyteam/posts',
-      resource_type: 'auto'
-    });
+    let imageUrl;
 
-    // Clean up local file after upload
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    if (process.env.NODE_ENV === 'production') {
+      // In production, file is already uploaded to Cloudinary via multer-storage-cloudinary
+      imageUrl = req.file.path; // This will be the Cloudinary URL
+    } else {
+      // In development, upload to Cloudinary manually
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'hyteam/posts',
+        resource_type: 'auto'
+      });
+      
+      imageUrl = result.secure_url;
+
+      // Clean up local file after upload
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
     }
 
     const post = new Post({
       user: req.user._id,
-      image: result.secure_url,
+      image: imageUrl,
       caption: caption || '',
       location: location || '',
       altText: altText || '',

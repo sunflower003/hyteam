@@ -103,6 +103,12 @@
     font-size: 14px;
     color: var(--grey);
     cursor: pointer;
+    margin: 4px 0;
+    transition: color 0.2s ease;
+}
+
+.allComments:hover {
+    color: #666;
 }
 
 .comment {

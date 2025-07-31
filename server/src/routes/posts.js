@@ -4,34 +4,55 @@ const path = require('path');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const postController = require('../controllers/postController');
+const { postStorage } = require('../config/cloudinary');
+const { ensureUploadsDir } = require('../utils/fileUtils');
+
+// Ensure uploads directory exists in development
+if (process.env.NODE_ENV !== 'production') {
+  ensureUploadsDir();
+}
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/posts')
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+let storage;
+let upload;
 
-const fileFilter = (req, file, cb) => {
-  // Accept images and videos
-  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image and video files are allowed'), false);
-  }
-};
+if (process.env.NODE_ENV === 'production') {
+  // Use Cloudinary storage in production
+  upload = multer({ 
+    storage: postStorage,
+    limits: {
+      fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+  });
+} else {
+  // Use local storage in development
+  storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/posts')
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  });
 
-const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
-  }
-});
+  const fileFilter = (req, file, cb) => {
+    // Accept images and videos
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image and video files are allowed'), false);
+    }
+  };
+
+  upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+  });
+}
 
 // Create post
 router.post('/', protect, upload.single('image'), postController.createPost);

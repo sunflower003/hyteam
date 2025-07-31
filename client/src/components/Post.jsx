@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { formatTimeAgo, formatNumber } from '../utils/formatters';
 import styles from '../styles/components/Post.module.css';
 
 const Post = () => {
@@ -104,27 +105,6 @@ const Post = () => {
         }
     };
 
-    // Format time ago
-    const formatTimeAgo = (dateString) => {
-        const now = new Date();
-        const postDate = new Date(dateString);
-        const diffInHours = Math.floor((now - postDate) / (1000 * 60 * 60));
-        
-        if (diffInHours < 1) return 'Just now';
-        if (diffInHours < 24) return `${diffInHours}h`;
-        const diffInDays = Math.floor(diffInHours / 24);
-        if (diffInDays < 7) return `${diffInDays}d`;
-        const diffInWeeks = Math.floor(diffInDays / 7);
-        return `${diffInWeeks}w`;
-    };
-
-    // Format number (likes, etc.)
-    const formatNumber = (num) => {
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-        return num.toString();
-    };
-
     if (loading) {
         return (
             <div className={styles.loading}>
@@ -161,8 +141,6 @@ const Post = () => {
                     onLike={handleLike}
                     onComment={handleComment}
                     renderAvatar={renderAvatar}
-                    formatTimeAgo={formatTimeAgo}
-                    formatNumber={formatNumber}
                 />
             ))}
         </div>
@@ -170,7 +148,7 @@ const Post = () => {
 };
 
 // Individual Post Card Component
-const PostCard = ({ post, onLike, onComment, renderAvatar, formatTimeAgo, formatNumber }) => {
+const PostCard = ({ post, onLike, onComment, renderAvatar }) => {
     const [commentText, setCommentText] = useState('');
     const [showAllComments, setShowAllComments] = useState(false);
 
@@ -179,8 +157,6 @@ const PostCard = ({ post, onLike, onComment, renderAvatar, formatTimeAgo, format
         onComment(post._id, commentText);
         setCommentText('');
     };
-
-    const displayedComments = showAllComments ? post.comments : post.comments.slice(0, 2);
 
     return (
         <div className={styles.postCard}>
@@ -229,17 +205,17 @@ const PostCard = ({ post, onLike, onComment, renderAvatar, formatTimeAgo, format
             )}
 
             {post.commentsCount > 0 && (
+                <span 
+                    className={styles.allComments}
+                    onClick={() => setShowAllComments(!showAllComments)}
+                >
+                    {showAllComments ? 'Hide comments' : `View all ${post.commentsCount} comments`}
+                </span>
+            )}
+
+            {post.commentsCount > 0 && showAllComments && (
                 <>
-                    {post.commentsCount > 2 && !showAllComments && (
-                        <span 
-                            className={styles.allComments}
-                            onClick={() => setShowAllComments(true)}
-                        >
-                            View all {post.commentsCount} comments
-                        </span>
-                    )}
-                    
-                    {displayedComments.map((comment) => (
+                    {post.comments.map((comment) => (
                         <div key={comment._id} className={styles.comment}>
                             <span className={styles.commentAuthor}>{comment.user?.username}</span>
                             <span className={styles.commentText}>{comment.text}</span>

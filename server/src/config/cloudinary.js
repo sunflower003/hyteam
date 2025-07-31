@@ -87,6 +87,8 @@ const extractPublicId = (url) => {
 
 module.exports = {
     cloudinary,
+    avatarStorage,
+    postStorage,
     uploadAvatar,
     uploadPost,
     deleteFromCloudinary,

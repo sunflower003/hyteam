@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { formatTimeAgo } from '../utils/formatters';
 import styles from '../styles/components/Story.module.css';
 import StoryUpload from './StoryUpload';            // ← NEW
 
@@ -534,7 +535,7 @@ const Story = () => {
                       <div className={styles.authorInfo}>
                         <p className={styles.authorName}>{currentStoryUser?.username}</p>
                         <p className={styles.timeAgo}>
-                          {new Date(currentStory.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {formatTimeAgo(currentStory.createdAt)}
                         </p>
                       </div>
                     </div>

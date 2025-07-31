@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import { useAuth } from '../context/AuthContext';
+import { formatTimeAgo } from '../utils/formatters';
 import api from '../utils/api';
 import styles from '../styles/components/MovieRoom.module.css';
 
@@ -1468,7 +1469,7 @@ const MovieRoom = () => {
                                         <div className={styles.messageHeader}>
                                             <span className={styles.messageUser}>{msg.user.username}</span>
                                             <span className={styles.messageTime}>
-                                                {new Date(msg.timestamp).toLocaleTimeString()}
+                                                {formatTimeAgo(msg.timestamp)}
                                             </span>
                                         </div>
                                         <div className={styles.messageText}>{msg.message}</div>

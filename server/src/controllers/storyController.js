@@ -42,7 +42,12 @@ const createStory = async (req, res) => {
       userId,
       content,
       mediaUrl: req.file.path,
-      mediaType: req.file.resource_type === 'video' ? 'video' : 'image',
+      mediaType: (() => {
+        const url = req.file.path || '';
+        if (url.match(/\.(mp4|mov|webm|avi)$/i)) return 'video';
+        if (req.file.mimetype && req.file.mimetype.startsWith('video/')) return 'video';
+        return 'image';
+      })(),
       duration: parseInt(duration),
       filters: parsedFilters,
       textOverlays: parsedTextOverlays,

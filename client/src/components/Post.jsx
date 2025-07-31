@@ -159,6 +159,12 @@ const Post = () => {
     );
 };
 
+const isVideo = (url, mediaType) => {
+    if (mediaType === 'video') return true;
+    if (!url) return false;
+    return /\.(mp4|mov|webm|avi)$/i.test(url);
+};
+
 // Individual Post Card Component
 const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
     const [commentText, setCommentText] = useState('');
@@ -169,6 +175,8 @@ const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
         onComment(post._id, commentText);
         setCommentText('');
     };
+
+    const mediaUrl = post.mediaUrl || post.image;
 
     return (
         <div className={styles.postCard}>
@@ -195,11 +203,21 @@ const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
                 <i className="ri-more-fill"></i>
             </div>
 
-            <img 
-                src={post.image} 
-                alt={post.altText || 'Post image'} 
-                className={styles.postImage} 
-            />
+            {isVideo(mediaUrl, post.mediaType) ? (
+                <video
+                    src={mediaUrl}
+                    className={styles.postImage}
+                    controls
+                    autoPlay
+                    muted
+                />
+            ) : (
+                <img
+                    src={mediaUrl}
+                    alt={post.altText || 'Post image'}
+                    className={styles.postImage}
+                />
+            )}
 
             <div className={styles.buttons}>
                 <div className={styles.buttonList}>

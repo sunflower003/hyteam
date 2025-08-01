@@ -1,15 +1,33 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Story from "../components/Story";
-import styles from '../styles/pages/Hyfeed.module.css';
 import Post from "../components/Post";
+import PostUpload from "../components/PostUpload";
+import styles from '../styles/pages/Hyfeed.module.css';
 
 const Hyfeed = () => {
+  const [showPostUpload, setShowPostUpload] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCreatePost = () => {
+    setShowPostUpload(true);
+  };
+
+  const handlePostUpload = (newPost) => {
+    // Refresh feed or handle new post
+    console.log('New post created:', newPost);
+    setShowPostUpload(false);
+    // Optionally refresh the page or update the posts
+    window.location.reload();
+  };
+
   return (
     <div>
       <div className={styles.header}>
           <h1 className={styles.logo}>HYTEAM</h1>
           <div className={styles.iconHeader}>
-            <i class="ri-add-box-line"></i>
-            <i class="ri-notification-3-line"></i>
+            <i className="ri-add-box-line" onClick={handleCreatePost}></i>
+            <i className="ri-notification-3-line"></i>
           </div>
         </div>
       <div className={styles.hyfeedContent}>
@@ -22,6 +40,13 @@ const Hyfeed = () => {
           <p>Đang  phát triển thêm</p>
         </div>
       </div>
+
+      {/* Post Upload Modal */}
+      <PostUpload
+        isOpen={showPostUpload}
+        onClose={() => setShowPostUpload(false)}
+        onUpload={handlePostUpload}
+      />
     </div>
   );
 };

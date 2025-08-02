@@ -1,87 +1,71 @@
-/* TaskCard.module.css - Modern Professional Design */
+/* TaskCard.module.css - Modern Task Card Design */
 
 .taskCard {
-  background: #ffffff;
-  border: none;
+  background: white;
   border-radius: 8px;
-  padding: 0.75rem;
-  cursor: grab;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #e4e6ea;
   position: relative;
-  overflow: hidden;
-}
-
-.taskCard::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #4ecdc4, #44a08d);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  user-select: none;
 }
 
 .taskCard:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
-}
-
-.taskCard:hover::before {
-  opacity: 1;
-}
-
-.taskCard:active {
-  cursor: grabbing;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: #c1c7d0;
 }
 
 .taskCard.dragging {
-  opacity: 0.8;
-  transform: rotate(2deg) scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  opacity: 0.5;
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .taskCard.newTask {
   animation: slideIn 0.3s ease-out;
+  border-color: #0079bf;
+  box-shadow: 0 4px 15px rgba(0, 121, 191, 0.2);
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-10px) scale(0.95);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .taskHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
-.taskHeader h4 {
-  font-weight: 500;
-  color: #172b4d;
-  margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.3;
-  flex: 1;
+.taskType {
+  display: flex;
+  align-items: center;
+}
+
+.taskIcon {
+  font-size: 1rem;
+  color: #6b778c;
+  padding: 0.25rem;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
 }
 
 .taskActions {
   position: relative;
-  flex-shrink: 0;
 }
 
-.moveBtn {
+.menuBtn {
   background: none;
   border: none;
   color: #a5adba;
@@ -89,295 +73,219 @@
   padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
   opacity: 0;
-  transform: scale(0.9);
 }
 
-.taskCard:hover .moveBtn {
+.taskCard:hover .menuBtn {
   opacity: 1;
-  transform: scale(1);
 }
 
-.moveBtn:hover {
-  color: #5e6c84;
-  background: #f4f5f7;
+.menuBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #6b778c;
 }
 
-.moveMenu {
+.taskMenu {
   position: absolute;
   top: 100%;
   right: 0;
-  background: #ffffff;
-  border: 1px solid #dfe1e6;
+  background: white;
+  border: 1px solid #e4e6ea;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   z-index: 100;
-  min-width: 140px;
+  min-width: 120px;
   overflow: hidden;
-  animation: menuSlideIn 0.2s ease-out;
 }
 
-@keyframes menuSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.moveMenu button {
+.taskMenu button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: none;
+  padding: 0.75rem 1rem;
   background: none;
-  text-align: left;
-  cursor: pointer;
-  font-size: 0.8rem;
+  border: none;
   color: #172b4d;
-  transition: background-color 0.2s ease;
-  font-weight: 400;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease;
 }
 
-.moveMenu button:hover:not(:disabled) {
+.taskMenu button:hover {
   background: #f4f5f7;
 }
 
-.moveMenu button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f8f9fa;
+.taskMenu button:last-child {
+  color: #eb5a46;
 }
 
-.columnIcon {
-  font-size: 0.8rem;
-  color: #5e6c84;
+.taskMenu button:last-child:hover {
+  background: #ffebe6;
+}
+
+.taskContent {
+  margin-bottom: 0.75rem;
+}
+
+.taskTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #172b4d;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+  word-wrap: break-word;
 }
 
 .taskDescription {
-  color: #5e6c84;
   font-size: 0.8rem;
+  color: #6b778c;
+  margin: 0;
   line-height: 1.4;
-  margin-bottom: 0.75rem;
-  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.taskFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
 }
 
 .taskMeta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
   gap: 0.5rem;
-}
-
-.taskMetaLeft,
-.taskMetaRight {
-  display: flex;
   align-items: center;
-  gap: 0.375rem;
-}
-
-.priority {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-  text-transform: capitalize;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.priority.high {
-  background: #ffebe6;
-  color: #bf2600;
-}
-
-.priority.medium {
-  background: #fffae6;
-  color: #ff8b00;
-}
-
-.priority.low {
-  background: #e3fcef;
-  color: #006644;
-}
-
-.priority i {
-  font-size: 0.7rem;
-}
-
-.dueDate {
-  color: #5e6c84;
-  font-weight: 400;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  background: #f4f5f7;
-}
-
-.dueDate.overdue {
-  color: #bf2600;
-  background: #ffebe6;
-}
-
-.dueDate.dueSoon {
-  color: #ff8b00;
-  background: #fffae6;
-}
-
-.dueDate i {
-  font-size: 0.7rem;
-}
-
-.assignee {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #f4f5f7;
-}
-
-.assigneeInfo {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: #5e6c84;
-  font-size: 0.75rem;
-  font-weight: 400;
-}
-
-.assigneeInfo i {
-  font-size: 0.75rem;
-  color: #a5adba;
-}
-
-.taskProgress {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #f4f5f7;
-}
-
-.progressBar {
-  height: 4px;
-  background: #dfe1e6;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 0.25rem;
-}
-
-.progressFill {
-  height: 100%;
-  background: #61bd4f;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.progressText {
-  font-size: 0.7rem;
-  color: #5e6c84;
-  font-weight: 400;
-}
-
-/* Task labels */
-.taskLabels {
-  display: flex;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
   flex-wrap: wrap;
 }
 
-.taskLabel {
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+.priorityBadge {
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 600;
   color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-.taskLabel.design {
-  background: #61bd4f;
+.dueDateBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #6b778c;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
 }
 
-.taskLabel.copywriting {
-  background: #f2d600;
-  color: #172b4d;
+.assignee {
+  display: flex;
+  align-items: center;
 }
 
-.taskLabel.video {
-  background: #ff9f1a;
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.taskLabel.urgent {
-  background: #eb5a46;
+.taskTags {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
-/* Priority indicators */
-.taskCard.high::before {
-  background: linear-gradient(90deg, #ff6b6b, #ee5a52);
+.tag {
+  font-size: 0.65rem;
+  background: #f4f5f7;
+  color: #6b778c;
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  font-weight: 500;
 }
 
-.taskCard.medium::before {
-  background: linear-gradient(90deg, #ffa726, #ff9800);
+/* Status-based styling */
+.taskCard[data-status="todo"] {
+  border-left: 4px solid #6c7b7f;
 }
 
-.taskCard.low::before {
-  background: linear-gradient(90deg, #4ecdc4, #44a08d);
+.taskCard[data-status="in_progress"] {
+  border-left: 4px solid #0079bf;
+}
+
+.taskCard[data-status="review"] {
+  border-left: 4px solid #d29034;
+}
+
+.taskCard[data-status="done"] {
+  border-left: 4px solid #61bd4f;
+  opacity: 0.8;
+}
+
+.taskCard[data-status="done"] .taskTitle {
+  text-decoration: line-through;
+  color: #a5adba;
 }
 
 @media (max-width: 768px) {
   .taskCard {
-    padding: 0.625rem;
-    border-radius: 12px;
+    padding: 0.875rem;
   }
 
-  .taskHeader {
-    margin-bottom: 0.75rem;
-  }
-
-  .taskHeader h4 {
-    font-size: 0.8rem;
+  .taskTitle {
+    font-size: 0.85rem;
   }
 
   .taskDescription {
     font-size: 0.75rem;
-    margin-bottom: 0.5rem;
   }
 
-  .taskMeta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.375rem;
+  .taskFooter {
+    margin-top: 0.5rem;
   }
 
-  .moveMenu {
-    min-width: 120px;
+  .avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
   }
 }
 
 @media (max-width: 480px) {
   .taskCard {
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
 
-  .taskHeader h4 {
-    font-size: 0.75rem;
+  .taskHeader {
+    margin-bottom: 0.5rem;
   }
 
-  .taskDescription {
-    font-size: 0.7rem;
+  .taskContent {
+    margin-bottom: 0.5rem;
   }
 
-  .priority,
-  .dueDate {
+  .taskMeta {
+    gap: 0.375rem;
+  }
+
+  .priorityBadge,
+  .dueDateBadge {
     font-size: 0.65rem;
-    padding: 0.15rem 0.375rem;
+    padding: 0.15rem 0.4rem;
   }
 }

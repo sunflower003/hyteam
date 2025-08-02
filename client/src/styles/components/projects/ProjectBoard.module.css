@@ -4,19 +4,14 @@
   background: transparent;
   border-radius: 0;
   overflow: visible;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(20px);
 }
 
 .boardHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 1.5rem 0;
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
   gap: 2rem;
 }
 
@@ -27,10 +22,10 @@
 .projectInfo h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: white;
   margin: 0 0 0.5rem 0;
   letter-spacing: -0.02em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .projectInfo p {
@@ -145,15 +140,15 @@
 }
 
 .addTaskBtn {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   padding: 0.75rem 1.25rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -161,7 +156,7 @@
 }
 
 .addTaskBtn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
 }
 
@@ -230,7 +225,7 @@
 
 .progressBar {
   height: 100%;
-  background: linear-gradient(90deg, #4ecdc4, #44a08d);
+  background: linear-gradient(90deg, #667eea, #764ba2);
   border-radius: 4px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;

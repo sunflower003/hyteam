@@ -7,13 +7,12 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: overlayFadeIn 0.3s ease-out;
+  z-index: 1000;
+  padding: 1rem;
 }
 
 @keyframes overlayFadeIn {
@@ -29,14 +28,14 @@
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
-  max-width: 520px;
+  max-width: 500px;
   max-height: 90vh;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
-  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #dfe1e6;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+  border: none;
 }
 
 @keyframes modalSlideIn {
@@ -54,9 +53,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #dfe1e6;
-  background: #f4f5f7;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e4e6ea;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
 }
 
 .modalTitle {
@@ -67,7 +66,40 @@
 
 .modalIcon {
   font-size: 1.25rem;
-  color: #0079bf;
+  color: #667eea;
+}
+
+.modalHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #172b4d;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modalHeader h2 i {
+  font-size: 1.1rem;
+  color: #667eea;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #6b778c;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #172b4d;
 }
 
 .modalTitle h3 {
@@ -78,29 +110,8 @@
   letter-spacing: -0.01em;
 }
 
-.closeBtn {
-  background: #f4f5f7;
-  border: 1px solid #dfe1e6;
-  font-size: 1rem;
-  cursor: pointer;
-  color: #5e6c84;
-  transition: all 0.2s ease;
-  border-radius: 8px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.closeBtn:hover {
-  color: #172b4d;
-  background: #ebecf0;
-  border-color: #c1c7d0;
-}
-
 .modalForm {
-  padding: 1.5rem;
+  padding: 2rem;
   overflow-y: auto;
   max-height: calc(90vh - 100px);
 }
@@ -120,21 +131,21 @@
 }
 
 .formGroup {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .formLabel {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #172b4d;
   margin-bottom: 0.5rem;
-  font-size: 0.875rem;
 }
 
 .formLabel i {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: #5e6c84;
 }
 
@@ -142,16 +153,15 @@
 .formSelect,
 .formTextarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #dfe1e6;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e4e6ea;
   border-radius: 8px;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  color: #172b4d;
   transition: all 0.2s ease;
   box-sizing: border-box;
   font-family: inherit;
-  background: #ffffff;
-  color: #172b4d;
-  font-weight: 400;
+  background: white;
 }
 
 .formTextarea {
@@ -164,8 +174,8 @@
 .formTextarea:focus,
 .formSelect:focus {
   outline: none;
-  border-color: #0079bf;
-  box-shadow: 0 0 0 2px rgba(0, 121, 191, 0.2);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .formInput::placeholder,
@@ -181,64 +191,170 @@
   gap: 1rem;
 }
 
-.modalActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #dfe1e6;
+.formHelp {
+  font-size: 0.8rem;
+  color: #5e6c84;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
 }
 
-.cancelBtn {
-  padding: 0.75rem 1.25rem;
-  border: 2px solid #dfe1e6;
-  background: white;
-  color: #5e6c84;
+.helpText {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b778c;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+.tagInput {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tagInput input {
+  flex: 1;
+}
+
+.addTagBtn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.cancelBtn:hover:not(:disabled) {
-  border-color: #c1c7d0;
+.addTagBtn:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   background: #f4f5f7;
+  color: #172b4d;
+  padding: 0.375rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.removeTagBtn {
+  background: none;
+  border: none;
+  color: #6b778c;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.removeTagBtn:hover {
+  background: rgba(0, 0, 0, 0.1);
   color: #172b4d;
 }
 
-.cancelBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.rolePermissions {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
-.submitBtn {
-  padding: 0.75rem 1.25rem;
-  background: #0079bf;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.rolePermissions h4 {
+  font-size: 0.9rem;
   font-weight: 600;
+  color: #172b4d;
+  margin: 0 0 0.75rem 0;
+}
+
+.permissionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.permission {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #6b778c;
+}
+
+.permission i {
+  color: #61bd4f;
+  font-size: 0.9rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e4e6ea;
+}
+
+.cancelBtn,
+.submitBtn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+}
+
+.cancelBtn {
+  background: #f4f5f7;
+  color: #6b778c;
+  border: 1px solid #e4e6ea;
+}
+
+.cancelBtn:hover {
+  background: #e4e6ea;
+  color: #172b4d;
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #026aa7;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .submitBtn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  background: #a5adba;
+  transform: none;
 }
 
 .submitBtn i.ri-spin {
@@ -271,12 +387,13 @@
 @media (max-width: 768px) {
   .modal {
     margin: 1rem;
-    max-width: calc(100% - 2rem);
+    max-width: none;
+    width: calc(100% - 2rem);
     border-radius: 10px;
   }
 
   .modalHeader {
-    padding: 1.25rem;
+    padding: 1.25rem 1.5rem;
   }
 
   .modalTitle h3 {
@@ -284,12 +401,12 @@
   }
 
   .modalForm {
-    padding: 1.25rem;
+    padding: 1.5rem;
   }
 
   .modalActions {
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: column-reverse;
+    gap: 0.75rem;
   }
 
   .modalActions button {
@@ -299,19 +416,32 @@
 
   .formRow {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1.5rem;
+  }
+
+  .formGroup {
+    margin-bottom: 1.25rem;
+  }
+
+  .rolePermissions {
+    padding: 1rem;
   }
 }
 
 @media (max-width: 480px) {
+  .modalOverlay {
+    padding: 0.5rem;
+  }
+
   .modal {
     margin: 0.5rem;
     max-width: calc(100% - 1rem);
+    width: calc(100% - 1rem);
     border-radius: 8px;
   }
 
   .modalHeader {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
   }
 
   .modalTitle h3 {
@@ -323,7 +453,7 @@
   }
 
   .modalForm {
-    padding: 1rem;
+    padding: 1.25rem;
   }
 
   .formInput,
@@ -340,6 +470,14 @@
   .cancelBtn,
   .submitBtn {
     padding: 0.625rem 1rem;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .formGroup {
+    margin-bottom: 1.25rem;
+  }
+
+  .rolePermissions {
+    padding: 1rem;
   }
 }

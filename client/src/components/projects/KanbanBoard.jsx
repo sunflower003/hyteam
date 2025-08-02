@@ -14,6 +14,9 @@ const KanbanBoard = ({
   handleDragStart,
   handleDragEnd,
   moveTask,
+  onAddTask,
+  onEditTask,
+  onDeleteTask,
 }) => {
   const getTasksByStatus = (status) => {
     return selectedProject?.tasks?.filter((task) => task.status === status) || []
@@ -23,7 +26,7 @@ const KanbanBoard = ({
     switch (columnId) {
       case "todo":
         return "ri-file-list-3-line"
-      case "progress":
+      case "in_progress":
         return "ri-play-circle-line"
       case "review":
         return "ri-eye-line"
@@ -65,6 +68,8 @@ const KanbanBoard = ({
                   key={task._id}
                   task={task}
                   onMove={moveTask}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
                   columns={columns}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
@@ -78,6 +83,12 @@ const KanbanBoard = ({
                 </div>
               )}
             </div>
+
+            {/* Add Task Button */}
+            <button className={styles.addTaskButton} onClick={onAddTask} title="Thêm task mới">
+              <i className="ri-add-line"></i>
+              Thêm task
+            </button>
 
             {/* Column Footer with Quick Stats */}
             {tasks.length > 0 && (

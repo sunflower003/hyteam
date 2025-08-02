@@ -1,53 +1,59 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import styles from "../../styles/components/projects/Modal.module.css"
 
 const EditTaskModal = ({ task, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    priority: "medium",
-    status: "todo",
-    dueDate: "",
-    tags: [],
+    title: task.title || "",
+    description: task.description || "",
+    priority: task.priority || "medium",
+    status: task.status || "todo",
+    dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+    tags: task.tags ? task.tags.join(", ") : "",
+    estimatedHours: task.estimatedHours || "",
   })
 
-  const [tagInput, setTagInput] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (task) {
-      setFormData({
-        title: task.title || "",
-        description: task.description || "",
-        priority: task.priority || "medium",
-        status: task.status || "todo",
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
-        tags: task.tags || [],
-      })
-    }
-  }, [task])
+  const priorities = [
+    { value: "low", label: "Thấp", color: "#61bd4f", icon: "ri-arrow-down-line" },
+    { value: "medium", label: "Trung bình", color: "#f2d600", icon: "ri-subtract-line" },
+    { value: "high", label: "Cao", color: "#eb5a46", icon: "ri-arrow-up-line" },
+  ]
 
-  const handleSubmit = (e) => {
+  const statuses = [
+    { value: "todo", label: "To Do", icon: "ri-file-list-3-line" },
+    { value: "in_progress", label: "In Progress", icon: "ri-play-circle-line" },
+    { value: "review", label: "Review", icon: "ri-eye-line" },
+    { value: "done", label: "Done", icon: "ri-checkbox-circle-line" },
+  ]
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    if (!formData.title.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      const taskData = {
+        ...formData,
+        tags: formData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag),
+        estimatedHours: formData.estimatedHours ? Number.parseInt(formData.estimatedHours) : null,
+      }
+      await onSubmit(taskData)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleAddTag = (e) => {
-    e.preventDefault()
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()],
-      }))
-      setTagInput("")
-    }
-  }
-
-  const handleRemoveTag = (tagToRemove) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+      [name]: value,
     }))
   }
 
@@ -55,114 +61,144 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h2>
-            <i className="ri-edit-line"></i>
-            Chỉnh sửa Task
-          </h2>
-          <button className={styles.closeBtn} onClick={onClose}>
+          <div className={styles.modalTitle}>
+            <i className={`${styles.modalIcon} ri-edit-line`}></i>
+            <h3>Chỉnh sửa task</h3>
+          </div>
+          <button onClick={onClose} className={styles.closeBtn}>
             <i className="ri-close-line"></i>
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.modalForm}>
           <div className={styles.formGroup}>
-            <label htmlFor="title">Tiêu đề Task *</label>
+            <label className={styles.formLabel}>
+              <i className="ri-task-line"></i>
+              Tên task
+            </label>
             <input
               type="text"
-              id="title"
+              name="title"
               value={formData.title}
-              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-              placeholder="Nhập tiêu đề task..."
+              onChange={handleChange}
+              placeholder="Nhập tên task..."
               required
+              autoFocus
+              className={styles.formInput}
             />
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="description">Mô tả</label>
+            <label className={styles.formLabel}>
+              <i className="ri-file-text-line"></i>
+              Mô tả chi tiết
+            </label>
             <textarea
-              id="description"
+              name="description"
               value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              onChange={handleChange}
               placeholder="Mô tả chi tiết task..."
-              rows="3"
+              rows={4}
+              className={styles.formTextarea}
             />
           </div>
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label htmlFor="priority">Độ ưu tiên</label>
-              <select
-                id="priority"
-                value={formData.priority}
-                onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
-              >
-                <option value="low">Thấp</option>
-                <option value="medium">Trung bình</option>
-                <option value="high">Cao</option>
-                <option value="urgent">Khẩn cấp</option>
+              <label className={styles.formLabel}>
+                <i className="ri-flag-line"></i>
+                Độ ưu tiên
+              </label>
+              <select name="priority" value={formData.priority} onChange={handleChange} className={styles.formSelect}>
+                {priorities.map((priority) => (
+                  <option key={priority.value} value={priority.value}>
+                    {priority.label}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="status">Trạng thái</label>
-              <select
-                id="status"
-                value={formData.status}
-                onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-              >
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="review">Review</option>
-                <option value="done">Done</option>
+              <label className={styles.formLabel}>
+                <i className="ri-bookmark-line"></i>
+                Trạng thái
+              </label>
+              <select name="status" value={formData.status} onChange={handleChange} className={styles.formSelect}>
+                {statuses.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>
+                <i className="ri-calendar-line"></i>
+                Deadline
+              </label>
+              <input
+                type="date"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleChange}
+                className={styles.formInput}
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>
+                <i className="ri-time-line"></i>
+                Ước tính (giờ)
+              </label>
+              <input
+                type="number"
+                name="estimatedHours"
+                value={formData.estimatedHours}
+                onChange={handleChange}
+                placeholder="8"
+                min="1"
+                max="999"
+                className={styles.formInput}
+              />
+            </div>
+          </div>
+
           <div className={styles.formGroup}>
-            <label htmlFor="dueDate">Hạn hoàn thành</label>
+            <label className={styles.formLabel}>
+              <i className="ri-price-tag-3-line"></i>
+              Tags (phân cách bằng dấu phẩy)
+            </label>
             <input
-              type="date"
-              id="dueDate"
-              value={formData.dueDate}
-              onChange={(e) => setFormData((prev) => ({ ...prev, dueDate: e.target.value }))}
+              type="text"
+              name="tags"
+              value={formData.tags}
+              onChange={handleChange}
+              placeholder="frontend, react, ui..."
+              className={styles.formInput}
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label>Tags</label>
-            <div className={styles.tagInput}>
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Thêm tag..."
-                onKeyPress={(e) => e.key === "Enter" && handleAddTag(e)}
-              />
-              <button type="button" onClick={handleAddTag} className={styles.addTagBtn}>
-                <i className="ri-add-line"></i>
-              </button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className={styles.tagList}>
-                {formData.tags.map((tag, index) => (
-                  <span key={index} className={styles.tag}>
-                    {tag}
-                    <button type="button" onClick={() => handleRemoveTag(tag)} className={styles.removeTagBtn}>
-                      <i className="ri-close-line"></i>
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className={styles.modalActions}>
-            <button type="button" onClick={onClose} className={styles.cancelBtn}>
+            <button type="button" onClick={onClose} className={styles.cancelBtn} disabled={isSubmitting}>
+              <i className="ri-close-line"></i>
               Hủy
             </button>
-            <button type="submit" className={styles.submitBtn}>
-              <i className="ri-save-line"></i>
-              Cập nhật Task
+            <button type="submit" className={styles.submitBtn} disabled={isSubmitting || !formData.title.trim()}>
+              {isSubmitting ? (
+                <>
+                  <i className="ri-loader-4-line ri-spin"></i>
+                  Đang cập nhật...
+                </>
+              ) : (
+                <>
+                  <i className="ri-save-line"></i>
+                  Cập nhật task
+                </>
+              )}
             </button>
           </div>
         </form>

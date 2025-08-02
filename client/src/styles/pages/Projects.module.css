@@ -1,8 +1,11 @@
+/* Projects.module.css - Professional Trello-like Design */
+
 .projectsContainer {
   padding: 0 80px;
   min-height: 100vh;
-  background: #f8f9fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #0079bf 0%, #026aa7 100%);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  position: relative;
 }
 
 .header {
@@ -13,73 +16,104 @@
   top: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   z-index: 1000;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   padding: 15px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .logo {
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
   font-size: 25px;
   font-weight: 800;
   cursor: pointer;
+  color: #0079bf;
+  letter-spacing: -0.5px;
 }
 
 .iconHeader {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .iconHeader i {
-  font-size: 25px;
+  font-size: 22px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.iconHeader i:hover {
+  color: #0079bf;
+  background: rgba(0, 121, 191, 0.1);
 }
 
 .projectsContent {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
   padding: 2rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 .pageHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .headerLeft h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #1a202c;
+  color: #ffffff;
   margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .headerLeft p {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
 .createBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
 }
 
 .createBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.createBtn i {
+  font-size: 1rem;
 }
 
 .loading {
@@ -88,66 +122,223 @@
   align-items: center;
   justify-content: center;
   min-height: 50vh;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .loadingSpinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e2e8f0;
-  border-top: 3px solid #667eea;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid #fff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .emptyIcon {
   font-size: 4rem;
   margin-bottom: 1rem;
+  opacity: 0.6;
 }
 
 .emptyState h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1a202c;
+  color: #ffffff;
   margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .emptyState p {
   margin-bottom: 2rem;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
 .createFirstBtn {
-  background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 1rem 2rem;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
 }
 
 .createFirstBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
+.createFirstBtn i {
+  font-size: 1.1rem;
+}
+
+/* Project Tabs */
+.projectTabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+}
+
+.projectTabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.projectTabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.projectTabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.projectTab {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.projectTab:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.projectTab.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.projectIcon {
+  font-size: 0.9rem;
+}
+
+.taskCount {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Project Board */
+.projectBoard {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.boardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 0;
+  margin-bottom: 1rem;
+}
+
+.projectInfo h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.projectInfo p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.addTaskBtn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.addTaskBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.addTaskBtn i {
+  font-size: 0.9rem;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .header {
     display: flex;
+    background: #0079bf;
+  }
+
+  .header .logo {
+    color: white;
+  }
+
+  .header .iconHeader i {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .header .iconHeader i:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .projectsContainer {
@@ -163,5 +354,40 @@
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
+    padding: 1.25rem;
+  }
+
+  .boardHeader {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .projectTabs {
+    gap: 0.25rem;
+  }
+
+  .projectTab {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .projectsContent {
+    padding: 0.75rem;
+  }
+
+  .pageHeader {
+    padding: 1rem;
+  }
+
+  .emptyState {
+    padding: 2rem 1rem;
+  }
+
+  .createFirstBtn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.85rem;
   }
 }

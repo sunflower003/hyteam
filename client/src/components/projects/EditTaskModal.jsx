@@ -1,9 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "../../context/AuthContext"
+import api from "../../utils/api"
 import styles from "../../styles/components/projects/Modal.module.css"
 
-const EditTaskModal = ({ task, onClose, onSubmit }) => {
+const EditTaskModal = ({ task, onClose, onSubmit, projectId }) => {
+  console.log('EditTaskModal props:', { task, projectId }); // Debug log
+  
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     title: task.title || "",
     description: task.description || "",
@@ -12,9 +17,12 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
     dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
     tags: task.tags ? task.tags.join(", ") : "",
     estimatedHours: task.estimatedHours || "",
+    assignee: task.assignee?._id || task.assignee || ""
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [projectMembers, setProjectMembers] = useState([])
+  const [loadingMembers, setLoadingMembers] = useState(true)
 
   const priorities = [
     { value: "low", label: "Thấp", color: "#61bd4f", icon: "ri-arrow-down-line" },
@@ -29,6 +37,38 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
     { value: "done", label: "Done", icon: "ri-checkbox-circle-line" },
   ]
 
+  // Sửa lại useEffect với debug
+  useEffect(() => {
+    console.log('useEffect triggered with projectId:', projectId); // Debug
+    
+    const fetchProjectMembers = async () => {
+      try {
+        console.log('Starting to fetch members for projectId:', projectId); // Debug
+        setLoadingMembers(true)
+        const response = await api.get(`/api/projects/${projectId}/members`)
+        console.log('Members API response:', response.data); // Debug
+        if (response.data.success) {
+          console.log('Setting project members:', response.data.data); // Debug
+          setProjectMembers(response.data.data)
+        } else {
+          console.log('API response not successful:', response.data); // Debug
+        }
+      } catch (error) {
+        console.error("Error fetching project members:", error)
+      } finally {
+        console.log('Setting loadingMembers to false'); // Debug
+        setLoadingMembers(false)
+      }
+    }
+
+    if (projectId) {
+      fetchProjectMembers()
+    } else {
+      console.log('No projectId provided, setting loadingMembers to false'); // Debug
+      setLoadingMembers(false)
+    }
+  }, [projectId])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.title.trim()) return
@@ -42,6 +82,7 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
           .map((tag) => tag.trim())
           .filter((tag) => tag),
         estimatedHours: formData.estimatedHours ? Number.parseInt(formData.estimatedHours) : null,
+        assignee: formData.assignee || null
       }
       await onSubmit(taskData)
     } finally {
@@ -74,7 +115,7 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               <i className="ri-task-line"></i>
-              Tên task
+              Tên task *
             </label>
             <input
               type="text"
@@ -133,6 +174,26 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
             </div>
           </div>
 
+          {/* Copy y hệt phần Assignee Selection từ CreateTaskModal */}
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>
+              <i className="ri-user-line"></i>
+              Giao cho
+            </label>
+            {loadingMembers ? (
+              <div className={styles.loadingSelect}>Đang tải thành viên...</div>
+            ) : (
+              <select name="assignee" value={formData.assignee} onChange={handleChange} className={styles.formSelect}>
+                <option value="">Chưa giao cho ai</option>
+                {projectMembers.map((member) => (
+                  <option key={member._id} value={member._id}>
+                    {member.username} {member.role === 'owner' ? '(Owner)' : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
@@ -145,7 +206,6 @@ const EditTaskModal = ({ task, onClose, onSubmit }) => {
                 value={formData.dueDate}
                 onChange={handleChange}
                 className={styles.formInput}
-                min={new Date().toISOString().split("T")[0]}
               />
             </div>
 

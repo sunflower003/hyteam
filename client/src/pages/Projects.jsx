@@ -252,6 +252,7 @@ const Projects = () => {
             setSelectedTask(null)
           }}
           onSubmit={(taskData) => updateTask(selectedTask._id, taskData)}
+          projectId={selectedProject?._id}
         />
       )}
 

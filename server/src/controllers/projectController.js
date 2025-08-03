@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const User = require('../models/User');
 const { createResponse } = require('../utils/response');
 
 // Get all projects for user
@@ -13,9 +14,10 @@ const getProjects = async (req, res) => {
       ],
       status: { $ne: 'archived' }
     })
-    .populate('owner', 'username avatar')
-    .populate('members.user', 'username avatar')
-    .populate('tasks.assignee', 'username avatar')
+    .populate('owner', 'username avatar email')
+    .populate('members.user', 'username avatar email')
+    .populate('tasks.assignee', 'username avatar email')
+    .populate('tasks.createdBy', 'username avatar email')
     .sort({ updatedAt: -1 });
 
     res.json(createResponse(true, projects, 'Projects fetched successfully'));
@@ -86,7 +88,16 @@ const getProject = async (req, res) => {
 const createTask = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { title, description, priority, status, assignee, dueDate } = req.body;
+    const { 
+      title, 
+      description, 
+      priority, 
+      status, 
+      assignee, 
+      dueDate,
+      tags,
+      estimatedHours 
+    } = req.body;
     const userId = req.user.id;
 
     const project = await Project.findOne({
@@ -101,22 +112,44 @@ const createTask = async (req, res) => {
       return res.status(404).json(createResponse(false, null, 'Project not found'));
     }
 
+    // Xử lý tags - chuyển từ string thành array
+    let processedTags = [];
+    if (tags) {
+      if (Array.isArray(tags)) {
+        processedTags = tags.filter(tag => tag && tag.trim());
+      } else if (typeof tags === 'string') {
+        processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      }
+    }
+
     const newTask = {
       title,
-      description,
+      description: description || '',
       priority: priority || 'medium',
       status: status || 'todo',
       assignee: assignee || null,
-      dueDate: dueDate || null
+      dueDate: dueDate || null,
+      tags: processedTags,
+      estimatedHours: estimatedHours ? Number(estimatedHours) : null,
+      createdBy: userId
     };
+
+    console.log('Creating task with data:', newTask); // Debug log
 
     project.tasks.push(newTask);
     await project.save();
 
     const createdTask = project.tasks[project.tasks.length - 1];
-    await project.populate('tasks.assignee', 'username avatar');
+    
+    // Populate assignee và createdBy
+    await project.populate([
+      { path: 'tasks.assignee', select: 'username avatar email' },
+      { path: 'tasks.createdBy', select: 'username avatar email' }
+    ]);
 
-    res.status(201).json(createResponse(true, createdTask, 'Task created successfully'));
+    const populatedTask = project.tasks.id(createdTask._id);
+
+    res.status(201).json(createResponse(true, populatedTask, 'Task created successfully'));
   } catch (error) {
     console.error('Create task error:', error);
     res.status(500).json(createResponse(false, null, 'Server error'));
@@ -143,13 +176,35 @@ const updateTask = async (req, res) => {
     }
 
     const task = project.tasks.id(taskId);
+    
+    // Xử lý tags nếu có
+    if (updateData.tags) {
+      if (Array.isArray(updateData.tags)) {
+        updateData.tags = updateData.tags.filter(tag => tag && tag.trim());
+      } else if (typeof updateData.tags === 'string') {
+        updateData.tags = updateData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      }
+    }
+
+    // Xử lý estimatedHours
+    if (updateData.estimatedHours) {
+      updateData.estimatedHours = Number(updateData.estimatedHours);
+    }
+
     Object.assign(task, updateData);
     task.updatedAt = new Date();
 
     await project.save();
-    await project.populate('tasks.assignee', 'username avatar');
+    
+    // Populate dữ liệu
+    await project.populate([
+      { path: 'tasks.assignee', select: 'username avatar email' },
+      { path: 'tasks.createdBy', select: 'username avatar email' }
+    ]);
 
-    res.json(createResponse(true, task, 'Task updated successfully'));
+    const updatedTask = project.tasks.id(taskId);
+
+    res.json(createResponse(true, updatedTask, 'Task updated successfully'));
   } catch (error) {
     console.error('Update task error:', error);
     res.status(500).json(createResponse(false, null, 'Server error'));
@@ -184,11 +239,62 @@ const deleteTask = async (req, res) => {
   }
 };
 
+// Thêm API để lấy danh sách users cho assign
+const getProjectMembers = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const userId = req.user.id;
+
+    const project = await Project.findOne({
+      _id: projectId,
+      $or: [
+        { owner: userId },
+        { 'members.user': userId }
+      ]
+    })
+    .populate('owner', 'username avatar email')
+    .populate('members.user', 'username avatar email');
+
+    if (!project) {
+      return res.status(404).json(createResponse(false, null, 'Project not found'));
+    }
+
+    // Tạo danh sách tất cả members (bao gồm owner)
+    const allMembers = [
+      {
+        _id: project.owner._id,
+        username: project.owner.username,
+        avatar: project.owner.avatar,
+        email: project.owner.email,
+        role: 'owner'
+      },
+      ...project.members.map(member => ({
+        _id: member.user._id,
+        username: member.user.username,
+        avatar: member.user.avatar,
+        email: member.user.email,
+        role: member.role
+      }))
+    ];
+
+    // Loại bỏ duplicate nếu owner cũng là member
+    const uniqueMembers = allMembers.filter((member, index, self) => 
+      index === self.findIndex(m => m._id.toString() === member._id.toString())
+    );
+
+    res.json(createResponse(true, uniqueMembers, 'Project members fetched successfully'));
+  } catch (error) {
+    console.error('Get project members error:', error);
+    res.status(500).json(createResponse(false, null, 'Server error'));
+  }
+};
+
 module.exports = {
   getProjects,
   createProject,
   getProject,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  getProjectMembers
 };

@@ -27,6 +27,20 @@ const taskSchema = new mongoose.Schema({
   dueDate: {
     type: Date
   },
+  // Thêm các field mới
+  tags: [{
+    type: String,
+    trim: true
+  }],
+  estimatedHours: {
+    type: Number,
+    min: 0
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -46,6 +60,19 @@ const projectSchema = new mongoose.Schema({
   description: {
     type: String,
     maxLength: 500
+  },
+  category: {
+    type: String,
+    enum: ['web', 'mobile', 'design', 'marketing', 'other'],
+    default: 'other'
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
+  deadline: {
+    type: Date
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

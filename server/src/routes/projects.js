@@ -7,7 +7,8 @@ const {
   getProject,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  getProjectMembers
 } = require('../controllers/projectController');
 
 // Protect all routes
@@ -17,6 +18,7 @@ router.use(protect);
 router.get('/', getProjects);
 router.post('/', createProject);
 router.get('/:projectId', getProject);
+router.get('/:projectId/members', getProjectMembers);
 
 // Task routes
 router.post('/:projectId/tasks', createTask);

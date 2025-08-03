@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "../../context/AuthContext"
+import api from "../../utils/api"
 import styles from "../../styles/components/projects/Modal.module.css"
 
 const CreateTaskModal = ({ onClose, onSubmit, projectId }) => {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -12,9 +15,12 @@ const CreateTaskModal = ({ onClose, onSubmit, projectId }) => {
     dueDate: "",
     tags: "",
     estimatedHours: "",
+    assignee: "" // Thêm assignee
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [projectMembers, setProjectMembers] = useState([])
+  const [loadingMembers, setLoadingMembers] = useState(true)
 
   const priorities = [
     { value: "low", label: "Thấp", color: "#61bd4f", icon: "ri-arrow-down-line" },
@@ -24,10 +30,31 @@ const CreateTaskModal = ({ onClose, onSubmit, projectId }) => {
 
   const statuses = [
     { value: "todo", label: "To Do", icon: "ri-file-list-3-line" },
-    { value: "progress", label: "In Progress", icon: "ri-play-circle-line" },
+    { value: "in_progress", label: "In Progress", icon: "ri-play-circle-line" },
     { value: "review", label: "Review", icon: "ri-eye-line" },
     { value: "done", label: "Done", icon: "ri-checkbox-circle-line" },
   ]
+
+  // Fetch project members khi component mount
+  useEffect(() => {
+    const fetchProjectMembers = async () => {
+      try {
+        setLoadingMembers(true)
+        const response = await api.get(`/api/projects/${projectId}/members`)
+        if (response.data.success) {
+          setProjectMembers(response.data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching project members:", error)
+      } finally {
+        setLoadingMembers(false)
+      }
+    }
+
+    if (projectId) {
+      fetchProjectMembers()
+    }
+  }, [projectId])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -42,6 +69,7 @@ const CreateTaskModal = ({ onClose, onSubmit, projectId }) => {
           .map((tag) => tag.trim())
           .filter((tag) => tag),
         estimatedHours: formData.estimatedHours ? Number.parseInt(formData.estimatedHours) : null,
+        assignee: formData.assignee || null
       }
       await onSubmit(taskData)
     } finally {
@@ -74,7 +102,7 @@ const CreateTaskModal = ({ onClose, onSubmit, projectId }) => {
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               <i className="ri-task-line"></i>
-              Tên task
+              Tên task *
             </label>
             <input
               type="text"
@@ -131,6 +159,26 @@ const CreateTaskModal = ({ onClose, onSubmit, projectId }) => {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Assignee Selection */}
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>
+              <i className="ri-user-line"></i>
+              Giao cho
+            </label>
+            {loadingMembers ? (
+              <div className={styles.loadingSelect}>Đang tải thành viên...</div>
+            ) : (
+              <select name="assignee" value={formData.assignee} onChange={handleChange} className={styles.formSelect}>
+                <option value="">Chưa giao cho ai</option>
+                {projectMembers.map((member) => (
+                  <option key={member._id} value={member._id}>
+                    {member.username} {member.role === 'owner' ? '(Owner)' : ''}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className={styles.formRow}>

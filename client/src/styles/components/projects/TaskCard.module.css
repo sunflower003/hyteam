@@ -109,7 +109,7 @@
   color: #172b4d;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: background 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .taskMenu button:hover {

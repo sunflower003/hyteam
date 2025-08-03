@@ -289,6 +289,96 @@ const getProjectMembers = async (req, res) => {
   }
 };
 
+// Thêm controller function
+
+const inviteMember = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { email, role } = req.body;
+    const userId = req.user.id;
+
+    // Validate input
+    if (!email || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email và vai trò là bắt buộc'
+      });
+    }
+
+    // Check if project exists and user has permission
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy project'
+      });
+    }
+
+    // Check if current user is owner or admin
+    const currentMember = project.members.find(m => 
+      m.user.toString() === userId && 
+      (m.role === 'owner' || m.role === 'admin')
+    );
+
+    if (!currentMember) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền mời thành viên'
+      });
+    }
+
+    // Find user by email
+    const invitedUser = await User.findOne({ email });
+    if (!invitedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng với email này'
+      });
+    }
+
+    // Check if user is already a member
+    const existingMember = project.members.find(m => 
+      m.user.toString() === invitedUser._id.toString()
+    );
+
+    if (existingMember) {
+      return res.status(400).json({
+        success: false,
+        message: 'Người dùng đã là thành viên của project'
+      });
+    }
+
+    // Add user to project
+    project.members.push({
+      user: invitedUser._id,
+      role: role,
+      joinedAt: new Date()
+    });
+
+    await project.save();
+
+    res.json({
+      success: true,
+      message: 'Đã mời thành viên thành công',
+      data: {
+        user: {
+          _id: invitedUser._id,
+          username: invitedUser.username,
+          email: invitedUser.email
+        },
+        role
+      }
+    });
+
+  } catch (error) {
+    console.error('Invite member error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi mời thành viên'
+    });
+  }
+};
+
 module.exports = {
   getProjects,
   createProject,
@@ -296,5 +386,6 @@ module.exports = {
   createTask,
   updateTask,
   deleteTask,
-  getProjectMembers
+  getProjectMembers,
+  inviteMember
 };

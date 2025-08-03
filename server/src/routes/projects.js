@@ -8,7 +8,8 @@ const {
   createTask,
   updateTask,
   deleteTask,
-  getProjectMembers
+  getProjectMembers,
+  inviteMember,
 } = require('../controllers/projectController');
 
 // Protect all routes
@@ -19,6 +20,9 @@ router.get('/', getProjects);
 router.post('/', createProject);
 router.get('/:projectId', getProject);
 router.get('/:projectId/members', getProjectMembers);
+
+// Thêm route invite member
+router.post('/:projectId/invite', protect, inviteMember);
 
 // Task routes
 router.post('/:projectId/tasks', createTask);

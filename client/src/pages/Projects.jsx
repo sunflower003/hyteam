@@ -22,6 +22,7 @@ const Projects = () => {
   const [showInviteMember, setShowInviteMember] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [projectMembers, setProjectMembers] = useState([]) // Thêm state để store members
 
   const columns = [
     { id: "todo", title: "TO DO", color: "#6C7B7F" },
@@ -33,6 +34,13 @@ const Projects = () => {
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  // Fetch project data khi selectedProject thay đổi
+  useEffect(() => {
+    if (selectedProject) {
+      fetchProjectData(selectedProject._id)
+    }
+  }, [selectedProject])
 
   // API calls
   const fetchProjects = async () => {
@@ -49,6 +57,28 @@ const Projects = () => {
       console.error("Error fetching projects:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Fetch project data (tasks + members)
+  const fetchProjectData = async (projectId) => {
+    try {
+      // Fetch tasks
+      const tasksResponse = await api.get(`/api/projects/${projectId}/tasks`)
+      if (tasksResponse.data.success) {
+        setSelectedProject(prev => ({
+          ...prev,
+          tasks: tasksResponse.data.data
+        }))
+      }
+
+      // Fetch members
+      const membersResponse = await api.get(`/api/projects/${projectId}/members`)
+      if (membersResponse.data.success) {
+        setProjectMembers(membersResponse.data.data)
+      }
+    } catch (error) {
+      console.error("Error fetching project data:", error)
     }
   }
 
@@ -70,20 +100,9 @@ const Projects = () => {
     try {
       const response = await api.post(`/api/projects/${selectedProject._id}/tasks`, taskData)
       if (response.data.success) {
-        const newTask = response.data.data
-        setSelectedProject((prev) => ({
-          ...prev,
-          tasks: [...(prev.tasks || []), { ...newTask, isNew: true }],
-        }))
+        // Refresh project data sau khi tạo task
+        await fetchProjectData(selectedProject._id)
         setShowCreateTask(false)
-
-        // Remove new flag after animation
-        setTimeout(() => {
-          setSelectedProject((prev) => ({
-            ...prev,
-            tasks: prev.tasks.map((task) => ({ ...task, isNew: false })),
-          }))
-        }, 300)
       }
     } catch (error) {
       console.error("Error creating task:", error)
@@ -94,15 +113,33 @@ const Projects = () => {
     try {
       const response = await api.put(`/api/projects/tasks/${taskId}`, taskData)
       if (response.data.success) {
+        // Find assignee info if exists
+        let assigneeInfo = null
+        if (taskData.assignee) {
+          assigneeInfo = projectMembers.find(m => m._id === taskData.assignee)
+        }
+
+        // Update local state với assignee info đầy đủ
         setSelectedProject((prev) => ({
           ...prev,
-          tasks: prev.tasks.map((task) => (task._id === taskId ? { ...task, ...taskData } : task)),
+          tasks: prev.tasks.map((task) => 
+            task._id === taskId 
+              ? { 
+                  ...task, 
+                  ...taskData,
+                  assignee: assigneeInfo // Set assignee object thay vì chỉ ID
+                }
+              : task
+          ),
         }))
+        
+        // Close modal
         setShowEditTask(false)
         setSelectedTask(null)
       }
     } catch (error) {
       console.error("Error updating task:", error)
+      throw error // Throw để EditTaskModal có thể handle error
     }
   }
 
@@ -134,21 +171,6 @@ const Projects = () => {
     }
   }
 
-  const inviteMember = async (email, role = "member") => {
-    try {
-      const response = await api.post(`/api/projects/${selectedProject._id}/invite`, { email, role })
-      if (response.data.success) {
-        setSelectedProject((prev) => ({
-          ...prev,
-          members: [...prev.members, response.data.data],
-        }))
-        setShowInviteMember(false)
-      }
-    } catch (error) {
-      console.error("Error inviting member:", error)
-    }
-  }
-
   // Drag and drop handlers
   const dragHandlers = useDragAndDrop(moveTask)
 
@@ -161,6 +183,14 @@ const Projects = () => {
   const handleDeleteTask = (taskId) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa task này?")) {
       deleteTask(taskId)
+    }
+  }
+
+  // Handle invite member success
+  const handleInviteSuccess = () => {
+    // Refresh project data
+    if (selectedProject) {
+      fetchProjectData(selectedProject._id)
     }
   }
 
@@ -258,9 +288,9 @@ const Projects = () => {
 
       {showInviteMember && selectedProject && (
         <InviteMemberModal
-          onClose={() => setShowInviteMember(false)}
-          onSubmit={inviteMember}
           projectId={selectedProject._id}
+          onClose={() => setShowInviteMember(false)}
+          onSuccess={handleInviteSuccess}
         />
       )}
     </div>

@@ -1,93 +1,96 @@
-import { useState, useRef, useEffect } from 'react';
-import { useChat } from '../../context/ChatContext';
-import styles from '../../styles/components/chat/MessageInput.module.css';
+"use client"
 
-const MessageInput = ({ onSendMessage, placeholder = "Nhập tin nhắn..." }) => {
-  const [message, setMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const { startTyping, stopTyping } = useChat();
-  const inputRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+import { useState, useRef, useEffect } from "react"
+import { useChat } from "../../context/ChatContext"
+import styles from "../../styles/components/chat/MessageInput.module.css"
+
+const MessageInput = ({ onSendMessage, placeholder = "Message..." }) => {
+  const [message, setMessage] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+  const { startTyping, stopTyping } = useChat()
+  const inputRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
 
   const handleInputChange = (e) => {
-    setMessage(e.target.value);
-    
+    setMessage(e.target.value)
+
     // Typing indicators
-    if (!isTyping) {
-      setIsTyping(true);
-      startTyping();
+    if (!isTyping && e.target.value.trim()) {
+      setIsTyping(true)
+      startTyping()
     }
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
+      clearTimeout(typingTimeoutRef.current)
     }
 
     // Set new timeout to stop typing
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-      stopTyping();
-    }, 1000);
-  };
+    if (e.target.value.trim()) {
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false)
+        stopTyping()
+      }, 1000)
+    } else {
+      setIsTyping(false)
+      stopTyping()
+    }
+  }
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!message.trim()) return;
-    
-    onSendMessage(message.trim());
-    setMessage('');
-    
+    e.preventDefault()
+
+    if (!message.trim()) return
+
+    onSendMessage(message.trim())
+    setMessage("")
+
     // Stop typing indicator
     if (isTyping) {
-      setIsTyping(false);
-      stopTyping();
+      setIsTyping(false)
+      stopTyping()
     }
-    
+
     // Clear timeout
     if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
+      clearTimeout(typingTimeoutRef.current)
     }
-  };
+  }
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
     }
-  };
+  }
 
   // Auto-resize textarea
   useEffect(() => {
-    const textarea = inputRef.current;
+    const textarea = inputRef.current
     if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      textarea.style.height = "auto"
+      textarea.style.height = Math.min(textarea.scrollHeight, 144) + "px"
     }
-  }, [message]);
+  }, [message])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+        clearTimeout(typingTimeoutRef.current)
       }
       if (isTyping) {
-        stopTyping();
+        stopTyping()
       }
-    };
-  }, []);
+    }
+  }, [])
 
   return (
     <div className={styles.messageInputContainer}>
       <form onSubmit={handleSubmit} className={styles.messageForm}>
         {/* Attachment Button */}
-        <button 
-          type="button" 
-          className={styles.attachmentBtn}
-          title="Đính kèm file"
-        >
-          <i className="ri-attachment-2"></i>
+        <button type="button" className={styles.attachmentBtn} title="Attach file">
+          <i className="ri-add-circle-line"></i>
         </button>
 
         {/* Message Input */}
@@ -102,36 +105,32 @@ const MessageInput = ({ onSendMessage, placeholder = "Nhập tin nhắn..." }) =
             rows={1}
             maxLength={2000}
           />
-          
-          {/* Emoji Button */}
-          <button 
-            type="button" 
-            className={styles.emojiBtn}
-            title="Chọn emoji"
-          >
-            <i className="ri-emotion-line"></i>
-          </button>
         </div>
 
-        {/* Send Button */}
-        <button 
-          type="submit" 
-          className={`${styles.sendBtn} ${message.trim() ? styles.active : ''}`}
-          disabled={!message.trim()}
-          title="Gửi tin nhắn"
-        >
-          <i className="ri-send-plane-2-fill"></i>
-        </button>
+        {/* Input Actions */}
+        <div className={styles.inputActions}>
+          <button type="button" className={styles.emojiBtn} title="Choose emoji">
+            <i className="ri-emotion-line"></i>
+          </button>
+
+          <button type="button" className={styles.gifBtn} title="Choose GIF">
+            <i className="ri-file-gif-line"></i>
+          </button>
+
+          <button type="button" className={styles.stickerBtn} title="Choose sticker">
+            <i className="ri-sticker-line"></i>
+          </button>
+        </div>
       </form>
 
       {/* Character count (when approaching limit) */}
       {message.length > 1800 && (
-        <div className={styles.characterCount}>
+        <div className={`${styles.characterCount} ${message.length > 1900 ? styles.danger : styles.warning}`}>
           {message.length}/2000
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default MessageInput;
+export default MessageInput

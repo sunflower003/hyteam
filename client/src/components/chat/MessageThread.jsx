@@ -1,80 +1,105 @@
-import { useState, useEffect, useRef } from 'react';
-import { useChat } from '../../context/ChatContext';
-import { useAuth } from '../../context/AuthContext';
-import MessageInput from './MessageInput';
-import styles from '../../styles/components/chat/MessageThread.module.css';
+"use client"
 
-const MessageThread = ({ conversation, messages, onBack, showBackButton }) => {
-  const { sendMessage, typingUsers, onlineUsers } = useChat();
-  const { user } = useAuth();
-  const messagesEndRef = useRef(null);
-  const [replyingTo, setReplyingTo] = useState(null);
+import { useState, useEffect, useRef } from "react"
+import { useChat } from "../../context/ChatContext"
+import { useAuth } from "../../context/AuthContext"
+import MessageInput from "./MessageInput"
+import styles from "../../styles/components/chat/MessageThread.module.css"
+
+const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggleChatInfo }) => {
+  const { sendMessage, typingUsers, onlineUsers } = useChat()
+  const { user } = useAuth()
+  const messagesEndRef = useRef(null)
+  const [replyingTo, setReplyingTo] = useState(null)
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    scrollToBottom()
+  }, [messages])
 
   const handleSendMessage = async (content) => {
     try {
-      await sendMessage(content);
-      setReplyingTo(null);
+      if (!content?.trim()) {
+        console.warn("Empty message content")
+        return
+      }
+
+      if (!conversation?._id) {
+        console.warn("No active conversation")
+        return
+      }
+
+      console.log("Sending message:", content, "ReplyTo:", replyingTo)
+      await sendMessage(content, replyingTo)
+      setReplyingTo(null)
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error)
     }
-  };
+  }
 
   const formatMessageTime = (date) => {
-    return new Date(date).toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+    return new Date(date).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+  }
 
   const isUserOnline = () => {
-    if (conversation.type === 'group') return false;
-    
-    const otherParticipant = conversation.participants.find(p => p.user._id !== user.id);
-    return otherParticipant && onlineUsers.has(otherParticipant.user._id);
-  };
+    if (conversation.type === "group") return false
+
+    const otherParticipant = conversation.participants.find((p) => p.user._id !== user.id)
+    return otherParticipant && onlineUsers.has(otherParticipant.user._id)
+  }
+
+  const shouldShowAvatar = (message, index) => {
+    if (index === 0) return true
+    const prevMessage = messages[index - 1]
+    return prevMessage.sender._id !== message.sender._id
+  }
+
+  const shouldShowHeader = (message, index) => {
+    if (index === 0) return true
+    const prevMessage = messages[index - 1]
+    const timeDiff = new Date(message.createdAt) - new Date(prevMessage.createdAt)
+    return prevMessage.sender._id !== message.sender._id || timeDiff > 5 * 60 * 1000 // 5 minutes
+  }
 
   const renderMessage = (message, index) => {
-    const isOwnMessage = message.sender._id === user.id;
-    const showAvatar = index === 0 || messages[index - 1].sender._id !== message.sender._id;
-    const isLastInGroup = index === messages.length - 1 || 
-                         messages[index + 1].sender._id !== message.sender._id;
+    const isOwnMessage = message.sender._id === user.id
+    const showAvatar = shouldShowAvatar(message, index)
+    const showHeader = shouldShowHeader(message, index)
 
     return (
       <div
         key={message._id}
-        className={`${styles.messageContainer} ${
-          isOwnMessage ? styles.ownMessage : styles.otherMessage
-        }`}
+        className={`${styles.messageContainer} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}
       >
-        {/* Avatar - chỉ hiển thị cho tin nhắn đầu tiên trong nhóm */}
-        {!isOwnMessage && showAvatar && (
-          <div className={styles.messageAvatar}>
-            {message.sender.avatar ? (
-              <img src={message.sender.avatar} alt={message.sender.username} />
+        {/* Avatar - only show for others and when needed */}
+        <div className={styles.messageAvatar}>
+          {!isOwnMessage && showAvatar ? (
+            message.sender.avatar ? (
+              <img src={message.sender.avatar || "/placeholder.svg"} alt={message.sender.username} />
             ) : (
-              <div className={styles.defaultAvatar}>
-                {message.sender.username.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-        )}
+              <div className={styles.defaultAvatar}>{message.sender.username.charAt(0).toUpperCase()}</div>
+            )
+          ) : null}
+        </div>
 
         <div className={styles.messageContent}>
-          {/* Sender name - chỉ hiển thị trong group chat và cho tin nhắn đầu tiên */}
-          {!isOwnMessage && showAvatar && conversation.type === 'group' && (
-            <div className={styles.senderName}>{message.sender.username}</div>
+          {/* Message Header - show sender name and time */}
+          {!isOwnMessage && showHeader && (
+            <div className={styles.messageHeader}>
+              <span className={styles.senderName}>{message.sender.username}</span>
+              <span className={styles.messageTimestamp}>{formatMessageTime(message.createdAt)}</span>
+            </div>
           )}
 
-          {/* Reply to message */}
+          {/* Reply Context */}
           {message.replyTo && (
             <div className={styles.replyContext}>
               <div className={styles.replyLine}></div>
@@ -85,42 +110,27 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton }) => {
             </div>
           )}
 
-          {/* Message bubble */}
-          <div 
-            className={`${styles.messageBubble} ${
-              isLastInGroup ? styles.lastInGroup : ''
-            }`}
-          >
+          {/* Message Content */}
+          <div className={styles.messageBubble}>
             <p>{message.content}</p>
-            
-            {/* Message time - chỉ hiển thị cho tin nhắn cuối trong nhóm */}
-            {isLastInGroup && (
-              <div className={styles.messageTime}>
-                {formatMessageTime(message.createdAt)}
-                {isOwnMessage && (
-                  <span className={styles.messageStatus}>
-                    {/* TODO: Implement read status */}
-                    ✓✓
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Message actions */}
+        {/* Message Actions */}
         <div className={styles.messageActions}>
-          <button 
-            className={styles.replyBtn}
-            onClick={() => setReplyingTo(message)}
-            title="Trả lời"
-          >
+          <button className={styles.replyBtn} onClick={() => setReplyingTo(message)} title="Reply">
             <i className="ri-reply-line"></i>
+          </button>
+          <button className={styles.emojiBtn} title="Add reaction">
+            <i className="ri-emotion-line"></i>
+          </button>
+          <button className={styles.moreBtn} title="More">
+            <i className="ri-more-line"></i>
           </button>
         </div>
       </div>
-    );
-  };
+    )
+  }
 
   return (
     <div className={styles.messageThread}>
@@ -131,29 +141,31 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton }) => {
             <i className="ri-arrow-left-line"></i>
           </button>
         )}
-        
+
         <div className={styles.conversationInfo}>
           <div className={styles.avatarContainer}>
             {conversation.avatar ? (
-              <img src={conversation.avatar} alt={conversation.name} />
+              <img src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
             ) : (
-              <div className={styles.defaultAvatar}>
-                {conversation.name.charAt(0).toUpperCase()}
-              </div>
+              <div className={styles.defaultAvatar}>{conversation.name.charAt(0).toUpperCase()}</div>
             )}
             {isUserOnline() && <div className={styles.onlineIndicator}></div>}
           </div>
-          
+
           <div className={styles.conversationDetails}>
             <h3>{conversation.name}</h3>
-            <p className={styles.status}>
-              {isUserOnline() ? 'Đang hoạt động' : 'Không hoạt động'}
-            </p>
+            <p className={styles.status}>{isUserOnline() ? "Active now" : "Offline"}</p>
           </div>
         </div>
 
         <div className={styles.headerActions}>
-          <button className={styles.actionBtn} title="Thông tin cuộc trò chuyện">
+          <button className={styles.actionBtn} title="Voice call">
+            <i className="ri-phone-line"></i>
+          </button>
+          <button className={styles.actionBtn} title="Video call">
+            <i className="ri-vidicon-line"></i>
+          </button>
+          <button className={styles.actionBtn} onClick={onToggleChatInfo} title="Chat info">
             <i className="ri-information-line"></i>
           </button>
         </div>
@@ -164,13 +176,13 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton }) => {
         {messages.length === 0 ? (
           <div className={styles.noMessages}>
             <div className={styles.noMessagesIcon}>💬</div>
-            <h4>Bắt đầu cuộc trò chuyện</h4>
-            <p>Gửi tin nhắn đầu tiên để bắt đầu trò chuyện</p>
+            <h4>Start the conversation</h4>
+            <p>Send your first message to begin chatting</p>
           </div>
         ) : (
           <>
             {messages.map((message, index) => renderMessage(message, index))}
-            
+
             {/* Typing indicators */}
             {typingUsers.length > 0 && (
               <div className={styles.typingIndicator}>
@@ -179,29 +191,28 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton }) => {
                   <span></span>
                   <span></span>
                 </div>
-                <p>đang nhập...</p>
+                <p>
+                  {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing...
+                </p>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
-      {/* Reply Context */}
+      {/* Reply Context Bar */}
       {replyingTo && (
-        <div className={styles.replyContext}>
+        <div className={styles.replyContextBar}>
           <div className={styles.replyPreview}>
             <div className={styles.replyLine}></div>
             <div className={styles.replyInfo}>
-              <strong>Trả lời {replyingTo.sender.username}</strong>
+              <strong>Replying to {replyingTo.sender.username}</strong>
               <p>{replyingTo.content.substring(0, 100)}</p>
             </div>
           </div>
-          <button 
-            className={styles.cancelReply}
-            onClick={() => setReplyingTo(null)}
-          >
+          <button className={styles.cancelReply} onClick={() => setReplyingTo(null)}>
             <i className="ri-close-line"></i>
           </button>
         </div>
@@ -210,7 +221,7 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton }) => {
       {/* Message Input */}
       <MessageInput onSendMessage={handleSendMessage} />
     </div>
-  );
-};
+  )
+}
 
-export default MessageThread;
+export default MessageThread

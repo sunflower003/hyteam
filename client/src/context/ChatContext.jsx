@@ -389,19 +389,25 @@ export const ChatProvider = ({ children }) => {
   };
 
   // Send message
-  const sendMessage = async (content, conversationId = state.activeConversation?._id) => {
-    if (!content?.trim() || !conversationId) {
-      console.warn('⚠️ Cannot send message: missing content or conversation');
+  const sendMessage = async (content, replyTo = null, conversationId = state.activeConversation?._id) => {
+    if (!content?.trim()) {
+      console.warn('⚠️ Cannot send message: missing content');
+      return;
+    }
+    
+    if (!conversationId) {
+      console.warn('⚠️ Cannot send message: missing conversation');
       return;
     }
 
     try {
-      console.log('📤 Sending message:', { content, conversationId });
+      console.log('📤 Sending message:', { content, conversationId, replyTo });
       
       const messageData = {
         conversationId,
         content: content.trim(),
-        messageType: 'text'
+        messageType: 'text',
+        replyTo: replyTo?._id // Thêm replyTo nếu có
       };
 
       // Send via socket for real-time

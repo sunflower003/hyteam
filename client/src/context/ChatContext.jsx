@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, useRef } from 'react';
+import { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react'; // Thêm useCallback
 import { useAuth } from './AuthContext';
 import io from 'socket.io-client';
 import api from '../utils/api';
@@ -139,20 +139,39 @@ export const ChatProvider = ({ children }) => {
     };
   }, [user?.id]);
 
-  // Fetch conversations
-  const fetchConversations = async () => {
+  // Fix fetchConversations - đang bị lỗi dispatch
+  const fetchConversations = useCallback(async () => {
+    if (state.loading) return; // Use state.loading instead of undefined loading
+    
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const response = await api.get('/api/chat/conversations');
+      dispatch({ type: 'SET_LOADING', payload: true }); // Use dispatch instead of setLoading
+      console.log("Fetching conversations...");
+      const response = await api.get("/api/chats/conversations");
       if (response.data.success) {
-        dispatch({ type: 'SET_CONVERSATIONS', payload: response.data.data });
+        dispatch({ type: 'SET_CONVERSATIONS', payload: response.data.data }); // Use dispatch instead of setConversations
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error("Error fetching conversations:", error);
     } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: 'SET_LOADING', payload: false }); // Use dispatch instead of setLoading
     }
-  };
+  }, [state.loading]); // Dependency array đúng
+
+  // Auto-fetch conversations khi user login - ONLY ONCE
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (user?.id && !state.loading && state.conversations.length === 0) {
+      console.log('ChatContext: Auto-fetching conversations');
+      if (isMounted) {
+        fetchConversations();
+      }
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]); // Only depend on user?.id, remove other dependencies
 
   // Search users
   const searchUsers = async (query) => {
@@ -162,7 +181,7 @@ export const ChatProvider = ({ children }) => {
       }
 
       console.log('Searching users with query:', query);
-      const response = await api.get(`/api/chat/users/search?query=${encodeURIComponent(query.trim())}`);
+      const response = await api.get(`/api/chats/users/search?query=${encodeURIComponent(query.trim())}`);
       console.log('Search response:', response.data);
       
       if (response.data.success) {
@@ -184,7 +203,7 @@ export const ChatProvider = ({ children }) => {
         throw new Error('Target user ID is required');
       }
 
-      const response = await api.post('/api/chat/conversations', {
+      const response = await api.post('/api/chats/conversations', {
         targetUserId
       });
 
@@ -228,7 +247,7 @@ export const ChatProvider = ({ children }) => {
   // Fetch messages
   const fetchMessages = async (conversationId) => {
     try {
-      const response = await api.get(`/api/chat/conversations/${conversationId}/messages`);
+      const response = await api.get(`/api/chats/conversations/${conversationId}/messages`);
       if (response.data.success) {
         dispatch({ type: 'SET_MESSAGES', payload: response.data.data.messages });
       }

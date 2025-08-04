@@ -11,16 +11,15 @@ const Chat = () => {
     activeConversation,
     messages,
     loading,
-    fetchConversations,
     setActiveConversation
+    // 🚫 Remove state, fetchConversations - causing infinite loop
   } = useChat();
 
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // Only handle resize - Remove all fetchConversations calls
   useEffect(() => {
-    fetchConversations();
-
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -28,6 +27,9 @@ const Chat = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // 🚫 REMOVE both useEffect with fetchConversations
+  // Let ChatContext handle fetching automatically
 
   const handleSelectConversation = (conversation) => {
     setActiveConversation(conversation);

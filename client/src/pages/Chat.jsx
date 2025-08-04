@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useChat } from '../context/ChatContext';
 import ConversationList from '../components/chat/ConversationList';
 import MessageThread from '../components/chat/MessageThread';
@@ -11,14 +11,16 @@ const Chat = () => {
     activeConversation,
     messages,
     loading,
-    setActiveConversation
-    // 🚫 Remove state, fetchConversations - causing infinite loop
+    error,
+    setActiveConversation,
+    fetchConversations,
+    createOrGetConversation
   } = useChat();
 
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const hasFetched = useRef(false); // Add ref to prevent multiple fetches
 
-  // Only handle resize - Remove all fetchConversations calls
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -28,11 +30,19 @@ const Chat = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 🚫 REMOVE both useEffect with fetchConversations
-  // Let ChatContext handle fetching automatically
+  // Only fetch once when component mounts
+  useEffect(() => {
+    console.log("📱 Chat component mounted");
+    if (!hasFetched.current && conversations.length === 0 && !loading) {
+      console.log("🔄 Triggering initial fetch");
+      hasFetched.current = true;
+      fetchConversations?.();
+    }
+  }, []); // Empty dependency array
 
-  const handleSelectConversation = (conversation) => {
-    setActiveConversation(conversation);
+  const handleSelectConversation = async (conversation) => {
+    console.log("🎯 Selecting conversation:", conversation);
+    await setActiveConversation(conversation);
   };
 
   const handleBackToList = () => {
@@ -41,12 +51,44 @@ const Chat = () => {
     }
   };
 
+  const handleSelectUser = async (user) => {
+    try {
+      console.log("👤 Creating conversation with user:", user);
+      const conversation = await createOrGetConversation(user._id);
+      await setActiveConversation(conversation);
+      setShowUserSearch(false);
+    } catch (error) {
+      console.error("❌ Error creating conversation:", error);
+      alert("Không thể tạo cuộc trò chuyện. Vui lòng thử lại.");
+    }
+  };
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    hasFetched.current = false;
+    fetchConversations?.();
+  };
+
   if (loading) {
     return (
       <div className={styles.chatContainer}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
           <p>Đang tải tin nhắn...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.chatContainer}>
+        <div className={styles.error}>
+          <h3>⚠️ Có lỗi xảy ra</h3>
+          <p>{error}</p>
+          <button onClick={handleRefresh}>
+            Thử lại
+          </button>
         </div>
       </div>
     );
@@ -70,7 +112,7 @@ const Chat = () => {
       </div>
 
       <div className={styles.chatContent}>
-        {/* Conversation List - Ẩn trên mobile khi có active conversation */}
+        {/* Conversation List */}
         <div className={`${styles.conversationSidebar} ${
           isMobile && activeConversation ? styles.hidden : ''
         }`}>
@@ -79,9 +121,22 @@ const Chat = () => {
             activeConversation={activeConversation}
             onSelectConversation={handleSelectConversation}
           />
+          
+          {/* Debug info - only show conversation count */}
+          {process.env.NODE_ENV === 'development' && (
+            <div style={{ padding: '10px', fontSize: '12px', color: '#666' }}>
+              Conversations: {conversations.length}
+              <button 
+                onClick={handleRefresh} 
+                style={{ marginLeft: '10px', fontSize: '10px' }}
+              >
+                Refresh
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Message Thread - Hiển thị khi có active conversation */}
+        {/* Message Thread */}
         <div className={`${styles.messageArea} ${
           !activeConversation ? styles.placeholder : ''
         }`}>
@@ -112,10 +167,7 @@ const Chat = () => {
       {showUserSearch && (
         <UserSearch 
           onClose={() => setShowUserSearch(false)}
-          onSelectUser={(user) => {
-            // Logic để tạo conversation và chuyển đến đó
-            setShowUserSearch(false);
-          }}
+          onSelectUser={handleSelectUser}
         />
       )}
     </div>

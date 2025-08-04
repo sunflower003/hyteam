@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ChatProvider } from './context/ChatContext'; 
 import NewLogin from './components/NewLogin';
 import Register from './components/Register';
 import MovieRoom from './components/MovieRoom';
@@ -10,6 +11,7 @@ import Settings from './components/Settings';
 import Layout from './components/Layout';
 import Hyfeed from './pages/Hyfeed';
 import Projects from './pages/Projects';
+import Chat from './pages/Chat'; 
 import './App.css'
 
 const AppContent = () => {
@@ -38,20 +40,23 @@ const AppContent = () => {
     }
 
     return (
-      <div className="app">
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Hyfeed />} />
-            <Route path="movie-room" element={<MovieRoom />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="profile/:userId" element={<Profile />} />
-            <Route path="edit-profile" element={<EditProfile />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="projects" element={<Projects />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+      <ChatProvider> 
+        <div className="app">
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Hyfeed />} />
+              <Route path="chat" element={<Chat />} /> 
+              <Route path="movie-room" element={<MovieRoom />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="profile/:userId" element={<Profile />} />
+              <Route path="edit-profile" element={<EditProfile />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="projects" element={<Projects />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </ChatProvider>
     );
 };
 

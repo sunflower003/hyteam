@@ -25,6 +25,7 @@ const profileRoutes = require('./routes/profile');
 const storyRoutes = require('./routes/stories');
 const postRoutes = require('./routes/posts');
 const projectRoutes = require('./routes/projects');
+const chatRoutes = require('./routes/chats');
 // Thêm route dành cho AI Hypo (bạn cần file này ở src/ai/routes/hypo.js)
 const hypoRoutes = require('./ai/routes/hypo');
 
@@ -78,6 +79,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/projects', projectRoutes);
 // Đăng ký endpoint AI chat: FE sẽ POST lên api/ai/hypo/chat
 app.use('/api/ai/hypo', hypoRoutes);
+app.use('/api/chats', chatRoutes);  
 
 // Route cho các API không tồn tại
 app.all('*', (req, res) => {

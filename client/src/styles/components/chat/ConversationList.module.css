@@ -1,0 +1,178 @@
+.conversationList {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.searchContainer {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.searchInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchInputWrapper i {
+  position: absolute;
+  left: 0.75rem;
+  color: #6c757d;
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #007bff;
+}
+
+.conversationsContainer {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.noConversations {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #6c757d;
+  text-align: center;
+}
+
+.conversationItem {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.conversationItem:hover {
+  background: #f8f9fa;
+}
+
+.conversationItem.active {
+  background: #e3f2fd;
+  border-right: 3px solid #007bff;
+}
+
+.avatarContainer {
+  position: relative;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.avatarContainer img,
+.defaultAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.defaultAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #6c757d;
+  color: white;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.onlineIndicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  background: #28a745;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.conversationInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.conversationName {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lastMessageTime {
+  font-size: 0.75rem;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.conversationFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lastMessage {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.unreadBadge {
+  background: #007bff;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .conversationItem {
+    padding: 0.75rem;
+  }
+  
+  .avatarContainer img,
+  .defaultAvatar {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .searchContainer {
+    padding: 0.75rem;
+  }
+}

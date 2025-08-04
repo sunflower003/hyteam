@@ -1,0 +1,146 @@
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f8f9fa;
+}
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.headerLeft h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+}
+
+.headerLeft p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.newChatBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.newChatBtn:hover {
+  background: #0056b3;
+}
+
+.chatContent {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.conversationSidebar {
+  width: 350px;
+  background: white;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageArea.placeholder {
+  background: #f8f9fa;
+}
+
+.noConversation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+}
+
+.noConversationIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.noConversation h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+}
+
+.noConversation p {
+  margin: 0 0 2rem 0;
+  color: #6c757d;
+}
+
+.startChatBtn {
+  padding: 0.75rem 1.5rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .conversationSidebar {
+    width: 100%;
+  }
+  
+  .conversationSidebar.hidden {
+    display: none;
+  }
+  
+  .messageArea {
+    width: 100%;
+  }
+  
+  .chatHeader {
+    padding: 1rem;
+  }
+}

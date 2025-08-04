@@ -1,7 +1,11 @@
 const socketIo = require('socket.io');
 const { saveMessage } = require('../controllers/messageController');
+const ChatMessage = require('../models/ChatMessage');
+const Conversation = require('../models/Conversation');
 
-const rooms = new Map(); //Luu tru thong tin phong va nguoi dung
+const rooms = new Map();
+const userSockets = new Map(); // Track user's socket connections
+const onlineUsers = new Set(); // Track online users
 
 const initializeSocket = (server) => {
     const io = socketIo(server, {
@@ -12,10 +16,144 @@ const initializeSocket = (server) => {
         }
     });
 
-    io.on('connection', (socket) =>{
+    io.on('connection', (socket) => {
         console.log('User connected:', socket.id);
 
-        // join room event
+        // User authentication and online status
+        socket.on('user-online', (userData) => {
+            const { userId, username } = userData;
+            socket.userId = userId;
+            socket.username = username;
+            
+            userSockets.set(userId, socket.id);
+            onlineUsers.add(userId);
+            
+            // Notify others about online status
+            socket.broadcast.emit('user-status-changed', {
+                userId,
+                status: 'online'
+            });
+            
+            console.log(`User ${username} (${userId}) is online`);
+        });
+
+        // Join private conversation room
+        socket.on('join-conversation', (conversationId) => {
+            socket.join(`conversation_${conversationId}`);
+            console.log(`User ${socket.userId} joined conversation ${conversationId}`);
+        });
+
+        // Leave conversation room
+        socket.on('leave-conversation', (conversationId) => {
+            socket.leave(`conversation_${conversationId}`);
+            console.log(`User ${socket.userId} left conversation ${conversationId}`);
+        });
+
+        // Send private message
+        socket.on('send-private-message', async (messageData) => {
+            try {
+                const { conversationId, content, messageType, replyTo } = messageData;
+                
+                // Tạo message trong database
+                const message = await ChatMessage.create({
+                    conversationId,
+                    sender: socket.userId,
+                    content,
+                    messageType: messageType || 'text',
+                    replyTo: replyTo || null
+                });
+
+                await message.populate('sender', 'username avatar');
+                if (replyTo) {
+                    await message.populate('replyTo');
+                }
+
+                // Cập nhật conversation
+                const conversation = await Conversation.findById(conversationId)
+                    .populate('participants.user', 'username avatar');
+                
+                if (conversation) {
+                    conversation.lastMessage = message._id;
+                    conversation.lastActivity = new Date();
+
+                    // Tăng unread count cho participants khác
+                    conversation.participants.forEach(participant => {
+                        if (participant.user._id.toString() !== socket.userId) {
+                            const participantId = participant.user._id.toString();
+                            const currentCount = conversation.unreadCount.get(participantId) || 0;
+                            conversation.unreadCount.set(participantId, currentCount + 1);
+                        }
+                    });
+
+                    await conversation.save();
+
+                    // Emit message to conversation room
+                    io.to(`conversation_${conversationId}`).emit('new-private-message', {
+                        message,
+                        conversationId
+                    });
+
+                    // Emit conversation update to all participants
+                    conversation.participants.forEach(participant => {
+                        const participantSocketId = userSockets.get(participant.user._id.toString());
+                        if (participantSocketId) {
+                            io.to(participantSocketId).emit('conversation-updated', {
+                                conversationId,
+                                lastMessage: message,
+                                lastActivity: conversation.lastActivity,
+                                unreadCount: conversation.unreadCount.get(participant.user._id.toString()) || 0
+                            });
+                        }
+                    });
+                }
+
+                console.log(`Private message sent in conversation ${conversationId}`);
+            } catch (error) {
+                console.error('Error sending private message:', error);
+                socket.emit('message-error', { error: 'Failed to send message' });
+            }
+        });
+
+        // Typing indicators
+        socket.on('typing-start', (data) => {
+            const { conversationId } = data;
+            socket.to(`conversation_${conversationId}`).emit('user-typing', {
+                userId: socket.userId,
+                username: socket.username,
+                conversationId
+            });
+        });
+
+        socket.on('typing-stop', (data) => {
+            const { conversationId } = data;
+            socket.to(`conversation_${conversationId}`).emit('user-stop-typing', {
+                userId: socket.userId,
+                conversationId
+            });
+        });
+
+        // Message read status
+        socket.on('message-read', async (data) => {
+            try {
+                const { conversationId, messageId } = data;
+                
+                // Mark message as read
+                await ChatMessage.findByIdAndUpdate(messageId, {
+                    $push: { readBy: { user: socket.userId } }
+                });
+
+                // Notify sender
+                socket.to(`conversation_${conversationId}`).emit('message-read-update', {
+                    messageId,
+                    readBy: socket.userId
+                });
+
+            } catch (error) {
+                console.error('Error marking message as read:', error);
+            }
+        });
+
+        // Movie Room functionality (giữ nguyên từ code cũ)
         socket.on('join-room', (roomData) => {
             const { roomId, user } = roomData;
             socket.join(roomId);
@@ -44,7 +182,6 @@ const initializeSocket = (server) => {
                 inVoiceChat: false
             });
 
-            //Gui danh sach user trong phong
             const roomUsers = Array.from(rooms.get(roomId));
             io.to(roomId).emit('room-users', roomUsers);
 
@@ -257,7 +394,19 @@ const initializeSocket = (server) => {
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id);
 
-            // Xoa user khoi tat ca cac phong
+            // Remove from online users
+            if (socket.userId) {
+                onlineUsers.delete(socket.userId);
+                userSockets.delete(socket.userId);
+                
+                // Notify others about offline status
+                socket.broadcast.emit('user-status-changed', {
+                    userId: socket.userId,
+                    status: 'offline'
+                });
+            }
+
+            // Remove from movie rooms (giữ nguyên logic cũ)
             for (const [roomId, users] of rooms.entries()) {
                 for(let user of users) {
                     if(user.socketId === socket.id) {

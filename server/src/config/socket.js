@@ -12,9 +12,9 @@ const onlineUsers = new Set() // Track online users
 const initializeSocket = (server) => {
   const io = socketIo(server, {
     cors: {
-      origin: ["http://localhost:3000", "http://localhost:5173", "https://hyteam.onrender.com"],
-      methods: ["GET", "POST"],
-      credentials: true,
+            origin: process.env.SOCKET_CORS_ORIGIN || "http://localhost:5173",
+            methods: ["GET", "POST"],
+            credentials: true,
     },
     transports: ["websocket", "polling"],
   })

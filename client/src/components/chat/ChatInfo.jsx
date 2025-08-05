@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useChat } from "../../context/ChatContext"
+import VerifiedBadge from "../ui/VerifiedBadge"
 import styles from "../../styles/components/chat/ChatInfo.module.css"
 
 const ChatInfo = ({ conversation, onClose }) => {
@@ -44,6 +45,9 @@ const ChatInfo = ({ conversation, onClose }) => {
             )}
             {otherParticipant && isUserOnline(otherParticipant.user._id) && (
               <div className={styles.onlineIndicator}></div>
+            )}
+            {otherParticipant && otherParticipant.user.verified && (
+              <VerifiedBadge size="default" />
             )}
           </div>
           <h2>{conversation.name}</h2>
@@ -132,6 +136,9 @@ const ChatInfo = ({ conversation, onClose }) => {
                       </div>
                     )}
                     {isUserOnline(participant.user._id) && <div className={styles.memberOnlineIndicator}></div>}
+                    {participant.user.verified && (
+                      <VerifiedBadge size="small" />
+                    )}
                   </div>
                   <div className={styles.memberInfo}>
                     <span className={styles.memberName}>{participant.user.username}</span>

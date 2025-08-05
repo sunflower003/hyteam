@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import styles from '../styles/pages/EditProfile.module.css';
+import { ModularDatePicker } from '../components/ui/ModularDatePicker';
 
 const EditProfile = () => {
     const { user, setUser, refreshUser } = useAuth();
@@ -14,6 +15,7 @@ const EditProfile = () => {
         email: '',
         position: '',
         address: '',
+        dateOfBirth: null,
         website: '',
         facebook: '',
         instagram: '',
@@ -35,6 +37,7 @@ const EditProfile = () => {
                 email: user.email || '',
                 position: user.position || '',
                 address: user.address || '',
+                dateOfBirth: user.dateOfBirth || null,
                 website: user.website || '',
                 facebook: user.facebook || '',
                 instagram: user.instagram || '',
@@ -59,6 +62,7 @@ const EditProfile = () => {
                         email: profileUser.email || '',
                         position: profileUser.position || '',
                         address: profileUser.address || '',
+                        dateOfBirth: profileUser.dateOfBirth || null,
                         website: profileUser.website || '',
                         facebook: profileUser.facebook || '',
                         instagram: profileUser.instagram || '',
@@ -138,6 +142,20 @@ const EditProfile = () => {
             setErrors(prev => ({
                 ...prev,
                 [name]: ''
+            }));
+        }
+    };
+
+    const handleDateChange = (date) => {
+        setFormData(prev => ({
+            ...prev,
+            dateOfBirth: date
+        }));
+        // Clear error for date field
+        if (errors.dateOfBirth) {
+            setErrors(prev => ({
+                ...prev,
+                dateOfBirth: ''
             }));
         }
     };
@@ -411,6 +429,18 @@ const EditProfile = () => {
                             className={styles.input}
                             placeholder="e.g. Hanoi City, Vietnam"
                         />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <ModularDatePicker
+                            label="Date of Birth"
+                            value={formData.dateOfBirth}
+                            onChange={handleDateChange}
+                            placeholder="Select your date of birth"
+                        />
+                        {errors.dateOfBirth && (
+                            <span className={styles.errorText}>{errors.dateOfBirth}</span>
+                        )}
                     </div>
                 </div>
 

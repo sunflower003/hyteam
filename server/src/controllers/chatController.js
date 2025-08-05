@@ -22,7 +22,7 @@ const searchUsers = async (req, res) => {
       _id: { $ne: currentUserId },
       $or: [{ username: { $regex: searchTerm, $options: "i" } }, { email: { $regex: searchTerm, $options: "i" } }],
     })
-      .select("username email avatar isActive lastLogin")
+      .select("username email avatar verified isActive lastLogin")
       .limit(10)
       .sort({ username: 1 })
 
@@ -34,6 +34,7 @@ const searchUsers = async (req, res) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      verified: user.verified,
       isActive: user.isActive,
       lastLogin: user.lastLogin,
     }))
@@ -56,7 +57,7 @@ const getConversations = async (req, res) => {
       "participants.user": userId,
       isActive: { $ne: false },
     })
-      .populate("participants.user", "username avatar email")
+      .populate("participants.user", "username avatar email verified")
       .populate("lastMessage")
       .sort({ lastActivity: -1 })
       .limit(50)
@@ -103,7 +104,7 @@ const createOrGetPrivateConversation = async (req, res) => {
     }
 
     // Kiểm tra target user tồn tại
-    const targetUser = await User.findById(targetUserId).select("username avatar email")
+    const targetUser = await User.findById(targetUserId).select("username avatar email verified")
     if (!targetUser) {
       return res.status(404).json(createResponse(false, null, "Target user not found"))
     }
@@ -176,7 +177,7 @@ const getMessages = async (req, res) => {
       conversationId,
       isDeleted: { $ne: true },
     })
-      .populate("sender", "username avatar")
+      .populate("sender", "username avatar verified")
       .populate("replyTo")
       .sort({ createdAt: -1 })
       .limit(limit * 1)
@@ -241,7 +242,7 @@ const sendMessage = async (req, res) => {
     const conversation = await Conversation.findOne({
       _id: conversationId,
       "participants.user": userId,
-    }).populate("participants.user", "username avatar")
+    }).populate("participants.user", "username avatar verified")
 
     if (!conversation) {
       return res.status(404).json(createResponse(false, null, "Conversation not found"))
@@ -256,7 +257,7 @@ const sendMessage = async (req, res) => {
       replyTo: replyTo || null,
     })
 
-    await message.populate("sender", "username avatar")
+    await message.populate("sender", "username avatar verified")
     if (replyTo) {
       await message.populate("replyTo")
     }
@@ -322,7 +323,7 @@ const getConversationInfo = async (req, res) => {
     const conversation = await Conversation.findOne({
       _id: conversationId,
       "participants.user": userId,
-    }).populate("participants.user", "username avatar email isActive lastLogin")
+    }).populate("participants.user", "username avatar email verified isActive lastLogin")
 
     if (!conversation) {
       return res.status(404).json(createResponse(false, null, "Conversation not found"))

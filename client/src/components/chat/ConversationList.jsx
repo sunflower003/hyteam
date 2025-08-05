@@ -1,5 +1,6 @@
 "use client"
 import { useChat } from "../../context/ChatContext"
+import VerifiedBadge from "../ui/VerifiedBadge"
 import styles from "../../styles/components/chat/ConversationList.module.css"
 
 const ConversationList = ({ conversations, activeConversation, onSelectConversation, activeFilter }) => {
@@ -52,6 +53,11 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
     return otherParticipant && onlineUsers.has(otherParticipant.user._id)
   }
 
+  const getOtherParticipant = (conversation) => {
+    if (conversation.type === "group") return null
+    return conversation.participants.find((p) => p.user._id !== "currentUserId")
+  }
+
   return (
     <div className={styles.conversationList}>
       <div className={styles.conversationsContainer}>
@@ -61,7 +67,10 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
             <p>No conversations found</p>
           </div>
         ) : (
-          filteredConversations.map((conversation) => (
+          filteredConversations.map((conversation) => {
+            const otherParticipant = getOtherParticipant(conversation)
+            
+            return (
             <div
               key={conversation._id}
               className={`${styles.conversationItem} ${
@@ -79,6 +88,11 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
 
                 {/* Online Status */}
                 {isUserOnline(conversation) && <div className={styles.onlineIndicator}></div>}
+                
+                {/* Verified Badge */}
+                {otherParticipant && otherParticipant.user.verified && (
+                  <VerifiedBadge size="small" />
+                )}
               </div>
 
               {/* Conversation Info */}
@@ -100,7 +114,8 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
                 </div>
               </div>
             </div>
-          ))
+            )
+          })
         )}
       </div>
     </div>

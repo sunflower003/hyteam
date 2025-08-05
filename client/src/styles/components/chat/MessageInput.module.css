@@ -1,8 +1,11 @@
 .messageInputContainer {
-  background: #40444b;
+  background: rgba(248, 249, 250, 0.8);
+  border: 1px solid var(--border-color);
   margin: 0 16px 24px 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   position: relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .replyPreview {
@@ -10,27 +13,27 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: #36393f;
-  border-bottom: 1px solid #40444b;
-  border-radius: 8px 8px 0 0;
+  background: rgba(102, 126, 234, 0.1);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 12px 12px 0 0;
 }
 
 .replyContent {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #b9bbbe;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .replyContent i {
-  color: #5865f2;
+  color: #667eea;
 }
 
 .cancelReply {
   background: none;
   border: none;
-  color: #b9bbbe;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -38,8 +41,8 @@
 }
 
 .cancelReply:hover {
-  background: #40444b;
-  color: #dcddde;
+  background: var(--grey-2);
+  color: var(--text-primary);
 }
 
 .messageForm {
@@ -58,13 +61,14 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #b9bbbe;
+  color: var(--text-secondary);
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .attachmentBtn:hover {
-  color: #dcddde;
+  color: var(--text-primary);
+  transform: scale(1.1);
 }
 
 .attachmentBtn:disabled {
@@ -93,12 +97,12 @@
   line-height: 1.375;
   max-height: 144px;
   overflow-y: auto;
-  color: #dcddde;
+  color: var(--text-primary);
   min-height: 22px;
 }
 
 .messageInput::placeholder {
-  color: #72767d;
+  color: var(--text-secondary);
 }
 
 .messageInput:disabled {
@@ -114,7 +118,7 @@
 }
 
 .messageInput::-webkit-scrollbar-thumb {
-  background: #202225;
+  background: var(--border-color);
   border-radius: 4px;
 }
 
@@ -136,7 +140,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #b9bbbe;
+  color: var(--text-secondary);
   transition: all 0.2s;
   flex-shrink: 0;
 }
@@ -144,7 +148,8 @@
 .emojiBtn:hover,
 .gifBtn:hover,
 .stickerBtn:hover {
-  color: #dcddde;
+  color: var(--text-primary);
+  transform: scale(1.1);
 }
 
 .characterCount {
@@ -152,15 +157,15 @@
   bottom: -20px;
   right: 16px;
   font-size: 12px;
-  color: #72767d;
+  color: var(--text-secondary);
 }
 
 .characterCount.warning {
-  color: #faa61a;
+  color: #f59e0b;
 }
 
 .characterCount.danger {
-  color: #f23f42;
+  color: #ef4444;
 }
 
 /* Mobile responsive */

@@ -24,7 +24,7 @@ const Chat = () => {
   const { user } = useAuth() // ✅ LẤY user TỪ AuthContext
 
   const [showUserSearch, setShowUserSearch] = useState(false)
-  const [showChatInfo, setShowChatInfo] = useState(true)
+  const [showChatInfo, setShowChatInfo] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [activeFilter, setActiveFilter] = useState("All")
   const [hasInitialized, setHasInitialized] = useState(false) 

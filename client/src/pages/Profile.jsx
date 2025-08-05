@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import VerifiedBadge from '../components/ui/VerifiedBadge';
 import api from '../utils/api';
 import styles from '../styles/pages/Profile.module.css';
 
@@ -104,26 +105,29 @@ const Profile = () => {
     };
 
     const renderAvatar = () => {
-        if (profileUser?.avatar && profileUser.avatar !== 'https://example.com/default-avatar.png') {
-            return (
-                <img 
-                    src={profileUser.avatar} 
-                    alt="avatar" 
-                    className={styles.avatar} 
-                />
-            );
-        } else {
-            const initial = getInitial(profileUser?.username);
-            const bgColor = getAvatarColor(profileUser?.username || 'User');
-            return (
-                <div 
-                    className={`${styles.avatar} ${styles.avatarDefault}`}
-                    style={{ backgroundColor: bgColor }}
-                >
-                    {initial}
-                </div>
-            );
-        }
+        const avatarElement = profileUser?.avatar && profileUser.avatar !== 'https://example.com/default-avatar.png' ? (
+            <img 
+                src={profileUser.avatar} 
+                alt="avatar" 
+                className={styles.avatar} 
+            />
+        ) : (
+            <div 
+                className={`${styles.avatar} ${styles.avatarDefault}`}
+                style={{ backgroundColor: getAvatarColor(profileUser?.username || 'User') }}
+            >
+                {getInitial(profileUser?.username)}
+            </div>
+        );
+
+        return (
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+                {avatarElement}
+                {profileUser?.verified && (
+                    <VerifiedBadge size="default" />
+                )}
+            </div>
+        );
     };
 
     if (loading) {

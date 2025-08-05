@@ -1,0 +1,68 @@
+/* Verified Badge Styles */
+.verifiedBadge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: #1da1f2;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(29, 161, 242, 0.3);
+  z-index: 3;
+}
+
+.verifiedBadge svg {
+  width: 10px;
+  height: 10px;
+  fill: white;
+}
+
+/* Smaller verified badge for smaller avatars */
+.verifiedBadgeSmall {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  background: #1da1f2;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(29, 161, 242, 0.3);
+  z-index: 3;
+}
+
+.verifiedBadgeSmall svg {
+  width: 8px;
+  height: 8px;
+  fill: white;
+}
+
+/* Very small verified badge for tiny avatars */
+.verifiedBadgeTiny {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 12px;
+  height: 12px;
+  background: #1da1f2;
+  border: 1px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(29, 161, 242, 0.3);
+  z-index: 3;
+}
+
+.verifiedBadgeTiny svg {
+  width: 6px;
+  height: 6px;
+  fill: white;
+}

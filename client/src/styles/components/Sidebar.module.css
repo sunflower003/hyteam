@@ -22,9 +22,8 @@
 }
 
 .logo {
-    font-family: "Open Sans", sans-serif;
-    font-weight: 800;
-    font-size: 25px;
+    font-weight: 600;
+    font-size: 24px;
     cursor: pointer;
 }
 
@@ -43,11 +42,11 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 15px;
+    font-size: 16px;
     cursor: pointer;
-    font-weight: 500;
     padding: 10px;
     border-radius: 10px;
+    font-weight: 500;
 }
 
 .link:hover {
@@ -56,6 +55,7 @@
 
 .links i {
     font-size: 22px;
+    font-weight: normal;
 }
 
 .account {

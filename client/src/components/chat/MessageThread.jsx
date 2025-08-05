@@ -5,6 +5,7 @@ import { useChat } from "../../context/ChatContext"
 import { useAuth } from "../../context/AuthContext"
 import MessageInput from "./MessageInput"
 import MessageItem from "./MessageItem"
+import VerifiedBadge from "../ui/VerifiedBadge"
 import styles from "../../styles/components/chat/MessageThread.module.css"
 
 const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggleChatInfo }) => {
@@ -64,6 +65,11 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
     return otherParticipant && onlineUsers.has(otherParticipant.user._id)
   }
 
+  const getOtherParticipant = () => {
+    if (conversation.type === "group") return null
+    return conversation.participants.find((p) => p.user._id !== user.id)
+  }
+
   const shouldShowAvatar = (message, index) => {
     if (index === 0) return true
     const prevMessage = messages[index - 1]
@@ -90,11 +96,16 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
         {/* Avatar - only show for others and when needed */}
         <div className={styles.messageAvatar}>
           {!isOwnMessage && showAvatar ? (
-            message.sender.avatar ? (
-              <img src={message.sender.avatar || "/placeholder.svg?height=40&width=40"} alt={message.sender.username} />
-            ) : (
-              <div className={styles.defaultAvatar}>{message.sender.username.charAt(0).toUpperCase()}</div>
-            )
+            <div style={{ position: 'relative' }}>
+              {message.sender.avatar ? (
+                <img src={message.sender.avatar || "/placeholder.svg?height=40&width=40"} alt={message.sender.username} />
+              ) : (
+                <div className={styles.defaultAvatar}>{message.sender.username.charAt(0).toUpperCase()}</div>
+              )}
+              {message.sender.verified && (
+                <VerifiedBadge size="tiny" />
+              )}
+            </div>
           ) : null}
         </div>
 
@@ -161,6 +172,9 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
               <div className={styles.defaultAvatar}>{conversation.name.charAt(0).toUpperCase()}</div>
             )}
             {isUserOnline() && <div className={styles.onlineIndicator}></div>}
+            {getOtherParticipant() && getOtherParticipant().user.verified && (
+              <VerifiedBadge size="small" />
+            )}
           </div>
 
           <div className={styles.conversationDetails}>

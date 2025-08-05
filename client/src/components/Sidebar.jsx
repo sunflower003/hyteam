@@ -73,7 +73,7 @@ const Sidebar = () => {
     <>
       <div className={styles.sidebar}>
         <div className={styles.header}>
-          <h1 className={styles.logo}>HYTEAM</h1>
+          <h1 className={styles.logo}>Hyteam</h1>
           <p className={styles.version}>v1.0</p>
         </div>
         <ul className={styles.links}>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import VerifiedBadge from './ui/VerifiedBadge';
 import api from '../utils/api';
 import { formatTimeAgo, formatNumber } from '../utils/formatters';
 import styles from '../styles/components/Post.module.css';
@@ -94,26 +95,29 @@ const Post = () => {
 
     // Render avatar with default fallback
     const renderAvatar = (user, className) => {
-        if (user?.avatar && user.avatar !== 'https://example.com/default-avatar.png') {
-            return (
-                <img 
-                    src={user.avatar} 
-                    alt="Avatar" 
-                    className={className}
-                />
-            );
-        } else {
-            const initial = getInitial(user?.username);
-            const bgColor = getAvatarColor(user?.username || 'User');
-            return (
-                <div 
-                    className={`${className} ${styles.avatarDefault}`}
-                    style={{ backgroundColor: bgColor }}
-                >
-                    {initial}
-                </div>
-            );
-        }
+        const avatarElement = user?.avatar && user.avatar !== 'https://example.com/default-avatar.png' ? (
+            <img 
+                src={user.avatar} 
+                alt="Avatar" 
+                className={className}
+            />
+        ) : (
+            <div 
+                className={`${className} ${styles.avatarDefault}`}
+                style={{ backgroundColor: getAvatarColor(user?.username || 'User') }}
+            >
+                {getInitial(user?.username)}
+            </div>
+        );
+
+        return (
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+                {avatarElement}
+                {user?.verified && (
+                    <VerifiedBadge size="small" />
+                )}
+            </div>
+        );
     };
 
     if (loading) {

@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    verified: {
+        type: Boolean,
+        default: false
+    },
     lastLogin: {
         type: Date,
         default: Date.now
@@ -50,6 +54,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
         maxlength: 200
+    },
+    dateOfBirth: {
+        type: Date,
+        validate: {
+            validator: function(v) {
+                if (!v) return true; // Allow empty values
+                const today = new Date();
+                const birthDate = new Date(v);
+                const age = today.getFullYear() - birthDate.getFullYear();
+                return age >= 13 && age <= 120; // Reasonable age limits
+            },
+            message: 'Date of birth must represent an age between 13 and 120 years'
+        }
     },
     website: {
         type: String,

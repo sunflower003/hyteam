@@ -54,7 +54,7 @@ app.use(morgan('combined'));
 // Hạn chế rate limit để tránh abuse
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests mỗi window cho 1 IP
+  max: 3000, // 3000 requests mỗi window cho 1 IP
   message: createResponse(false, 'Too many requests, please try again later.')
 });
 app.use(limiter);
@@ -77,9 +77,9 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/chats', chatRoutes);  
 // Đăng ký endpoint AI chat: FE sẽ POST lên api/ai/hypo/chat
 app.use('/api/ai/hypo', hypoRoutes);
-app.use('/api/chats', chatRoutes);  
 
 // Route cho các API không tồn tại
 app.all('*', (req, res) => {

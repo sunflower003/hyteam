@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useChat } from "../../context/ChatContext"
 import { useAuth } from "../../context/AuthContext"
 import MessageInput from "./MessageInput"
+import MessageItem from "./MessageItem"
 import styles from "../../styles/components/chat/MessageThread.module.css"
 
 const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggleChatInfo }) => {
@@ -21,24 +22,31 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
     scrollToBottom()
   }, [messages])
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content, replyToId = null) => {
     try {
-      if (!content?.trim()) {
-        console.warn("Empty message content")
-        return
-      }
-
-      if (!conversation?._id) {
-        console.warn("No active conversation")
-        return
-      }
-
-      console.log("Sending message:", content, "ReplyTo:", replyingTo)
-      await sendMessage(content, replyingTo)
+      await sendMessage(content, replyToId || replyingTo?._id)
       setReplyingTo(null)
     } catch (error) {
       console.error("Error sending message:", error)
     }
+  }
+
+  const handleReply = (message) => {
+    setReplyingTo(message)
+  }
+
+  const handleCancelReply = () => {
+    setReplyingTo(null)
+  }
+
+  const handleEditMessage = (updatedMessage) => {
+    // Message will be updated via socket
+    console.log("Message edited:", updatedMessage)
+  }
+
+  const handleDeleteMessage = (messageId) => {
+    // Message will be deleted via socket
+    console.log("Message deleted:", messageId)
   }
 
   const formatMessageTime = (date) => {
@@ -83,7 +91,7 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
         <div className={styles.messageAvatar}>
           {!isOwnMessage && showAvatar ? (
             message.sender.avatar ? (
-              <img src={message.sender.avatar || "/placeholder.svg"} alt={message.sender.username} />
+              <img src={message.sender.avatar || "/placeholder.svg?height=40&width=40"} alt={message.sender.username} />
             ) : (
               <div className={styles.defaultAvatar}>{message.sender.username.charAt(0).toUpperCase()}</div>
             )
@@ -113,20 +121,23 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
           {/* Message Content */}
           <div className={styles.messageBubble}>
             <p>{message.content}</p>
+            {message.isEdited && <span className={styles.editedLabel}>(edited)</span>}
           </div>
         </div>
 
         {/* Message Actions */}
         <div className={styles.messageActions}>
-          <button className={styles.replyBtn} onClick={() => setReplyingTo(message)} title="Reply">
+          <button className={styles.replyBtn} onClick={() => handleReply(message)} title="Reply">
             <i className="ri-reply-line"></i>
           </button>
           <button className={styles.emojiBtn} title="Add reaction">
             <i className="ri-emotion-line"></i>
           </button>
-          <button className={styles.moreBtn} title="More">
-            <i className="ri-more-line"></i>
-          </button>
+          {isOwnMessage && (
+            <button className={styles.moreBtn} title="More">
+              <i className="ri-more-line"></i>
+            </button>
+          )}
         </div>
       </div>
     )
@@ -145,7 +156,7 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
         <div className={styles.conversationInfo}>
           <div className={styles.avatarContainer}>
             {conversation.avatar ? (
-              <img src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
+              <img src={conversation.avatar || "/placeholder.svg?height=40&width=40"} alt={conversation.name} />
             ) : (
               <div className={styles.defaultAvatar}>{conversation.name.charAt(0).toUpperCase()}</div>
             )}
@@ -181,7 +192,15 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
           </div>
         ) : (
           <>
-            {messages.map((message, index) => renderMessage(message, index))}
+            {messages.map((message, index) => (
+              <MessageItem
+                key={message._id}
+                message={message}
+                onReply={handleReply}
+                onEdit={handleEditMessage}
+                onDelete={handleDeleteMessage}
+              />
+            ))}
 
             {/* Typing indicators */}
             {typingUsers.length > 0 && (
@@ -202,24 +221,8 @@ const MessageThread = ({ conversation, messages, onBack, showBackButton, onToggl
         )}
       </div>
 
-      {/* Reply Context Bar */}
-      {replyingTo && (
-        <div className={styles.replyContextBar}>
-          <div className={styles.replyPreview}>
-            <div className={styles.replyLine}></div>
-            <div className={styles.replyInfo}>
-              <strong>Replying to {replyingTo.sender.username}</strong>
-              <p>{replyingTo.content.substring(0, 100)}</p>
-            </div>
-          </div>
-          <button className={styles.cancelReply} onClick={() => setReplyingTo(null)}>
-            <i className="ri-close-line"></i>
-          </button>
-        </div>
-      )}
-
       {/* Message Input */}
-      <MessageInput onSendMessage={handleSendMessage} />
+      <MessageInput onSendMessage={handleSendMessage} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
     </div>
   )
 }

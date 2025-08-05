@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useChat } from "../../context/ChatContext"
 import styles from "../../styles/components/chat/ChatInfo.module.css"
 
 const ChatInfo = ({ conversation, onClose }) => {
+  const { onlineUsers } = useChat()
   const [expandedSections, setExpandedSections] = useState({
-    chatInfo: false,
+    chatInfo: true,
     customise: false,
     members: false,
     media: false,
@@ -19,6 +21,16 @@ const ChatInfo = ({ conversation, onClose }) => {
     }))
   }
 
+  const isUserOnline = (userId) => {
+    return onlineUsers.has(userId)
+  }
+
+  const getOtherParticipant = () => {
+    return conversation.participants.find((p) => p.user._id !== "currentUserId")
+  }
+
+  const otherParticipant = getOtherParticipant()
+
   return (
     <div className={styles.chatInfo}>
       {/* Header */}
@@ -26,20 +38,21 @@ const ChatInfo = ({ conversation, onClose }) => {
         <div className={styles.userProfile}>
           <div className={styles.avatarContainer}>
             {conversation.avatar ? (
-              <img src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
+              <img src={conversation.avatar || "/placeholder.svg?height=80&width=80"} alt={conversation.name} />
             ) : (
               <div className={styles.defaultAvatar}>{conversation.name.charAt(0).toUpperCase()}</div>
             )}
-            <div className={styles.onlineIndicator}></div>
+            {otherParticipant && isUserOnline(otherParticipant.user._id) && (
+              <div className={styles.onlineIndicator}></div>
+            )}
           </div>
-
-          <div className={styles.userInfo}>
-            <h3>{conversation.name}</h3>
-            <p>Active now</p>
-          </div>
+          <h2>{conversation.name}</h2>
+          <p className={styles.status}>
+            {otherParticipant && isUserOnline(otherParticipant.user._id) ? "Active now" : "Offline"}
+          </p>
         </div>
 
-        <div className={styles.headerActions}>
+        <div className={styles.quickActions}>
           <button className={styles.actionBtn} title="Mute">
             <i className="ri-notification-off-line"></i>
             <span>Mute</span>
@@ -61,7 +74,14 @@ const ChatInfo = ({ conversation, onClose }) => {
           </button>
           {expandedSections.chatInfo && (
             <div className={styles.sectionContent}>
-              <p>Chat information content...</p>
+              <div className={styles.infoItem}>
+                <i className="ri-time-line"></i>
+                <span>Created: {new Date(conversation.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <i className="ri-user-line"></i>
+                <span>{conversation.participants.length} members</span>
+              </div>
             </div>
           )}
         </div>
@@ -74,7 +94,18 @@ const ChatInfo = ({ conversation, onClose }) => {
           </button>
           {expandedSections.customise && (
             <div className={styles.sectionContent}>
-              <p>Customisation options...</p>
+              <button className={styles.optionBtn}>
+                <i className="ri-palette-line"></i>
+                <span>Change theme</span>
+              </button>
+              <button className={styles.optionBtn}>
+                <i className="ri-emotion-line"></i>
+                <span>Change emoji</span>
+              </button>
+              <button className={styles.optionBtn}>
+                <i className="ri-edit-line"></i>
+                <span>Edit nicknames</span>
+              </button>
             </div>
           )}
         </div>
@@ -87,7 +118,29 @@ const ChatInfo = ({ conversation, onClose }) => {
           </button>
           {expandedSections.members && (
             <div className={styles.sectionContent}>
-              <p>Chat members list...</p>
+              {conversation.participants.map((participant) => (
+                <div key={participant.user._id} className={styles.memberItem}>
+                  <div className={styles.memberAvatar}>
+                    {participant.user.avatar ? (
+                      <img
+                        src={participant.user.avatar || "/placeholder.svg?height=32&width=32"}
+                        alt={participant.user.username}
+                      />
+                    ) : (
+                      <div className={styles.defaultMemberAvatar}>
+                        {participant.user.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {isUserOnline(participant.user._id) && <div className={styles.memberOnlineIndicator}></div>}
+                  </div>
+                  <div className={styles.memberInfo}>
+                    <span className={styles.memberName}>{participant.user.username}</span>
+                    <span className={styles.memberStatus}>
+                      {isUserOnline(participant.user._id) ? "Active now" : "Offline"}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -100,19 +153,19 @@ const ChatInfo = ({ conversation, onClose }) => {
           </button>
           {expandedSections.media && (
             <div className={styles.sectionContent}>
-              <div className={styles.mediaOptions}>
-                <div className={styles.mediaOption}>
+              <div className={styles.mediaGrid}>
+                <button className={styles.mediaBtn}>
                   <i className="ri-image-line"></i>
                   <span>Media</span>
-                </div>
-                <div className={styles.mediaOption}>
+                </button>
+                <button className={styles.mediaBtn}>
                   <i className="ri-file-line"></i>
                   <span>Files</span>
-                </div>
-                <div className={styles.mediaOption}>
+                </button>
+                <button className={styles.mediaBtn}>
                   <i className="ri-links-line"></i>
                   <span>Links</span>
-                </div>
+                </button>
               </div>
             </div>
           )}
@@ -126,7 +179,22 @@ const ChatInfo = ({ conversation, onClose }) => {
           </button>
           {expandedSections.privacy && (
             <div className={styles.sectionContent}>
-              <p>Privacy and support options...</p>
+              <button className={styles.optionBtn}>
+                <i className="ri-notification-off-line"></i>
+                <span>Mute notifications</span>
+              </button>
+              <button className={styles.optionBtn}>
+                <i className="ri-spam-line"></i>
+                <span>Report</span>
+              </button>
+              <button className={styles.optionBtn}>
+                <i className="ri-forbid-line"></i>
+                <span>Block</span>
+              </button>
+              <button className={styles.optionBtn} style={{ color: "#f23f42" }}>
+                <i className="ri-delete-bin-line"></i>
+                <span>Delete chat</span>
+              </button>
             </div>
           )}
         </div>

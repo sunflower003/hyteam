@@ -5,6 +5,43 @@
   position: relative;
 }
 
+.replyPreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #36393f;
+  border-bottom: 1px solid #40444b;
+  border-radius: 8px 8px 0 0;
+}
+
+.replyContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b9bbbe;
+  font-size: 14px;
+}
+
+.replyContent i {
+  color: #5865f2;
+}
+
+.cancelReply {
+  background: none;
+  border: none;
+  color: #b9bbbe;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.cancelReply:hover {
+  background: #40444b;
+  color: #dcddde;
+}
+
 .messageForm {
   display: flex;
   align-items: flex-end;
@@ -28,6 +65,11 @@
 
 .attachmentBtn:hover {
   color: #dcddde;
+}
+
+.attachmentBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .inputWrapper {
@@ -57,6 +99,10 @@
 
 .messageInput::placeholder {
   color: #72767d;
+}
+
+.messageInput:disabled {
+  opacity: 0.5;
 }
 
 .messageInput::-webkit-scrollbar {
@@ -101,10 +147,6 @@
   color: #dcddde;
 }
 
-.sendBtn {
-  display: none; /* Discord doesn't show send button, uses Enter */
-}
-
 .characterCount {
   position: absolute;
   bottom: -20px;
@@ -119,16 +161,6 @@
 
 .characterCount.danger {
   color: #f23f42;
-}
-
-/* Typing indicator in input */
-.typingUsers {
-  position: absolute;
-  bottom: -24px;
-  left: 16px;
-  font-size: 12px;
-  color: #72767d;
-  font-style: italic;
 }
 
 /* Mobile responsive */

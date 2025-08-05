@@ -244,6 +244,70 @@ const addComment = async (req, res) => {
   }
 };
 
+// Delete comment
+const deleteComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    // Check if user owns the comment
+    if (comment.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Not authorized to delete this comment' });
+    }
+
+    post.comments.pull(commentId);
+    await post.save();
+
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+};
+
+// Delete all my comments from all posts
+const deleteAllMyComments = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Find all posts that have comments from this user
+    const postsWithMyComments = await Post.find({
+      'comments.user': userId
+    });
+
+    let totalDeletedComments = 0;
+
+    // Remove user's comments from all posts
+    for (const post of postsWithMyComments) {
+      const initialCommentsCount = post.comments.length;
+      post.comments = post.comments.filter(comment => 
+        comment.user.toString() !== userId.toString()
+      );
+      const deletedFromThisPost = initialCommentsCount - post.comments.length;
+      totalDeletedComments += deletedFromThisPost;
+      await post.save();
+    }
+
+    res.json({ 
+      message: 'All your comments have been deleted successfully',
+      deletedComments: totalDeletedComments,
+      postsAffected: postsWithMyComments.length
+    });
+  } catch (error) {
+    console.error('Error deleting all comments:', error);
+    res.status(500).json({ error: 'Failed to delete all comments' });
+  }
+};
+
 // Delete post
 const deletePost = async (req, res) => {
   try {
@@ -275,5 +339,7 @@ module.exports = {
   getPost,
   toggleLike,
   addComment,
+  deleteComment,
+  deleteAllMyComments,
   deletePost
 };

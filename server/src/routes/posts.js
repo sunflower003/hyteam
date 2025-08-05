@@ -72,6 +72,12 @@ router.post('/:postId/like', protect, postController.toggleLike);
 // Add comment
 router.post('/:postId/comment', protect, postController.addComment);
 
+// Delete specific comment
+router.delete('/:postId/comment/:commentId', protect, postController.deleteComment);
+
+// Delete all my comments from all posts
+router.delete('/my-comments/all', protect, postController.deleteAllMyComments);
+
 // Delete post
 router.delete('/:postId', protect, postController.deletePost);
 

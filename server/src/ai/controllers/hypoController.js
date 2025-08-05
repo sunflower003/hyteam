@@ -2,13 +2,34 @@ const conversationManager = require('../core/conversation-manager');
 const contextManager = require('../core/context-manager');
 const memoryService = require('../services/memory-service');
 const ollamaService = require('../services/ollama-service').default;
+const perplexityService = require('../services/perplexity-service').default;
 const cacheManager = require('../services/cache-manager').default;
 
 // Enhanced rate limiting
 const userRateLimit = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 30; // Increased for local Ollama
+const RATE_LIMIT_MAX_REQUESTS = 30; // Increased for better capacity
 const REQUEST_COOLDOWN = 500; // Reduced cooldown for better UX
+
+// AI Service Selection Priority
+const AI_SERVICE_PRIORITY = ['perplexity', 'ollama', 'openrouter'];
+
+// Get available AI service
+const getAvailableAIService = async () => {
+  // Check Sonar (Perplexity) first
+  if (await perplexityService.validateSetup()) {
+    console.log('🌐 Using Sonar AI service');
+    return perplexityService;
+  }
+  
+  // Fallback to Ollama
+  if (await ollamaService.validateSetup()) {
+    console.log('🦙 Using Ollama AI service');
+    return ollamaService;
+  }
+  
+  throw new Error('No AI service available');
+};
 
 // Main streaming endpoint with cache + true streaming
 exports.chatStream = async (req, res) => {
@@ -61,14 +82,10 @@ exports.chatStream = async (req, res) => {
     console.log(`✅ Conversation ID: ${conversationId}`);
     console.log(`✅ Message: ${message.substring(0, 100)}...`);
 
-    // Validate Ollama setup
-    if (!(await ollamaService.validateSetup())) {
-      return res.status(503).json({
-        error: 'Service unavailable',
-        message: 'Ollama service is not properly configured. Please check setup.',
-        details: 'Run "ollama serve" and ensure models are pulled'
-      });
-    }
+    // Get available AI service
+    const aiService = await getAvailableAIService();
+    const serviceName = aiService === perplexityService ? 'Sonar' : 'Ollama';
+    console.log(`🤖 Using ${serviceName} AI service`);
 
     // Add user message to conversation
     conversationManager.addMessage(conversationId, {
@@ -152,15 +169,17 @@ exports.chatStream = async (req, res) => {
     try {
       console.log('🌊 Starting TRUE streaming response...');
       
-      // Use true streaming generator
-      for await (const chunk of ollamaService.generateChatResponseStream(messages)) {
-        fullResponse += chunk;
+      // Use true streaming generator with dynamic service
+      for await (const chunk of aiService.generateChatResponseStream(messages)) {
+        // Extract content from chunk if it's an object
+        const content = typeof chunk === 'object' ? (chunk.content || '') : chunk;
+        fullResponse += content;
         chunkCount++;
         
-        // Send real-time chunk
+        // Send real-time chunk - only send the content string, not the whole object
         res.write(`data: ${JSON.stringify({ 
           type: 'chunk', 
-          content: chunk,
+          content: content, // Send only the content string
           conversationId: conversationId,
           chunkIndex: chunkCount,
           fromCache: false
@@ -190,7 +209,10 @@ exports.chatStream = async (req, res) => {
         conversationId: conversationId,
         totalChunks: chunkCount,
         processingTime: Date.now() - startTime,
-        modelUsed: process.env.OLLAMA_MODEL || 'llama3.2:1b',
+        modelUsed: aiService === perplexityService ? 
+          (process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online') : 
+          (process.env.OLLAMA_MODEL || 'llama3.2:1b'),
+        service: aiService === perplexityService ? 'sonar' : 'ollama',
         fromCache: false
       })}\n\n`);
       res.end();
@@ -255,30 +277,59 @@ exports.chatStream = async (req, res) => {
 exports.healthCheck = async (req, res) => {
   try {
     const memoryStats = memoryService.getMemoryStats();
-    const ollamaHealth = await ollamaService.validateConnection();
-    const availableModels = await ollamaService.listModels();
     const cacheStats = cacheManager.getStats();
+    
+    // Check multiple AI services
+    const sonarHealth = await perplexityService.validateConnection();
+    const ollamaHealth = await ollamaService.validateConnection();
     
     const systemStats = {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       timestamp: new Date().toISOString()
     };
+
+    // Determine primary service
+    let primaryService = 'none';
+    let primaryConnection = 'disconnected';
+    let primaryModel = '';
+    
+    if (sonarHealth.success) {
+      primaryService = 'sonar';
+      primaryConnection = 'connected';
+      primaryModel = process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online';
+    } else if (ollamaHealth.success) {
+      primaryService = 'ollama';
+      primaryConnection = 'connected';
+      primaryModel = process.env.OLLAMA_MODEL || 'llama3.2:1b';
+    }
     
     const healthStatus = {
-      status: ollamaHealth.success ? 'healthy' : 'degraded',
+      status: (sonarHealth.success || ollamaHealth.success) ? 'healthy' : 'degraded',
       ai: {
-        service: 'ollama',
-        connection: ollamaHealth.success ? 'connected' : 'disconnected',
-        models: availableModels.length,
-        defaultModel: process.env.OLLAMA_MODEL || 'llama3.2:1b',
+        service: primaryService,
+        connection: primaryConnection,
+        defaultModel: primaryModel,
+        services: {
+          sonar: {
+            available: sonarHealth.success,
+            model: process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online',
+            displayName: 'Sonar',
+            features: ['chat', 'streaming', 'search', 'realtime']
+          },
+          ollama: {
+            available: ollamaHealth.success,
+            model: process.env.OLLAMA_MODEL || 'llama3.2:1b',
+            features: ['chat', 'streaming', 'local']
+          }
+        },
         cache: cacheStats,
         memory: memoryStats,
         system: systemStats
       }
     };
     
-    const statusCode = ollamaHealth.success ? 200 : 503;
+    const statusCode = (sonarHealth.success || ollamaHealth.success) ? 200 : 503;
     res.status(statusCode).json(healthStatus);
     
   } catch (error) {
@@ -318,6 +369,79 @@ exports.managCache = async (req, res) => {
   } catch (error) {
     console.error('❌ Cache management error:', error);
     res.status(500).json({ error: 'Cache management failed' });
+  }
+};
+
+// Get available Sonar models
+exports.getSonarModels = async (req, res) => {
+  try {
+    const models = await perplexityService.listModels();
+    const currentModel = perplexityService.getCurrentModelInfo();
+    
+    res.json({
+      success: true,
+      data: {
+        models,
+        currentModel,
+        serviceInfo: perplexityService.getServiceInfo()
+      }
+    });
+  } catch (error) {
+    console.error('❌ Get Sonar models error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get Sonar models' 
+    });
+  }
+};
+
+// Switch Sonar model
+exports.switchSonarModel = async (req, res) => {
+  try {
+    const { modelKey, modelId } = req.body;
+    
+    let success = false;
+    let newModel = '';
+    
+    if (modelKey) {
+      // Switch using predefined key
+      success = perplexityService.setSonarModel(modelKey);
+      newModel = perplexityService.defaultModel;
+    } else if (modelId) {
+      // Switch using full model ID
+      perplexityService.defaultModel = modelId;
+      success = true;
+      newModel = modelId;
+    }
+    
+    if (success) {
+      // Clear cache when model changes
+      cacheManager.clear();
+      
+      const currentModel = perplexityService.getCurrentModelInfo();
+      
+      res.json({
+        success: true,
+        message: `Switched to ${currentModel.name}`,
+        data: {
+          oldModel: req.body.oldModel || 'unknown',
+          newModel: currentModel,
+          cacheCleared: true
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid model specified'
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Switch Sonar model error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to switch Sonar model' 
+    });
   }
 };
 

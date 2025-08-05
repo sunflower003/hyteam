@@ -27,10 +27,32 @@ router.get('/health', (req, res, next) => {
   hypoController.healthCheck(req, res, next);
 });
 
+// Sonar model management
+router.get('/sonar/models', (req, res, next) => {
+  console.log('🌐 Get Sonar models route hit!');
+  hypoController.getSonarModels(req, res, next);
+});
+
+router.post('/sonar/switch', (req, res, next) => {
+  console.log('🔄 Switch Sonar model route hit!');
+  hypoController.switchSonarModel(req, res, next);
+});
+
 // NEW: Cache management endpoint
 router.post('/cache/manage', (req, res, next) => {
   console.log('💾 Cache management route hit!');
   hypoController.managCache(req, res, next);
+});
+
+// NEW: Sonar model management endpoint
+router.get('/models/sonar', (req, res, next) => {
+  console.log('🔍 Get Sonar models route hit!');
+  hypoController.getSonarModels(req, res, next);
+});
+
+router.post('/models/sonar/switch', (req, res, next) => {
+  console.log('🔄 Switch Sonar model route hit!');
+  hypoController.switchSonarModel(req, res, next);
 });
 
 console.log('✅ All optimized AI routes registered');

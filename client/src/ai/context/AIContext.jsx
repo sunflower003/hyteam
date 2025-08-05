@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
+import api from '../../utils/api';
 
 export const AIContext = createContext();
 
@@ -55,12 +56,8 @@ export const AIProvider = ({ children }) => {
   // Check AI service status (Sonar, Ollama, OpenRouter)
   const checkAIServiceStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/ai/hypo/health', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const health = await response.json();
+      const response = await api.get('/api/ai/hypo/health');
+      const health = response.data;
       
       if (health.ai?.service === 'sonar' && health.ai?.connection === 'connected') {
         setAiServiceStatus('sonar');
@@ -126,7 +123,8 @@ export const AIProvider = ({ children }) => {
     setStreamingMessageId(aiMsg.id);
 
     try {
-      const response = await fetch('/api/ai/hypo/chat-stream', {
+      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseURL}/api/ai/hypo/chat-stream`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -297,10 +295,7 @@ export const AIProvider = ({ children }) => {
     try {
       // Clear from server if conversation exists
       if (conversationId && messages.length > 0) {
-        await fetch(`/api/ai/hypo/conversation/${conversationId}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        await api.delete(`/api/ai/hypo/conversation/${conversationId}`);
       }
     } catch (error) {
       console.warn('⚠️ Failed to clear conversation from server:', error);
@@ -417,8 +412,8 @@ export const AIStatusProvider = ({ children }) => {
 
   const checkAllServices = useCallback(async () => {
     try {
-      const response = await fetch('/api/ai/hypo/health');
-      const health = await response.json();
+      const response = await api.get('/api/ai/hypo/health');
+      const health = response.data;
       
       setServiceHealth({
         perplexity: health.ai?.service === 'perplexity' && health.ai?.connection === 'connected',

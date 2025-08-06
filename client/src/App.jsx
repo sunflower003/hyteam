@@ -12,6 +12,7 @@ import Layout from './components/Layout';
 import Hyfeed from './pages/Hyfeed';
 import Projects from './pages/Projects';
 import Chat from './pages/Chat'; 
+import Notifications from './pages/Notifications';
 import './App.css'
 
 const AppContent = () => {
@@ -52,6 +53,7 @@ const AppContent = () => {
               <Route path="edit-profile" element={<EditProfile />} />
               <Route path="settings" element={<Settings />} />
               <Route path="projects" element={<Projects />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

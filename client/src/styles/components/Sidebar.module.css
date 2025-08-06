@@ -9,6 +9,8 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 20px;
+    background: white;
+    z-index: 100;
 }
 
 .navbar {
@@ -46,15 +48,75 @@
     cursor: pointer;
     padding: 10px;
     border-radius: 10px;
+    transition: background-color 0.2s ease;
 }
 
 .link:hover {
     background-color: var(--grey-2);
 }
 
+.link.active {
+    background-color: var(--grey-2);
+}
+
+/* CSS cơ bản cho tất cả icons */
 .links i {
-    font-size: 22px;
-    font-weight: normal;
+    font-size: 28px !important;
+    font-weight: 550 !important;
+    min-width: 26px;
+    flex-shrink: 0;
+    color: #262626;
+    transition: color 0.3s ease, font-weight 0.3s ease; /* Thêm transition mượt */
+}
+
+/* CSS cho tất cả icons khi active - áp dụng cho mọi menu item */
+.link.active i {
+    color: #051621 !important; /* Màu đậm hơn khi active */
+    font-weight: 800 !important; /* Font weight đậm hơn khi active */
+}
+
+.linkText {
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Class chính để ẩn text */
+.textHidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+.iconContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 22px;
+}
+
+.notificationLink {
+    position: relative;
+}
+
+/* Notification Panel Overlay */
+.notificationOverlay {
+    position: fixed;
+    left: 155px;
+    top: 0;
+    bottom: 0;
+    width: 500px;
+    z-index: 999;
+    animation: slideInFromLeft 0.3s ease-out;
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .account {
@@ -73,6 +135,10 @@
     background-color: var(--grey-2);
 }
 
+.accountInfo {
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
 .accountName {
     font-size: 15px;
     font-weight: 600;
@@ -88,6 +154,7 @@
     height: 40px;
     object-fit: cover;
     border-radius: 5px;
+    flex-shrink: 0;
 }
 
 .avatarDefault {
@@ -101,6 +168,7 @@
     font-weight: 600;
     font-size: 16px;
     text-transform: uppercase;
+    flex-shrink: 0;
 }
 
 .account i {
@@ -109,8 +177,8 @@
     position: absolute;
     top: 8px;
     right: 8px;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
-
 
 .navbar {
     position: fixed;
@@ -161,5 +229,12 @@
         font-size: 30px;
         cursor: pointer;
     }
+    
+    .iconContainer {
+        position: relative;
+    }
+    
+    .notificationOverlay {
+        display: none;
+    }
 }
-

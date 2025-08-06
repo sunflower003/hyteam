@@ -144,6 +144,8 @@
     font-size: 14px;
     color: var(--grey);
     font-weight: 500;
+    display: flex;
+    gap: 5px;
 }
 
 .linkButton {

@@ -4,6 +4,9 @@ import Story from "../components/Story";
 import Post from "../components/Post";
 import PostUpload from "../components/PostUpload";
 import styles from '../styles/pages/Hyfeed.module.css';
+import Present from '@/components/RightSide/Present';
+import Birthday from '@/components/RightSide/Birthday';
+import Copyright from '@/components/RightSide/Copyright';
 
 const Hyfeed = () => {
   const [showPostUpload, setShowPostUpload] = useState(false);
@@ -36,8 +39,9 @@ const Hyfeed = () => {
           <Post />
         </div>
         <div className={styles.right}>
-          <h1>Right Side</h1>
-          <p>Đang  phát triển thêm</p>
+          <Present />
+          <Birthday />
+          <Copyright />
         </div>
       </div>
 

@@ -30,6 +30,7 @@
 .version {
     font-size: 14px;
     color: var(--grey);
+    font-weight: 500;
 }
 
 .links {
@@ -42,11 +43,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
     padding: 10px;
     border-radius: 10px;
-    font-weight: 500;
 }
 
 .link:hover {

@@ -7,7 +7,11 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "test": "jest",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "delete-messages": "node scripts/core/delete-all-messages.js",
+    "safe-delete-messages": "node scripts/core/safe-delete-all-messages.js",
+    "backup-messages": "node scripts/core/backup-all-messages.js",
+    "delete-comments": "node scripts/core/delete-all-comments-from-all-posts.js"
   },
   "dependencies": {
     "axios": "^1.11.0",

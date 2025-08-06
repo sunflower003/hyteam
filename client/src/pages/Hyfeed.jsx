@@ -27,7 +27,7 @@ const Hyfeed = () => {
   return (
     <div>
       <div className={styles.header}>
-          <h1 className={styles.logo}>HYTEAM</h1>
+          <img src="/img/hyteam-logo.png" alt="hyteam" className={styles.logo}/>
           <div className={styles.iconHeader}>
             <i className="ri-add-box-line" onClick={handleCreatePost}></i>
             <i className="ri-notification-3-line"></i>

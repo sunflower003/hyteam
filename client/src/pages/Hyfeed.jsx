@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Story from "../components/Story";
 import Post from "../components/Post";
 import PostUpload from "../components/PostUpload";
+import Doge from "../components/Doge";
 import styles from '../styles/pages/Hyfeed.module.css';
 import Present from '@/components/RightSide/Present';
 import Birthday from '@/components/RightSide/Birthday';
@@ -42,6 +43,7 @@ const Hyfeed = () => {
           <Present />
           <Birthday />
           <Copyright />
+          
         </div>
       </div>
 

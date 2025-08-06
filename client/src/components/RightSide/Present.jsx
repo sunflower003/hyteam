@@ -12,15 +12,15 @@ const Present = () => {
                     <div className={styles.tableCell + ' ' + styles.tableHeader}>People</div>
                     <div className={styles.user}>
                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/The_White_House_-_54409525537_%28cropped%29.jpg/250px-The_White_House_-_54409525537_%28cropped%29.jpg" alt="avatar" className={styles.avatar}/>
-                        <p className={styles.username}>duonglo</p>
+                        <p className={styles.username}>duongvualo</p>
                     </div>
                     <div className={styles.user}>
                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/The_White_House_-_54409525537_%28cropped%29.jpg/250px-The_White_House_-_54409525537_%28cropped%29.jpg" alt="avatar" className={styles.avatar}/>
-                        <p className={styles.username}>duonglo</p>
+                        <p className={styles.username}>duongvualo</p>
                     </div>
                     <div className={styles.user}>
                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/The_White_House_-_54409525537_%28cropped%29.jpg/250px-The_White_House_-_54409525537_%28cropped%29.jpg" alt="avatar" className={styles.avatar}/>
-                        <p className={styles.username}>duonglo</p>
+                        <p className={styles.username}>duongvualo</p>
                     </div>
                 </div>
                 <div className={styles.tableCol}>

@@ -225,13 +225,29 @@
         cursor: pointer;
     }
 
+    /* CSS cho mobile navbar icons - tương tự desktop */
     .navbar i {
         font-size: 30px;
         cursor: pointer;
+        font-weight: 550 !important;
+        color: #262626;
+        transition: color 0.3s ease, font-weight 0.3s ease;
+    }
+
+    /* Active state cho mobile icons */
+    .navbar i.active {
+        color: #051621 !important;
+        font-weight: 800 !important;
     }
     
     .iconContainer {
         position: relative;
+    }
+
+    /* Active state cho icon container (notification) */
+    .iconContainer.active i {
+        color: #051621 !important;
+        font-weight: 800 !important;
     }
     
     .notificationOverlay {

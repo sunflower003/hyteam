@@ -1,0 +1,199 @@
+//@version=6
+indicator("Volume Profile con Supporti e Resistenze", "VP+SR", overlay = true)
+
+// Input per i parametri
+lookbackPeriod = input.int(100, "Periodo di Lookback", minval = 1, maxval = 1000)
+numOfBars = input.int(30, "Numero di Barre", minval = 5, maxval = 100)
+volumePercentile = input.int(75, "Percentile Volume per S/R", minval = 50, maxval = 100, step = 5)
+bidColor = input.color(color.yellow, "Colore Volume Bid (Acquisti)")
+askColor = input.color(color.aqua, "Colore Volume Ask (Vendite)")
+bidDominantColor = input.color(color.red, "Colore Linee S/R Bid Dominante")
+askDominantColor = input.color(color.green, "Colore Linee S/R Ask Dominante")
+profileWidth = input.int(50, "Larghezza Profilo", minval = 10, maxval = 200)
+opacity = input.int(70, "Opacità", minval = 0, maxval = 100)
+rightOffset = input.int(70, "Distanza dal bordo destro", minval = 0, maxval = 200)
+srLineLength = input.int(300, "Lunghezza linee S/R", minval = 20, maxval = 500)
+
+// Funzioni per calcolare il range di prezzo
+get_highest(idx) =>
+    float result = 0.0
+    if idx >= lookbackPeriod
+        result := ta.highest(high, lookbackPeriod)
+    else if idx > 0
+        result := ta.highest(high, idx + 1)
+    else
+        result := high
+    result
+
+get_lowest(idx) =>
+    float result = 0.0
+    if idx >= lookbackPeriod
+        result := ta.lowest(low, lookbackPeriod)
+    else if idx > 0
+        result := ta.lowest(low, idx + 1)
+    else
+        result := low
+    result
+
+// Ottieni i valori massimi e minimi
+highestPrice = get_highest(bar_index)
+lowestPrice = get_lowest(bar_index)
+
+// Calcola l'altezza di ogni barra
+barHeight = (highestPrice - lowestPrice) / numOfBars
+if barHeight <= 0
+    barHeight := 0.0001  // Evita divisione per zero
+
+// Array per i volumi bid e ask
+bidVolumeArray = array.new_float(numOfBars, 0.0)
+askVolumeArray = array.new_float(numOfBars, 0.0)
+totalVolumeArray = array.new_float(numOfBars, 0.0)  // Nuovo array per i volumi totali
+priceArray = array.new_float(numOfBars, 0.0)  // Array per memorizzare i livelli di prezzo
+
+// Calcola i volumi per ogni livello di prezzo
+for i = 0 to math.min(lookbackPeriod - 1, bar_index)
+    barHigh = high[i]
+    barLow = low[i]
+    barVolume = volume[i]
+    barClose = close[i]
+    barOpen = open[i]
+    
+    // Determina se la barra è rialzista (bid) o ribassista (ask)
+    isBullish = barClose >= barOpen
+    
+    // Calcola i livelli di prezzo solo se i prezzi sono nel range
+    if barHigh >= lowestPrice and barLow <= highestPrice
+        // Calcola i livelli di prezzo
+        topBar = int(math.floor((barHigh - lowestPrice) / barHeight))
+        bottomBar = int(math.floor((barLow - lowestPrice) / barHeight))
+        
+        // Limita agli indici validi
+        topBar := math.min(topBar, numOfBars - 1)
+        bottomBar := math.max(bottomBar, 0)
+        
+        // Distribuisci il volume
+        if topBar == bottomBar and topBar < numOfBars
+            if isBullish
+                array.set(bidVolumeArray, topBar, array.get(bidVolumeArray, topBar) + barVolume)
+            else
+                array.set(askVolumeArray, topBar, array.get(askVolumeArray, topBar) + barVolume)
+        else
+            priceRange = barHigh - barLow
+            for j = bottomBar to math.min(topBar, numOfBars - 1)
+                if j < numOfBars  // Verifica aggiuntiva per sicurezza
+                    barStart = lowestPrice + j * barHeight
+                    barEnd = lowestPrice + (j + 1) * barHeight
+                    
+                    // Salva il prezzo medio di questo livello
+                    array.set(priceArray, j, (barStart + barEnd) / 2)
+                    
+                    overlap = math.min(barEnd, barHigh) - math.max(barStart, barLow)
+                    if overlap > 0
+                        ratio = overlap / priceRange
+                        if isBullish
+                            array.set(bidVolumeArray, j, array.get(bidVolumeArray, j) + barVolume * ratio)
+                        else
+                            array.set(askVolumeArray, j, array.get(askVolumeArray, j) + barVolume * ratio)
+
+// Calcola il volume totale per ogni livello e riempi l'array dei volumi totali
+for i = 0 to numOfBars - 1
+    if i < array.size(bidVolumeArray) and i < array.size(askVolumeArray)
+        bidVol = array.get(bidVolumeArray, i)
+        askVol = array.get(askVolumeArray, i)
+        totalVol = bidVol + askVol
+        array.set(totalVolumeArray, i, totalVol)
+
+// Trova il volume massimo per la normalizzazione
+maxTotalVolume = 0.0
+
+// Calcola il massimo volume totale
+for i = 0 to numOfBars - 1
+    if i < array.size(totalVolumeArray)
+        totalVol = array.get(totalVolumeArray, i)
+        maxTotalVolume := math.max(maxTotalVolume, totalVol)
+
+// Crea una copia dell'array dei volumi totali per ordinarlo e trovare il cinquantesimo percentile
+sortedVolumes = array.copy(totalVolumeArray)
+array.sort(sortedVolumes, order.ascending)
+
+// Calcola il percentile selezionato dall'utente
+percentileIndex = math.round(array.size(sortedVolumes) * (volumePercentile / 100)) - 1
+// Assicurati che l'indice sia valido (non negativo e all'interno dell'array)
+percentileIndex := math.max(0, math.min(percentileIndex, array.size(sortedVolumes) - 1))
+selectedPercentile = array.get(sortedVolumes, percentileIndex)
+
+// Array per i livelli di supporto e resistenza con le loro proprietà
+srPriceArray = array.new_float(0)
+srIsBidDominant = array.new_bool(0)  // true se bid > ask, false se ask > bid
+
+// Identifica i livelli con volume superiore al percentile selezionato
+for i = 0 to numOfBars - 1
+    if i < array.size(totalVolumeArray) and i < array.size(priceArray)
+        totalVol = array.get(totalVolumeArray, i)
+        if totalVol > selectedPercentile
+            bidVol = array.get(bidVolumeArray, i)
+            askVol = array.get(askVolumeArray, i)
+            array.push(srPriceArray, array.get(priceArray, i))
+            array.push(srIsBidDominant, bidVol > askVol)  // true se bid > ask
+
+// Disegna le barre del profilo di volume
+if barstate.islast
+    rightEdge = bar_index + rightOffset  // Posizione personalizzabile
+    
+    for i = 0 to numOfBars - 1
+        if i < math.min(array.size(bidVolumeArray), array.size(askVolumeArray))
+            bidVol = array.get(bidVolumeArray, i)
+            askVol = array.get(askVolumeArray, i)
+            totalVol = bidVol + askVol
+            
+            if totalVol > 0 and maxTotalVolume > 0
+                // Calcola la larghezza proporzionale al volume
+                barWidth = int(math.round(totalVol / maxTotalVolume * profileWidth))
+                
+                price = lowestPrice + i * barHeight + barHeight / 2
+                
+                // Calcola le proporzioni di bid e ask
+                bidProp = bidVol / totalVol
+                askProp = askVol / totalVol
+                
+                // Calcola la larghezza per ciascun tipo
+                askWidth = math.round(barWidth * askProp)
+                bidWidth = barWidth - askWidth
+                
+                // Posizione di partenza a destra del grafico
+                startX = rightEdge
+                
+                // Disegna la barra completa che va da destra a sinistra
+                if barWidth > 0
+                    // Dividi la barra in due parti: bid (gialla) e ask (azzurra)
+                    
+                    // Parte bid (gialla) - a destra
+                    if bidWidth > 0
+                        bidStartX = startX
+                        bidEndX = startX - bidWidth
+                        bidBox = box.new(bidStartX, price + barHeight/3, bidEndX, price - barHeight/3,
+                             bgcolor = color.new(bidColor, opacity),
+                             border_width = 0)
+                    
+                    // Parte ask (azzurra) - a sinistra del bid
+                    if askWidth > 0
+                        askStartX = startX - bidWidth
+                        askEndX = askStartX - askWidth
+                        askBox = box.new(askStartX, price + barHeight/3, askEndX, price - barHeight/3,
+                             bgcolor = color.new(askColor, opacity),
+                             border_width = 0)
+    
+    // Disegna le linee di supporto e resistenza
+    for i = 0 to array.size(srPriceArray) - 1
+        srPrice = array.get(srPriceArray, i)
+        isBidDominant = array.get(srIsBidDominant, i)
+        
+        // Scegli il colore in base alla predominanza di bid o ask
+        lineColor = isBidDominant ? bidDominantColor : askDominantColor
+        
+        // Disegna la linea orizzontale per il supporto/resistenza che attraversa il grafico
+        line.new(rightEdge, srPrice, bar_index - srLineLength, srPrice, 
+             color = lineColor, 
+             width = 1, 
+             style = line.style_solid,
+             extend = extend.left)  // Estende la linea verso sinistra

@@ -11,7 +11,8 @@ import Settings from './components/Settings';
 import Layout from './components/Layout';
 import Hyfeed from './pages/Hyfeed';
 import Projects from './pages/Projects';
-import Chat from './pages/Chat'; 
+import Chat from './pages/Chat';
+import Documents from './components/Documents/Documents'; // ← THÊM
 import './App.css'
 
 const AppContent = () => {
@@ -52,6 +53,7 @@ const AppContent = () => {
               <Route path="edit-profile" element={<EditProfile />} />
               <Route path="settings" element={<Settings />} />
               <Route path="projects" element={<Projects />} />
+              <Route path="documents" element={<Documents />} /> {/* ← THÊM */}
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -42,6 +42,7 @@ const register = async (req, res) => {
                     email: user.email,
                     role: user.role,
                     avatar: user.avatar,
+                    verified: user.verified,
                 },
                 token,
             }, 'User registered successfully')
@@ -81,6 +82,7 @@ const login = async (req, res) => {
                     email: user.email,
                     role: user.role,
                     avatar: user.avatar,
+                    verified: user.verified,
                 },
                 token,
             }, 'User logged in successfully')  
@@ -104,6 +106,7 @@ const getProfile = async (req, res) => {
                     email: user.email,
                     role: user.role,
                     avatar: user.avatar,
+                    verified: user.verified,
                     lastLogin: user.lastLogin,
                 }
             }, 'User profile retrieved successfully')

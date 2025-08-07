@@ -72,6 +72,10 @@ const postSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  broadcasted: {
+    type: Boolean,
+    default: false
   }
 });
 

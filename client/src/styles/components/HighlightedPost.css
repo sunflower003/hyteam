@@ -1,0 +1,35 @@
+/* Highlighted Post Animation */
+.highlighted-post {
+  animation: highlightPulse 2s ease-in-out;
+  border: 2px solid var(--primary, #0095f6) !important;
+  border-radius: 8px !important;
+  background: rgba(0, 149, 246, 0.05) !important;
+}
+
+/* Highlighted Comment Animation */
+.highlighted-comment {
+  animation: highlightPulse 1.5s ease-in-out;
+  border: 2px solid var(--success, #00c896) !important;
+  border-radius: 6px !important;
+  background: rgba(0, 200, 150, 0.05) !important;
+}
+
+@keyframes highlightPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 149, 246, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 10px rgba(0, 149, 246, 0.1);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 149, 246, 0);
+  }
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}

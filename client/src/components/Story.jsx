@@ -1,18 +1,19 @@
 /*  client/src/components/Story.jsx  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import api from '../utils/api';
 import { formatTimeAgo } from '../utils/formatters';
 import styles from '../styles/components/Story.module.css';
-import StoryUpload from './StoryUpload';            // ← NEW
+import StoryUpload from './StoryUpload';
 
 const Story = () => {
   /* ------------------------------------------------------------------ */
   /*  STATE                                                              */
   /* ------------------------------------------------------------------ */
   const { user: currentUser } = useAuth();
+  const { socket } = useNotifications();
   const [users, setUsers] = useState([]);
-  const [allStories, setAllStories] = useState([]); // ← NEW: All story data from API
   const [isViewingStory, setIsViewingStory]   = useState(false);
   const [currentStoryIndex, setCurrentStory]  = useState(0);
   const [currentStoryInGroup, setCurrentStoryInGroup] = useState(0); // ← NEW: current story in user's stories
@@ -28,7 +29,7 @@ const Story = () => {
   /* ------------------------------------------------------------------ */
   /*  FETCH STORIES FROM API                                            */
   /* ------------------------------------------------------------------ */
-  const fetchAllStories = async () => {
+  const fetchAllStories = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -46,7 +47,6 @@ const Story = () => {
       
       if (storiesResponse.data.success) {
         storiesWithUsers = storiesResponse.data.data.stories;
-        setAllStories(storiesWithUsers);
         console.log('Fetched stories:', storiesWithUsers);
       }
 
@@ -118,18 +118,17 @@ const Story = () => {
         ];
         setUsers(fallbackUsers);
       }
-      setAllStories([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   /* ------------------------------------------------------------------ */
   /*  RESPONSIVE CHECK                                                   */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     fetchAllStories();
-  }, []);
+  }, [fetchAllStories]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -138,50 +137,30 @@ const Story = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  /* ------------------------------------------------------------------ */
-  /*  PROGRESS BAR                                                       */
-  /* ------------------------------------------------------------------ */
+  // Socket listener for real-time story updates
   useEffect(() => {
-    let interval;
-    if (isViewingStory && !isPaused && !isManuallyPaused) {
-      const usersWithStories = users.filter(user => user.hasStory);
-      const currentUser = usersWithStories[currentStoryIndex];
-      const currentStory = currentUser?.stories[currentStoryInGroup];
-      const duration = currentStory?.duration || 15; // Default 15s
+    if (!socket) return;
+
+    console.log('📖 Setting up socket listeners for story updates');
+
+    const handleNewStory = (data) => {
+      console.log('📖 New story received:', data);
       
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            handleNextStoryInSequence();
-            return 0;
-          }
-          return prev + (100 / (duration * 10)); // Update every 100ms
-        });
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [isViewingStory, currentStoryIndex, currentStoryInGroup, isPaused, isManuallyPaused]);
+      // Refresh stories to get the new one
+      fetchAllStories();
+    };
+
+    socket.on('new-story', handleNewStory);
+
+    return () => {
+      console.log('🧹 Cleaning up story socket listeners');
+      socket.off('new-story', handleNewStory);
+    };
+  }, [socket, fetchAllStories]);
 
   /* ------------------------------------------------------------------ */
-  /*  VIEW / NAVIGATE STORY                                              */
+  /*  NAVIGATION FUNCTIONS                                               */
   /* ------------------------------------------------------------------ */
-  const openStory = async (userIndex) => { 
-    const usersWithStories = users.filter(user => user.hasStory);
-    const targetUser = users[userIndex];
-    const storyIndex = usersWithStories.findIndex(user => user._id === targetUser._id);
-    
-    setCurrentStory(storyIndex >= 0 ? storyIndex : 0);
-    setCurrentStoryInGroup(0); // Start with first story in group
-    setIsViewingStory(true);
-    setProgress(0);
-
-    // Mark first story as viewed
-    const firstStoryId = targetUser.stories[0]?._id;
-    if (firstStoryId) {
-      markStoryAsViewed(firstStoryId);
-    }
-  };
-
   const closeStory = () => { 
     setIsViewingStory(false); 
     setProgress(0); 
@@ -189,7 +168,7 @@ const Story = () => {
     setCurrentStoryInGroup(0);
   };
 
-  const handleNextStoryInSequence = async () => {
+  const handleNextStoryInSequence = useCallback(async () => {
     const usersWithStories = users.filter(user => user.hasStory);
     const currentUser = usersWithStories[currentStoryIndex];
     
@@ -221,7 +200,7 @@ const Story = () => {
         closeStory();
       }
     }
-  };
+  }, [users, currentStoryIndex, currentStoryInGroup]);
 
   const handlePrevStoryInSequence = () => {
     if (currentStoryInGroup > 0) {
@@ -238,20 +217,95 @@ const Story = () => {
     }
   };
 
+  // Legacy functions for compatibility
+  const handleNextStory = handleNextStoryInSequence;
+  const handlePrevStory = handlePrevStoryInSequence;
+  
   const handlePlayPause = () => {
     setIsManuallyPaused(prev => !prev);
   };
 
-  // Legacy functions for compatibility
-  const handleNextStory = handleNextStoryInSequence;
-  const handlePrevStory = handlePrevStoryInSequence;
+  /* ------------------------------------------------------------------ */
+  /*  PROGRESS BAR                                                       */
+  /* ------------------------------------------------------------------ */
+  useEffect(() => {
+    let interval;
+    if (isViewingStory && !isPaused && !isManuallyPaused) {
+      const usersWithStories = users.filter(user => user.hasStory);
+      const currentUser = usersWithStories[currentStoryIndex];
+      const currentStory = currentUser?.stories[currentStoryInGroup];
+      const duration = currentStory?.duration || 15; // Default 15s
+      
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            handleNextStoryInSequence();
+            return 0;
+          }
+          return prev + (100 / (duration * 10)); // Update every 100ms
+        });
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isViewingStory, currentStoryIndex, currentStoryInGroup, isPaused, isManuallyPaused, handleNextStoryInSequence, users]);
+
+  /* ------------------------------------------------------------------ */
+  /*  VIEW / NAVIGATE STORY                                              */
+  /* ------------------------------------------------------------------ */
+  const openStory = useCallback(async (userIndex) => { 
+    const usersWithStories = users.filter(user => user.hasStory);
+    const targetUser = users[userIndex];
+    const storyIndex = usersWithStories.findIndex(user => user._id === targetUser._id);
+    
+    setCurrentStory(storyIndex >= 0 ? storyIndex : 0);
+    setCurrentStoryInGroup(0); // Start with first story in group
+    setIsViewingStory(true);
+    setProgress(0);
+
+    // Mark first story as viewed
+    const firstStoryId = targetUser.stories[0]?._id;
+    if (firstStoryId) {
+      markStoryAsViewed(firstStoryId);
+    }
+  }, [users]);
+
+  // Open story by specific user ID (for notifications)
+  const openStoryByUserId = useCallback(async (userId) => {
+    // Find user index by userId
+    const userIndex = users.findIndex(user => user._id === userId);
+    if (userIndex === -1) {
+      console.warn('User not found for story:', userId);
+      return;
+    }
+
+    const targetUser = users[userIndex];
+    if (!targetUser.hasStory || !targetUser.stories.length) {
+      console.warn('User has no active stories:', userId);
+      return;
+    }
+
+    // Open story for this user
+    await openStory(userIndex);
+  }, [users, openStory]);
+
+  // Make openStoryByUserId available globally for notifications
+  useEffect(() => {
+    window.openStoryByUserId = openStoryByUserId;
+    return () => {
+      delete window.openStoryByUserId;
+    };
+  }, [users, openStoryByUserId]); // Re-attach when users data changes
+
+  /* ------------------------------------------------------------------ */
+  /*  STORY VIEW HANDLERS                                                */
+  /* ------------------------------------------------------------------ */
 
   // Mark story as viewed via API
   const markStoryAsViewed = async (storyId) => {
     try {
       await api.post(`/api/stories/${storyId}/view`);
       // Update local state to reflect view status
-      setAllStories(prev => prev.map(userStory => ({
+      setUsers(prev => prev.map(userStory => ({
         ...userStory,
         stories: userStory.stories.map(story => 
           story._id === storyId 
@@ -274,7 +328,7 @@ const Story = () => {
     };
     window.addEventListener('keydown', keyHandler);
     return () => window.removeEventListener('keydown', keyHandler);
-  }, [isViewingStory, currentStoryIndex]);
+  }, [isViewingStory, handleNextStory, handlePrevStory]);
 
   /* Touch navigation (mobile) */
   const handleContentClick = (e) => {
@@ -292,7 +346,7 @@ const Story = () => {
     setShowUpload(true);
   };
   
-  const handleStoryUpload = (newStory) => {
+  const handleStoryUpload = () => {
     // Refresh stories after upload
     fetchAllStories();
     setShowUpload(false);

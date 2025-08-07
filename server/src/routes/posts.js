@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === 'production') {
   // Use local storage in development
   storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads/posts')
+      cb(null, path.join(__dirname, '../../uploads/posts'))
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -71,6 +71,12 @@ router.post('/:postId/like', protect, postController.toggleLike);
 
 // Add comment
 router.post('/:postId/comment', protect, postController.addComment);
+
+// Delete specific comment
+router.delete('/:postId/comment/:commentId', protect, postController.deleteComment);
+
+// Delete all my comments from all posts
+router.delete('/my-comments/all', protect, postController.deleteAllMyComments);
 
 // Delete post
 router.delete('/:postId', protect, postController.deletePost);

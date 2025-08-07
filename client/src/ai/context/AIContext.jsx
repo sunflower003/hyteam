@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
+import api from '../../utils/api';
 
 export const AIContext = createContext();
 
@@ -52,17 +53,16 @@ export const AIProvider = ({ children }) => {
     }
   }, []);
 
-  // Check AI service status (Ollama vs OpenRouter)
+  // Check AI service status (Sonar, Ollama, OpenRouter)
   const checkAIServiceStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/ai/hypo/health', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const response = await api.get('/api/ai/hypo/health');
+      const health = response.data;
       
-      const health = await response.json();
-      
-      if (health.ai?.service === 'ollama' && health.ai?.connection === 'connected') {
+      if (health.ai?.service === 'sonar' && health.ai?.connection === 'connected') {
+        setAiServiceStatus('sonar');
+        console.log('🌐 Sonar AI service detected and ready');
+      } else if (health.ai?.service === 'ollama' && health.ai?.connection === 'connected') {
         setAiServiceStatus('ollama');
         console.log('🦙 Ollama service detected and ready');
       } else if (health.ai?.service === 'openrouter') {
@@ -123,7 +123,8 @@ export const AIProvider = ({ children }) => {
     setStreamingMessageId(aiMsg.id);
 
     try {
-      const response = await fetch('/api/ai/hypo/chat-stream', {
+      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseURL}/api/ai/hypo/chat-stream`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -174,15 +175,31 @@ export const AIProvider = ({ children }) => {
                 setStreamingMessageId(null);
                 
                 // Update AI service status if provided
-                if (data.modelUsed) {
-                  setAiServiceStatus(data.modelUsed.includes('llama') ? 'ollama' : 'openrouter');
+                if (data.service) {
+                  setAiServiceStatus(data.service);
+                } else if (data.modelUsed) {
+                  // Fallback logic for older responses
+                  if (data.modelUsed.includes('sonar') || data.service === 'sonar') {
+                    setAiServiceStatus('sonar');
+                  } else if (data.modelUsed.includes('llama')) {
+                    setAiServiceStatus('ollama');
+                  } else {
+                    setAiServiceStatus('openrouter');
+                  }
                 }
                 
               } else if (data.type === 'error') {
                 let errorMessage = data.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
                 
-                // Enhanced Ollama-specific error handling
-                if (data.errorType === 'ollama_not_running') {
+                // Enhanced error handling for multiple services
+                if (data.errorType === 'sonar_api_error') {
+                  errorMessage = '🌐 Sonar API error. Kiểm tra API key hoặc thử lại sau.';
+                  setAiServiceStatus('offline');
+                  
+                } else if (data.errorType === 'sonar_rate_limit') {
+                  errorMessage = '⏳ Sonar rate limit exceeded. Vui lòng đợi một chút.';
+                  
+                } else if (data.errorType === 'ollama_not_running') {
                   errorMessage = '🦙 Ollama service chưa chạy. Vui lòng start Ollama: ollama serve';
                   setAiServiceStatus('offline');
                   
@@ -191,14 +208,14 @@ export const AIProvider = ({ children }) => {
                   setAiServiceStatus('offline');
                   
                 } else if (data.errorType === 'connection_failed') {
-                  errorMessage = '🔌 Không thể kết nối Ollama. Kiểm tra service đang chạy trên localhost:11434';
+                  errorMessage = '🔌 Không thể kết nối AI service. Kiểm tra cấu hình.';
                   setAiServiceStatus('offline');
                   
                 } else if (data.errorType === 'out_of_memory') {
                   errorMessage = '💾 Không đủ RAM để chạy model. Thử model nhỏ hơn: ollama pull llama3.2:1b';
                   
                 } else if (data.errorType === 'timeout') {
-                  errorMessage = '⏰ Ollama response timeout. Model có thể đang tải hoặc máy chậm.';
+                  errorMessage = '⏰ AI response timeout. Model có thể đang tải hoặc mạng chậm.';
                   
                 } else if (data.errorType === 'model_not_loaded') {
                   errorMessage = '📦 Model chưa được load. Đang tải model, vui lòng thử lại sau 30-60 giây...';
@@ -278,10 +295,7 @@ export const AIProvider = ({ children }) => {
     try {
       // Clear from server if conversation exists
       if (conversationId && messages.length > 0) {
-        await fetch(`/api/ai/hypo/conversation/${conversationId}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        await api.delete(`/api/ai/hypo/conversation/${conversationId}`);
       }
     } catch (error) {
       console.warn('⚠️ Failed to clear conversation from server:', error);
@@ -373,6 +387,7 @@ export const AIProvider = ({ children }) => {
     // Computed values
     hasMessages: messages.length > 0,
     canSendMessage: !loading && conversationId,
+    isSonarReady: aiServiceStatus === 'sonar',
     isOllamaReady: aiServiceStatus === 'ollama',
     isOffline: aiServiceStatus === 'offline'
   };
@@ -389,6 +404,7 @@ export const AIStatusContext = createContext();
 
 export const AIStatusProvider = ({ children }) => {
   const [serviceHealth, setServiceHealth] = useState({
+    sonar: false,
     ollama: false,
     openrouter: false,
     lastCheck: null
@@ -396,10 +412,11 @@ export const AIStatusProvider = ({ children }) => {
 
   const checkAllServices = useCallback(async () => {
     try {
-      const response = await fetch('/api/ai/hypo/health');
-      const health = await response.json();
+      const response = await api.get('/api/ai/hypo/health');
+      const health = response.data;
       
       setServiceHealth({
+        perplexity: health.ai?.service === 'perplexity' && health.ai?.connection === 'connected',
         ollama: health.ai?.service === 'ollama' && health.ai?.connection === 'connected',
         openrouter: health.ai?.service === 'openrouter' && health.status === 'healthy',
         lastCheck: new Date()
@@ -409,6 +426,7 @@ export const AIStatusProvider = ({ children }) => {
       console.error('❌ Error checking service health:', error);
       setServiceHealth(prev => ({
         ...prev,
+        perplexity: false,
         ollama: false,
         openrouter: false,
         lastCheck: new Date()

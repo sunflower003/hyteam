@@ -14,7 +14,7 @@ const connectDB = require('./config/database');
 const corsOptions = require('./config/cors');
 const errorHandler = require('./middleware/errorHandler');
 const { createResponse } = require('./utils/response');
-const { initializeSocket } = require('./config/socket');
+const { initializeSocket, setIO } = require('./config/socket');
 const { scheduleStoryCleanup } = require('./utils/storyCleanup');
 
 // Import các route chính
@@ -27,6 +27,7 @@ const storyRoutes = require('./routes/stories');
 const postRoutes = require('./routes/posts');
 const projectRoutes = require('./routes/projects');
 const chatRoutes = require('./routes/chats');
+const notificationRoutes = require('./routes/notifications');
 // Thêm route dành cho AI Hypo (bạn cần file này ở src/ai/routes/hypo.js)
 const hypoRoutes = require('./ai/routes/hypo');
 const documentsRoutes = require('./routes/documents');    // ← THÊM
@@ -38,6 +39,12 @@ const server = http.createServer(app);
 
 // Initialize Socket.io nếu dùng tính năng socket
 const io = initializeSocket(server);
+
+// Set IO instance for global access
+setIO(io);
+
+// Store socket.io instance in app for use in controllers
+app.set('io', io);
 
 // Initialize story cleanup scheduler
 scheduleStoryCleanup();
@@ -55,7 +62,7 @@ app.use(morgan('combined'));
 // Hạn chế rate limit để tránh abuse
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests mỗi window cho 1 IP
+  max: 3000, // 3000 requests mỗi window cho 1 IP
   message: createResponse(false, 'Too many requests, please try again later.')
 });
 app.use(limiter);
@@ -78,10 +85,14 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/chats', chatRoutes);  
 // Đăng ký endpoint AI chat: FE sẽ POST lên api/ai/hypo/chat
 app.use('/api/ai/hypo', hypoRoutes);
+
 app.use('/api/chats', chatRoutes);  
 app.use('/api/documents', documentsRoutes);    // thêm
+
 // Route cho các API không tồn tại
 app.all('*', (req, res) => {
   res.status(404).json(

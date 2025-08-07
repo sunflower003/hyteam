@@ -38,7 +38,7 @@ const NewLogin = ({ onSwitchToRegister }) => {
         <div className={styles.container}>
            {/* Left Container */}
            <div className={styles.leftContainer}>
-                <h1 className={styles.logo}>HYTEAM</h1>
+                <img src="/img/hyteam-logo.png" alt="hyteam" className={styles.logo}/>
                 <div className={styles.text}>
                     <h2 className={styles.title}>Sign into your account</h2>
                     <p className={styles.description}>

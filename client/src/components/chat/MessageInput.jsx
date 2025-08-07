@@ -1,137 +1,194 @@
-import { useState, useRef, useEffect } from 'react';
-import { useChat } from '../../context/ChatContext';
-import styles from '../../styles/components/chat/MessageInput.module.css';
+"use client"
 
-const MessageInput = ({ onSendMessage, placeholder = "Nhập tin nhắn..." }) => {
-  const [message, setMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const { startTyping, stopTyping } = useChat();
-  const inputRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+import { useState, useRef, useEffect } from "react"
+import { useChat } from "../../context/ChatContext"
+import api from "../../utils/api"
+import styles from "../../styles/components/chat/MessageInput.module.css"
+
+const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
+  const { startTyping, stopTyping } = useChat()
+  const [newMessage, setNewMessage] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
+  const inputRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
+
+  // Handle file upload
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await api.post("/api/chats/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+
+      if (response.data.success) {
+        // Send file message
+        const fileMessage = `📎 ${response.data.data.filename}\n${response.data.data.url}`
+        onSendMessage(fileMessage)
+      }
+    } catch (error) {
+      console.error("File upload error:", error)
+      alert("Không thể upload file. Vui lòng thử lại.")
+    } finally {
+      setUploading(false)
+      e.target.value = "" // Reset input
+    }
+  }
 
   const handleInputChange = (e) => {
-    setMessage(e.target.value);
-    
+    setNewMessage(e.target.value)
+
     // Typing indicators
-    if (!isTyping) {
-      setIsTyping(true);
-      startTyping();
+    if (e.target.value.trim() && !isTyping) {
+      startTyping()
+      setIsTyping(true)
+    } else if (!e.target.value.trim() && isTyping) {
+      stopTyping()
+      setIsTyping(false)
     }
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
+      clearTimeout(typingTimeoutRef.current)
     }
 
     // Set new timeout to stop typing
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-      stopTyping();
-    }, 1000);
-  };
+    if (e.target.value.trim()) {
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false)
+        stopTyping()
+      }, 1000)
+    } else {
+      setIsTyping(false)
+      stopTyping()
+    }
+  }
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!message.trim()) return;
-    
-    onSendMessage(message.trim());
-    setMessage('');
-    
-    // Stop typing indicator
-    if (isTyping) {
-      setIsTyping(false);
-      stopTyping();
+    e.preventDefault()
+
+    if (!newMessage.trim()) return
+
+    try {
+      onSendMessage(newMessage.trim(), replyingTo?._id)
+      setNewMessage("")
+      stopTyping()
+      setIsTyping(false)
+    } catch (error) {
+      console.error("Error in MessageInput handleSubmit:", error)
     }
-    
-    // Clear timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-  };
+  }
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
     }
-  };
+  }
 
   // Auto-resize textarea
   useEffect(() => {
-    const textarea = inputRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    const input = inputRef.current
+    if (input) {
+      input.style.height = "auto"
+      input.style.height = Math.min(input.scrollHeight, 144) + "px"
     }
-  }, [message]);
+  }, [newMessage])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+        clearTimeout(typingTimeoutRef.current)
       }
       if (isTyping) {
-        stopTyping();
+        stopTyping()
       }
-    };
-  }, []);
+    }
+  }, [])
 
   return (
     <div className={styles.messageInputContainer}>
+      {/* Reply Preview */}
+      {replyingTo && (
+        <div className={styles.replyPreview}>
+          <div className={styles.replyContent}>
+            <i className="ri-reply-line"></i>
+            <span>Đang trả lời: {replyingTo.content.substring(0, 50)}...</span>
+          </div>
+          <button onClick={onCancelReply} className={styles.cancelReply}>
+            <i className="ri-close-line"></i>
+          </button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className={styles.messageForm}>
-        {/* Attachment Button */}
-        <button 
-          type="button" 
+        {/* File Upload Button */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
           className={styles.attachmentBtn}
+          disabled={uploading}
           title="Đính kèm file"
         >
-          <i className="ri-attachment-2"></i>
+          {uploading ? <i className="ri-loader-4-line ri-spin"></i> : <i className="ri-add-circle-line"></i>}
         </button>
 
         {/* Message Input */}
         <div className={styles.inputWrapper}>
           <textarea
             ref={inputRef}
-            value={message}
+            value={newMessage}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={placeholder}
+            placeholder="Message..."
             className={styles.messageInput}
             rows={1}
             maxLength={2000}
+            disabled={uploading}
           />
-          
-          {/* Emoji Button */}
-          <button 
-            type="button" 
-            className={styles.emojiBtn}
-            title="Chọn emoji"
-          >
+        </div>
+
+        {/* Input Actions */}
+        <div className={styles.inputActions}>
+          <button type="button" className={styles.emojiBtn} title="Choose emoji">
             <i className="ri-emotion-line"></i>
+          </button>
+
+          <button type="button" className={styles.gifBtn} title="Choose GIF">
+            <i className="ri-file-gif-line"></i>
+          </button>
+
+          <button type="button" className={styles.stickerBtn} title="Choose sticker">
+            <i className="ri-sticker-line"></i>
           </button>
         </div>
 
-        {/* Send Button */}
-        <button 
-          type="submit" 
-          className={`${styles.sendBtn} ${message.trim() ? styles.active : ''}`}
-          disabled={!message.trim()}
-          title="Gửi tin nhắn"
-        >
-          <i className="ri-send-plane-2-fill"></i>
-        </button>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileSelect}
+          accept="image/*,application/pdf,.doc,.docx,.txt"
+          style={{ display: "none" }}
+        />
       </form>
 
       {/* Character count (when approaching limit) */}
-      {message.length > 1800 && (
-        <div className={styles.characterCount}>
-          {message.length}/2000
+      {newMessage.length > 1800 && (
+        <div className={`${styles.characterCount} ${newMessage.length > 1900 ? styles.danger : styles.warning}`}>
+          {newMessage.length}/2000
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default MessageInput;
+export default MessageInput

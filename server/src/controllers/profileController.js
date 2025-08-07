@@ -69,6 +69,7 @@ const updateProfile = async (req, res) => {
             email,
             position,
             address,
+            dateOfBirth,
             website,
             facebook,
             instagram,
@@ -105,6 +106,18 @@ const updateProfile = async (req, res) => {
         if (email) updateData.email = email;
         if (position !== undefined) updateData.position = position;
         if (address !== undefined) updateData.address = address;
+        if (dateOfBirth !== undefined) {
+            // Validate date if provided
+            if (dateOfBirth) {
+                const birthDate = new Date(dateOfBirth);
+                const today = new Date();
+                const age = today.getFullYear() - birthDate.getFullYear();
+                if (age < 13 || age > 120) {
+                    return sendError(res, 'Invalid date of birth', 400);
+                }
+            }
+            updateData.dateOfBirth = dateOfBirth;
+        }
         if (website !== undefined) updateData.website = website;
         if (facebook !== undefined) updateData.facebook = facebook;
         if (instagram !== undefined) updateData.instagram = instagram;

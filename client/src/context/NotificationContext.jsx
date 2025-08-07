@@ -5,6 +5,7 @@ import { createContext, useContext, useReducer, useEffect, useRef } from "react"
 import { useAuth } from "./AuthContext"
 import io from "socket.io-client"
 import api from "../utils/api"
+import { navigateToPage, scrollToPost, navigateToPostHighlight, openStoryByUserId } from "../utils/navigation"
 
 const NotificationContext = createContext()
 
@@ -280,6 +281,7 @@ export const NotificationProvider = ({ children }) => {
   // Navigate to notification target (post/comment/story)
   const navigateToNotification = async (notification) => {
     try {
+      console.log("🔔 Navigating to notification:", notification)
       const { _id, type, post, commentId, sender } = notification
 
       // Mark as read first and update local state immediately
@@ -297,57 +299,42 @@ export const NotificationProvider = ({ children }) => {
         await markAsRead(_id)
       }
 
+      console.log(`🎯 Navigation type: ${type}, post: ${post?._id}, sender: ${sender?._id}`)
+
       // Navigate based on notification type
       if (type === "like" || type === "comment") {
         if (post?._id) {
-          // Navigate to main feed and scroll to post
-          const postElement = document.getElementById(`post-${post._id}`)
-          if (postElement) {
-            // If post is already visible, scroll to it
-            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            
-            // Highlight the post briefly
-            postElement.classList.add('highlighted-post')
-            setTimeout(() => {
-              postElement.classList.remove('highlighted-post')
-            }, 2000)
-          } else {
-            // Navigate to home feed with post ID in URL for scrolling
-            window.location.href = `/?highlight=${post._id}${commentId ? `&comment=${commentId}` : ''}`
+          console.log(`📍 Navigating to like/comment post: ${post._id}`)
+          // Try to scroll to post if it's already visible
+          if (!scrollToPost(post._id)) {
+            console.log(`🏠 Post not visible, navigating to home with highlight`)
+            // If post is not visible, navigate to home feed with highlight
+            navigateToPostHighlight(post._id, commentId)
           }
         }
       } else if (type === "story") {
         if (sender?._id) {
-          // Check if Story component has made openStoryByUserId available globally
-          if (window.openStoryByUserId) {
-            console.log('📖 Opening story for user:', sender._id);
-            window.openStoryByUserId(sender._id);
-          } else {
-            console.warn('Story component not available, navigating to home');
-            window.location.href = '/';
+          console.log(`📖 Navigating to story by user: ${sender._id}`)
+          // Try to open story, fallback to home
+          if (!openStoryByUserId(sender._id)) {
+            console.log(`🏠 Story not available, navigating to home`)
+            navigateToPage('/')
           }
         }
       } else if (type === "post") {
         if (post?._id) {
-          // Navigate to main feed and scroll to post
-          const postElement = document.getElementById(`post-${post._id}`)
-          if (postElement) {
-            // If post is already visible, scroll to it
-            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            
-            // Highlight the post briefly
-            postElement.classList.add('highlighted-post')
-            setTimeout(() => {
-              postElement.classList.remove('highlighted-post')
-            }, 2000)
-          } else {
-            // Navigate to home feed with post ID in URL for scrolling
-            window.location.href = `/?highlight=${post._id}`
+          console.log(`📸 Navigating to new post: ${post._id}`)
+          // Try to scroll to post if it's already visible
+          if (!scrollToPost(post._id)) {
+            console.log(`🏠 Post not visible, navigating to home with highlight`)
+            // If post is not visible, navigate to home feed with highlight
+            navigateToPostHighlight(post._id)
           }
         }
       } else if (type === "follow") {
         if (sender?._id) {
-          window.location.href = `/profile/${sender._id}`
+          console.log(`👤 Navigating to profile: ${sender._id}`)
+          navigateToPage(`/profile/${sender._id}`)
         }
       }
     } catch (error) {

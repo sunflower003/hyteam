@@ -21,6 +21,8 @@ const NotificationItem = ({ notification }) => {
         return 'ri-user-add-line';
       case 'story':
         return 'ri-camera-line';
+      case 'post':
+        return 'ri-image-line';
       default:
         return 'ri-notification-2-line';
     }
@@ -53,6 +55,10 @@ const NotificationItem = ({ notification }) => {
   const getNotificationPreview = () => {
     if (type === 'story') {
       return 'posted a new story';
+    }
+    
+    if (type === 'post') {
+      return 'posted a new photo';
     }
     
     if (type === 'comment' && post?.content) {

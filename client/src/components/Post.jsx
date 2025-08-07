@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import VerifiedBadge from './ui/VerifiedBadge';
+import CommentModal from './CommentModal';
 import api from '../utils/api';
 import { formatTimeAgo, formatNumber } from '../utils/formatters';
 import styles from '../styles/components/Post.module.css';
@@ -14,6 +15,10 @@ const Post = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Comment modal states
+    const [selectedPost, setSelectedPost] = useState(null);
+    const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
     // Navigate to user profile
     const handleUserClick = (userId) => {
@@ -124,27 +129,85 @@ const Post = () => {
         }
     };
 
-    // Handle comment submission
-    const handleComment = async (postId, commentText) => {
-        if (!commentText.trim()) return;
+    // Handle comment submission (legacy - now using modal)
+    // const handleComment = async (postId, commentText) => {
+    //     if (!commentText.trim()) return;
 
-        try {
-            const response = await api.post(`/api/posts/${postId}/comment`, {
-                text: commentText.trim()
-            });
+    //     try {
+    //         const response = await api.post(`/api/posts/${postId}/comment`, {
+    //             text: commentText.trim()
+    //         });
             
-            setPosts(posts.map(post => 
-                post._id === postId 
-                    ? { 
-                        ...post, 
-                        comments: [...post.comments, response.data],
-                        commentsCount: post.commentsCount + 1
+    //         setPosts(posts.map(post => 
+    //             post._id === postId 
+    //                 ? { 
+    //                     ...post, 
+    //                     comments: [...post.comments, response.data],
+    //                     commentsCount: post.commentsCount + 1
+    //                 }
+    //                 : post
+    //         ));
+    //     } catch (error) {
+    //         console.error('Error adding comment:', error);
+    //     }
+    // };
+
+    // Handle comment icon click - open modal
+    const handleCommentClick = (post) => {
+        setSelectedPost(post);
+        setIsCommentModalOpen(true);
+    };
+
+    // Handle comment modal close
+    const handleCommentModalClose = () => {
+        setIsCommentModalOpen(false);
+        setSelectedPost(null);
+    };
+
+    // Handle new comment added from modal
+    const handleCommentAdded = (newComment, isDelete = false) => {
+        if (!selectedPost) return;
+
+        setPosts(prevPosts => 
+            prevPosts.map(post => {
+                if (post._id === selectedPost._id) {
+                    if (isDelete) {
+                        // Remove comment
+                        return {
+                            ...post,
+                            comments: post.comments?.filter(c => c._id !== newComment?._id) || [],
+                            commentsCount: Math.max(0, (post.commentsCount || 0) - 1)
+                        };
+                    } else {
+                        // Add comment
+                        return {
+                            ...post,
+                            comments: [...(post.comments || []), newComment],
+                            commentsCount: (post.commentsCount || 0) + 1
+                        };
                     }
-                    : post
-            ));
-        } catch (error) {
-            console.error('Error adding comment:', error);
-        }
+                }
+                return post;
+            })
+        );
+
+        // Update selected post for modal
+        setSelectedPost(prev => {
+            if (!prev) return null;
+            if (isDelete) {
+                return {
+                    ...prev,
+                    comments: prev.comments?.filter(c => c._id !== newComment?._id) || [],
+                    commentsCount: Math.max(0, (prev.commentsCount || 0) - 1)
+                };
+            } else {
+                return {
+                    ...prev,
+                    comments: [...(prev.comments || []), newComment],
+                    commentsCount: (prev.commentsCount || 0) + 1
+                };
+            }
+        });
     };
 
     // Generate random color for avatar background
@@ -224,11 +287,19 @@ const Post = () => {
                     key={post._id} 
                     post={post} 
                     onLike={handleLike}
-                    onComment={handleComment}
+                    onCommentClick={handleCommentClick}
                     onUserClick={handleUserClick}
                     renderAvatar={renderAvatar}
                 />
             ))}
+
+            {/* Comment Modal */}
+            <CommentModal
+                isOpen={isCommentModalOpen}
+                onClose={handleCommentModalClose}
+                post={selectedPost}
+                onCommentAdded={handleCommentAdded}
+            />
         </div>
     );
 };
@@ -240,16 +311,7 @@ const isVideo = (url, mediaType) => {
 };
 
 // Individual Post Card Component
-const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
-    const [commentText, setCommentText] = useState('');
-    const [showAllComments, setShowAllComments] = useState(false);
-
-    const handleCommentSubmit = (e) => {
-        e.preventDefault();
-        onComment(post._id, commentText);
-        setCommentText('');
-    };
-
+const PostCard = ({ post, onLike, onCommentClick, onUserClick, renderAvatar }) => {
     const mediaUrl = post.mediaUrl || post.image;
 
     return (
@@ -300,7 +362,11 @@ const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
                         onClick={() => onLike(post._id)}
                         style={{ color: post.isLiked ? '#ed4956' : 'inherit' }}
                     ></i>
-                    <i className="ri-chat-3-line"></i>
+                    <i 
+                        className="ri-chat-3-line"
+                        onClick={() => onCommentClick(post)}
+                        style={{ cursor: 'pointer' }}
+                    ></i>
                     <i className="ri-send-plane-line"></i>
                 </div>
                 <i className="ri-bookmark-line"></i>
@@ -327,39 +393,13 @@ const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
             {post.commentsCount > 0 && (
                 <span 
                     className={styles.allComments}
-                    onClick={() => setShowAllComments(!showAllComments)}
+                    onClick={() => onCommentClick(post)}
                 >
-                    {showAllComments ? 'Hide comments' : `View all ${post.commentsCount} comments`}
+                    View all {formatNumber(post.commentsCount)} comments
                 </span>
             )}
 
-            {post.commentsCount > 0 && showAllComments && (
-                <>
-                    {post.comments.map((comment) => (
-                        <div key={comment._id} className={styles.comment} id={`comment-${comment._id}`}>
-                            <span className={styles.commentAuthor}>{comment.user?.username}</span>
-                            <span className={styles.commentText}>{comment.text}</span>
-                        </div>
-                    ))}
-                </>
-            )}
-
-            {!post.turnOffCommenting && (
-                <form onSubmit={handleCommentSubmit} className={styles.commentForm}>
-                    <input 
-                        type="text" 
-                        placeholder="Add a comment..." 
-                        className={styles.commentInput}
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                    />
-                    {commentText.trim() && (
-                        <button type="submit" className={styles.postButton}>
-                            Post
-                        </button>
-                    )}
-                </form>
-            )}
+            <span className={styles.postTime}>{formatTimeAgo(post.createdAt)}</span>
 
             <div className={styles.borderBottom}></div>
         </div>

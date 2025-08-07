@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const Message = require('../../src/models/Message');
 const ChatMessage = require('../../src/models/ChatMessage');
 const Conversation = require('../../src/models/Conversation');
-require('dotenv').config();
+const User = require('../../src/models/User');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const MONGODB_URI = process.env.MONGODB_URI;
 

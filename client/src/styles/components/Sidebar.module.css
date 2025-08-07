@@ -37,7 +37,7 @@
 .links {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
 }
 
 .link {
@@ -61,19 +61,12 @@
 
 /* CSS cơ bản cho tất cả icons */
 .links i {
-    font-size: 28px !important;
-    font-weight: 550 !important;
-    min-width: 26px;
-    flex-shrink: 0;
-    color: #262626;
+    font-size: 24px;
     transition: color 0.3s ease, font-weight 0.3s ease; /* Thêm transition mượt */
 }
 
 /* CSS cho tất cả icons khi active - áp dụng cho mọi menu item */
-.link.active i {
-    color: #051621 !important; /* Màu đậm hơn khi active */
-    font-weight: 800 !important; /* Font weight đậm hơn khi active */
-}
+
 
 .linkText {
     transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -235,10 +228,7 @@
     }
 
     /* Active state cho mobile icons */
-    .navbar i.active {
-        color: #051621 !important;
-        font-weight: 800 !important;
-    }
+  
     
     .iconContainer {
         position: relative;

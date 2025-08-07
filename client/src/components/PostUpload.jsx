@@ -78,7 +78,7 @@ const PostUpload = ({ isOpen, onClose, onUpload }) => {
   };
 
   const handleShare = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || isUploading) return; // Prevent double submission
 
     setIsUploading(true);
     try {

@@ -128,7 +128,7 @@ const createStory = async (req, res) => {
 
             io.to(`user_${user._id}`).emit('new-notification', {
               notification: {
-                _id: new Date().getTime(), // Temporary ID
+                _id: new Date().getTime().toString(), // Convert to string for proper handling
                 recipient: user._id,
                 sender: {
                   _id: userId,

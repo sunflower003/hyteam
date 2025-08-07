@@ -154,8 +154,7 @@ export const NotificationProvider = ({ children }) => {
     // Listen for new posts
     socket.on("new-post", (data) => {
       console.log("📝 New post created:", data)
-      // Emit custom event cho Post components
-      window.dispatchEvent(new CustomEvent('newPost', { detail: data }))
+      // Post component sẽ tự handle update thông qua socket listener riêng
     })
 
     // Listen for real-time story updates
@@ -326,6 +325,24 @@ export const NotificationProvider = ({ children }) => {
           } else {
             console.warn('Story component not available, navigating to home');
             window.location.href = '/';
+          }
+        }
+      } else if (type === "post") {
+        if (post?._id) {
+          // Navigate to main feed and scroll to post
+          const postElement = document.getElementById(`post-${post._id}`)
+          if (postElement) {
+            // If post is already visible, scroll to it
+            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            
+            // Highlight the post briefly
+            postElement.classList.add('highlighted-post')
+            setTimeout(() => {
+              postElement.classList.remove('highlighted-post')
+            }, 2000)
+          } else {
+            // Navigate to home feed with post ID in URL for scrolling
+            window.location.href = `/?highlight=${post._id}`
           }
         }
       } else if (type === "follow") {

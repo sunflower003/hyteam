@@ -52,6 +52,27 @@ const createPost = async (req, res) => {
     console.log('📍 File path:', req.file.path);
     console.log('📂 File exists?', fs.existsSync(req.file.path));
 
+    // Enhanced duplicate prevention: Check for recent posts from same user within 10 seconds
+    // Also check by caption and file size for better duplicate detection
+    const recentPost = await Post.findOne({
+      user: req.user._id,
+      $and: [
+        { createdAt: { $gte: new Date(Date.now() - 10 * 1000) } }, // Within last 10 seconds
+        {
+          $or: [
+            { caption: caption || '' }, // Same caption
+            { createdAt: { $gte: new Date(Date.now() - 5 * 1000) } } // Or within 5 seconds regardless
+          ]
+        }
+      ]
+    }).sort({ createdAt: -1 });
+
+    if (recentPost) {
+      console.log('⚠️ Duplicate post attempt detected, returning existing post');
+      await recentPost.populate('user', 'username avatar');
+      return res.status(201).json(recentPost);
+    }
+
     let imageUrl;
 
     if (process.env.NODE_ENV === 'production') {
@@ -92,6 +113,112 @@ const createPost = async (req, res) => {
     await post.populate('user', 'username avatar');
 
     console.log('📝 POST CREATED:', post._id);
+
+    // Real-time broadcast - emit new post to all connected users (similar to story)
+    // Add a flag to prevent duplicate broadcasts
+    if (!post.broadcasted) {
+      try {
+        const { getIO } = require('../config/socket');
+        const io = getIO();
+        
+        if (io) {
+          console.log('🔗 IO instance available for post:', !!io);
+          
+          // Prepare post data for broadcast
+          const postData = {
+            _id: post._id,
+            user: {
+              _id: post.user._id,
+              username: post.user.username,
+              avatar: post.user.avatar
+            },
+            image: post.image,
+            caption: post.caption,
+            location: post.location,
+            altText: post.altText,
+            hideViewCount: post.hideViewCount,
+            hideLikeCount: post.hideLikeCount,
+            turnOffCommenting: post.turnOffCommenting,
+            likes: [],
+            comments: [],
+            likesCount: 0,
+            commentsCount: 0,
+            createdAt: post.createdAt
+          };
+          
+          console.log('📤 Emitting new-post:', {
+            post: postData
+          });
+          
+          // Broadcast to all connected users
+          io.emit('new-post', {
+            post: postData
+          });
+          
+          console.log('📝 New post broadcasted for user', post.user.username);
+          
+          // Create post notifications for all users (internal network) - similar to story notifications
+          const User = require('../models/User');
+          const allUsers = await User.find({ _id: { $ne: post.user._id } }).select('_id username');
+          
+          if (allUsers && allUsers.length > 0) {
+            console.log(`📱 Creating post notifications for ${allUsers.length} users (internal network)`);
+            
+            const notifications = allUsers.map(user => ({
+              recipient: user._id,
+              sender: post.user._id,
+              type: 'post',
+              post: post._id,
+              message: 'đã đăng một bài viết mới'
+            }));
+
+            await Notification.insertMany(notifications);
+            console.log(`✅ Created ${notifications.length} post notifications`);
+
+            // Emit notifications to all users via socket - similar to story notifications
+            for (const user of allUsers) {
+              // Get updated unread count for each user
+              const unreadCount = await Notification.countDocuments({
+                recipient: user._id,
+                isRead: false
+              });
+
+              io.to(`user_${user._id}`).emit('new-notification', {
+                notification: {
+                  _id: new Date().getTime().toString(), // Convert to string for proper handling
+                  recipient: user._id,
+                  sender: {
+                    _id: post.user._id,
+                    username: post.user.username,
+                    avatar: post.user.avatar
+                  },
+                  type: 'post',
+                  post: post._id,
+                  message: 'đã đăng một bài viết mới',
+                  isRead: false,
+                  createdAt: new Date()
+                },
+                unreadCount: unreadCount
+              });
+            }
+            console.log(`📤 Post notifications sent to all users via socket`);
+          } else {
+            console.log(`📱 No other users found to notify about post`);
+          }
+          
+          // Mark as broadcasted to prevent duplicate broadcasts
+          await Post.findByIdAndUpdate(post._id, { $set: { broadcasted: true } });
+          
+        } else {
+          console.log('❌ IO instance not available for post broadcast');
+        }
+      } catch (broadcastError) {
+        console.error('❌ Error broadcasting post:', broadcastError);
+        // Don't fail the entire operation if broadcast fails
+      }
+    } else {
+      console.log('📝 Post already broadcasted, skipping...');
+    }
 
     res.status(201).json(post);
   } catch (error) {

@@ -29,20 +29,6 @@ const Post = () => {
         fetchPosts();
     }, []);
 
-    // Listen for custom window events (from notifications)
-    useEffect(() => {
-        const handleNewPostEvent = (event) => {
-            console.log('📝 New post event from window:', event.detail);
-            setPosts(prevPosts => [event.detail.post, ...prevPosts]);
-        };
-
-        window.addEventListener('newPost', handleNewPostEvent);
-
-        return () => {
-            window.removeEventListener('newPost', handleNewPostEvent);
-        };
-    }, []);
-
     // Socket listeners for real-time updates
     useEffect(() => {
         console.log('🔌 Post component - Socket status:', !!socket);
@@ -53,7 +39,15 @@ const Post = () => {
         // Listen for new posts
         const handleNewPost = (data) => {
             console.log('📝 New post received:', data);
-            setPosts(prevPosts => [data.post, ...prevPosts]);
+            setPosts(prevPosts => {
+                // Check if post already exists to prevent duplicates
+                const existingPost = prevPosts.find(post => post._id === data.post._id);
+                if (existingPost) {
+                    console.log('📝 Post already exists, skipping duplicate');
+                    return prevPosts;
+                }
+                return [data.post, ...prevPosts];
+            });
         };
 
         // Listen for real-time like updates

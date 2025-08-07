@@ -14,14 +14,14 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['like', 'comment', 'follow', 'mention', 'story'],
+    enum: ['like', 'comment', 'follow', 'mention', 'story', 'post'],
     required: true
   },
   post: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post',
     required: function() { 
-      return this.type === 'like' || this.type === 'comment'; 
+      return this.type === 'like' || this.type === 'comment' || this.type === 'post'; 
     }
   },
   commentId: {

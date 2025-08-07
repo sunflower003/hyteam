@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import PostUpload from './PostUpload';
 import { useNavigate, useLocation } from 'react-router-dom';
 import NotificationPanel from './notification/NotificationPanel';
@@ -10,9 +11,9 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const [showPostUpload, setShowPostUpload] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(3);
   const notificationRef = useRef(null);
   const sidebarRef = useRef(null);
 
@@ -55,15 +56,12 @@ const Sidebar = () => {
   };
 
   const handleNotificationClick = () => {
-    setShowNotifications(prev => {
-      if (!prev) {
-        setNotificationCount(0);
-      }
-      return !prev;
-    });
+    setShowNotifications(prev => !prev);
+    // Không tự động mark as read khi mở panel
   };
 
   const handleMobileNotificationClick = () => {
+    // Chỉ navigate, không tự động mark as read
     navigate('/notifications');
   };
 
@@ -143,7 +141,7 @@ const Sidebar = () => {
           >
             <div className={styles.iconContainer}>
               <i className="ri-notification-2-line"></i>
-              <NotificationBadge count={notificationCount} />
+              <NotificationBadge count={unreadCount} />
             </div>
             <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Notification</span>
           </li>
@@ -223,7 +221,7 @@ const Sidebar = () => {
           onClick={handleMobileNotificationClick}
         >
           <i className="ri-notification-2-line"></i>
-          <NotificationBadge count={notificationCount} />
+          <NotificationBadge count={unreadCount} />
         </div>
         <i 
           className={`ri-chat-1-line ${isActive('/chat') ? styles.active : ''}`} 
@@ -240,8 +238,7 @@ const Sidebar = () => {
         <div onClick={() => handleNavigation('/profile')}>
           {renderAvatar(user, styles.avatarCircle)}
         </div>
-      </div>`
-
+      </div>
 
       {/* Post Upload Modal */}
       <PostUpload

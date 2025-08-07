@@ -1,12 +1,14 @@
 import styles from '../../styles/components/notification/NotificationItem.module.css';
+import { useNotifications } from '../../context/NotificationContext';
 
-const NotificationItem = ({ notification, onRead }) => {
-  const { id, type, user, avatar, message, time, isRead } = notification;
+const NotificationItem = ({ notification }) => {
+  const { navigateToNotification } = useNotifications();
+  
+  // Xóa những destructuring không cần thiết
+  const { _id, type, sender, post, message, isRead, createdAt } = notification;
 
   const handleClick = () => {
-    if (!isRead) {
-      onRead(id);
-    }
+    navigateToNotification(notification);
   };
 
   const getNotificationIcon = (type) => {
@@ -17,6 +19,8 @@ const NotificationItem = ({ notification, onRead }) => {
         return 'ri-chat-1-line';
       case 'follow':
         return 'ri-user-add-line';
+      case 'story':
+        return 'ri-camera-line';
       default:
         return 'ri-notification-2-line';
     }
@@ -35,20 +39,53 @@ const NotificationItem = ({ notification, onRead }) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const notifDate = new Date(date);
+    const diffInSeconds = Math.floor((now - notifDate) / 1000);
+    
+    if (diffInSeconds < 60) return 'now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    return `${Math.floor(diffInSeconds / 86400)}d`;
+  };
+
+  const getNotificationPreview = () => {
+    if (type === 'story') {
+      return 'posted a new story';
+    }
+    
+    if (type === 'comment' && post?.content) {
+      const preview = post.content.length > 30 
+        ? `"${post.content.substring(0, 30)}..."` 
+        : `"${post.content}"`;
+      return `commented on your post ${preview}`;
+    }
+    
+    if (type === 'like' && post?.content) {
+      const preview = post.content.length > 30 
+        ? `"${post.content.substring(0, 30)}..."` 
+        : `"${post.content}"`;
+      return `liked your post ${preview}`;
+    }
+    
+    return message;
+  };
+
   return (
     <div 
       className={`${styles.item} ${!isRead ? styles.unread : ''}`}
       onClick={handleClick}
     >
       <div className={styles.avatarContainer}>
-        {avatar ? (
-          <img src={avatar} alt={user} className={styles.avatar} />
+        {sender?.avatar ? (
+          <img src={sender.avatar} alt={sender.username} className={styles.avatar} />
         ) : (
           <div 
             className={styles.avatarDefault}
-            style={{ backgroundColor: getAvatarColor(user) }}
+            style={{ backgroundColor: getAvatarColor(sender?.username || 'User') }}
           >
-            {getInitial(user)}
+            {getInitial(sender?.username || 'U')}
           </div>
         )}
         <div className={`${styles.typeIcon} ${styles[type]}`}>
@@ -58,9 +95,10 @@ const NotificationItem = ({ notification, onRead }) => {
       
       <div className={styles.content}>
         <p className={styles.message}>
-          <span className={styles.username}>{user}</span> {message}
+          <span className={styles.username}>{sender?.username || 'Unknown User'}</span>{' '}
+          {getNotificationPreview()}
         </p>
-        <span className={styles.time}>{time}</span>
+        <span className={styles.time}>{getTimeAgo(createdAt)}</span>
       </div>
       
       {!isRead && <div className={styles.dot}></div>}

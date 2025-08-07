@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import VerifiedBadge from './ui/VerifiedBadge';
 import api from '../utils/api';
 import { formatTimeAgo, formatNumber } from '../utils/formatters';
@@ -9,6 +10,7 @@ import styles from '../styles/components/Post.module.css';
 const Post = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { socket } = useNotifications();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -26,6 +28,80 @@ const Post = () => {
     useEffect(() => {
         fetchPosts();
     }, []);
+
+    // Listen for custom window events (from notifications)
+    useEffect(() => {
+        const handleNewPostEvent = (event) => {
+            console.log('📝 New post event from window:', event.detail);
+            setPosts(prevPosts => [event.detail.post, ...prevPosts]);
+        };
+
+        window.addEventListener('newPost', handleNewPostEvent);
+
+        return () => {
+            window.removeEventListener('newPost', handleNewPostEvent);
+        };
+    }, []);
+
+    // Socket listeners for real-time updates
+    useEffect(() => {
+        console.log('🔌 Post component - Socket status:', !!socket);
+        if (!socket) return;
+
+        console.log('📡 Setting up socket listeners for post updates');
+
+        // Listen for new posts
+        const handleNewPost = (data) => {
+            console.log('📝 New post received:', data);
+            setPosts(prevPosts => [data.post, ...prevPosts]);
+        };
+
+        // Listen for real-time like updates
+        const handleLikeUpdate = (data) => {
+            console.log('👍 Real-time like update received:', data);
+            setPosts(prevPosts => 
+                prevPosts.map(post => 
+                    post._id === data.postId 
+                        ? { 
+                            ...post, 
+                            likesCount: data.likes,
+                            // Only update isLiked if it's not the current user's action
+                            isLiked: data.userId === user?.id ? data.isLiked : post.isLiked
+                        }
+                        : post
+                )
+            );
+        };
+
+        // Listen for real-time comment updates
+        const handleCommentUpdate = (data) => {
+            console.log('💬 Real-time comment update received:', data);
+            setPosts(prevPosts => 
+                prevPosts.map(post => 
+                    post._id === data.postId 
+                        ? { 
+                            ...post, 
+                            commentsCount: data.commentsCount,
+                            comments: data.comment ? [...(post.comments || []), data.comment] : post.comments
+                        }
+                        : post
+                )
+            );
+        };
+
+        socket.on('new-post', handleNewPost);
+        socket.on('post-like-updated', handleLikeUpdate);
+        socket.on('post-comment-added', handleCommentUpdate);
+
+        console.log('✅ Socket listeners registered for post updates');
+
+        return () => {
+            console.log('🧹 Cleaning up socket listeners');
+            socket.off('new-post', handleNewPost);
+            socket.off('post-like-updated', handleLikeUpdate);
+            socket.off('post-comment-added', handleCommentUpdate);
+        };
+    }, [socket, user?.id]);
 
     const fetchPosts = async () => {
         try {
@@ -183,7 +259,7 @@ const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
     const mediaUrl = post.mediaUrl || post.image;
 
     return (
-        <div className={styles.postCard}>
+        <div className={styles.postCard} id={`post-${post._id}`}>
             <div className={styles.header}>
                 <div className={styles.authorAndTime}>
                     <div onClick={() => onUserClick(post.user?._id)}>
@@ -266,7 +342,7 @@ const PostCard = ({ post, onLike, onComment, onUserClick, renderAvatar }) => {
             {post.commentsCount > 0 && showAllComments && (
                 <>
                     {post.comments.map((comment) => (
-                        <div key={comment._id} className={styles.comment}>
+                        <div key={comment._id} className={styles.comment} id={`comment-${comment._id}`}>
                             <span className={styles.commentAuthor}>{comment.user?.username}</span>
                             <span className={styles.commentText}>{comment.text}</span>
                         </div>

@@ -1,5 +1,6 @@
 const Story = require('../models/Story');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { createResponse } = require('../utils/response');
 const { cloudinary } = require('../middleware/upload');
 
@@ -64,6 +65,93 @@ const createStory = async (req, res) => {
     });
 
     await story.populate('userId', 'username avatar');
+
+    // Emit real-time story update
+    try {
+      const io = req.app.get('io');
+      console.log('📖 STORY CREATED:', story._id);
+      console.log('🔗 IO instance available for story:', !!io);
+      
+      if (io) {
+        const storyData = {
+          story: {
+            _id: story._id,
+            userId: story.userId,
+            mediaUrl: story.mediaUrl,
+            mediaType: story.mediaType,
+            content: story.content,
+            createdAt: story.createdAt,
+            expiresAt: story.expiresAt,
+            duration: story.duration,
+            filters: story.filters,
+            textOverlays: story.textOverlays
+          }
+        };
+        console.log('📤 Emitting new-story:', storyData);
+        io.emit('new-story', storyData);
+        console.log(`📖 New story broadcasted for user ${story.userId.username}`);
+      }
+    } catch (socketError) {
+      console.error('Error emitting story update:', socketError);
+    }
+
+    // Create notifications for all users (internal network - everyone is connected)
+    try {
+      // Get all users except the story creator
+      const allUsers = await User.find({ 
+        _id: { $ne: userId } 
+      }, '_id username');
+      
+      if (allUsers && allUsers.length > 0) {
+        console.log(`📱 Creating story notifications for ${allUsers.length} users (internal network)`);
+        
+        const notifications = allUsers.map(user => ({
+          recipient: user._id,
+          sender: userId,
+          type: 'story',
+          story: story._id,
+          message: `${story.userId.username} posted a new story`
+        }));
+
+        await Notification.insertMany(notifications);
+        console.log(`✅ Created ${notifications.length} story notifications`);
+
+        // Emit notifications to all users via socket
+        const io = req.app.get('io');
+        if (io) {
+          for (const user of allUsers) {
+            // Get updated unread count for each user
+            const unreadCount = await Notification.countDocuments({
+              recipient: user._id,
+              isRead: false
+            });
+
+            io.to(`user_${user._id}`).emit('new-notification', {
+              notification: {
+                _id: new Date().getTime(), // Temporary ID
+                recipient: user._id,
+                sender: {
+                  _id: userId,
+                  username: story.userId.username,
+                  avatar: story.userId.avatar
+                },
+                type: 'story',
+                story: story._id,
+                message: `posted a new story`,
+                isRead: false,
+                createdAt: new Date()
+              },
+              unreadCount: unreadCount
+            });
+          }
+          console.log(`📤 Story notifications sent to all users via socket`);
+        }
+      } else {
+        console.log(`📱 No other users found to notify about story`);
+      }
+    } catch (notificationError) {
+      console.error('Error creating story notifications:', notificationError);
+    }
 
     res.status(201).json(
       createResponse(true, { story }, 'Story created successfully')

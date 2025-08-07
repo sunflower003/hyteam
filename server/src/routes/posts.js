@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === 'production') {
   // Use local storage in development
   storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads/posts')
+      cb(null, path.join(__dirname, '../../uploads/posts'))
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

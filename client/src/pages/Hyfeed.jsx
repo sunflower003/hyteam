@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Story from "../components/Story";
 import Post from "../components/Post";
 import PostUpload from "../components/PostUpload";
@@ -11,7 +11,48 @@ import Copyright from '@/components/RightSide/Copyright';
 
 const Hyfeed = () => {
   const [showPostUpload, setShowPostUpload] = useState(false);
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Handle highlight post from notification
+  useEffect(() => {
+    const highlightPostId = searchParams.get('highlight');
+    const commentId = searchParams.get('comment');
+    
+    if (highlightPostId) {
+      // Wait for component to mount and posts to load
+      const timer = setTimeout(() => {
+        const postElement = document.getElementById(`post-${highlightPostId}`);
+        if (postElement) {
+          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Highlight the post
+          postElement.classList.add('highlighted-post');
+          setTimeout(() => {
+            postElement.classList.remove('highlighted-post');
+          }, 3000);
+          
+          // If there's a specific comment, scroll to it after the post
+          if (commentId) {
+            setTimeout(() => {
+              const commentElement = document.getElementById(`comment-${commentId}`);
+              if (commentElement) {
+                commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                commentElement.classList.add('highlighted-comment');
+                setTimeout(() => {
+                  commentElement.classList.remove('highlighted-comment');
+                }, 2000);
+              }
+            }, 1000);
+          }
+        }
+        
+        // Clear URL params after handling
+        setSearchParams({});
+      }, 1500); // Give time for posts to load
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleCreatePost = () => {
     setShowPostUpload(true);

@@ -3,7 +3,7 @@ const path = require('path');
 
 // Ensure uploads directory exists
 const ensureUploadsDir = () => {
-  const uploadsDir = path.join(__dirname, '../uploads');
+  const uploadsDir = path.join(__dirname, '../../uploads');
   const postsDir = path.join(uploadsDir, 'posts');
   const storiesDir = path.join(uploadsDir, 'stories');
 

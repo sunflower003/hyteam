@@ -52,9 +52,69 @@ const initializeSocket = (server) => {
 
     // Handle user going online
     socket.emit("connected", {
-      message: "Connected to chat server",
+      message: "Connected to server",
       userId: socket.userId,
     })
+
+    // Get and send unread notification count
+    const getUnreadCount = async () => {
+      try {
+        const Notification = require('../models/Notification');
+        const unreadCount = await Notification.countDocuments({
+          recipient: socket.userId,
+          isRead: false
+        });
+        
+        socket.emit('unread-count-update', { unreadCount });
+      } catch (error) {
+        console.error('Error getting unread count:', error);
+      }
+    };
+
+    getUnreadCount();
+
+    // Handle notification read event
+    socket.on('mark-notification-read', async (data) => {
+      try {
+        const { notificationId } = data;
+        const Notification = require('../models/Notification');
+        
+        await Notification.findOneAndUpdate(
+          { _id: notificationId, recipient: socket.userId },
+          { isRead: true }
+        );
+
+        const unreadCount = await Notification.countDocuments({
+          recipient: socket.userId,
+          isRead: false
+        });
+
+        socket.emit('notification-read-success', { 
+          notificationId, 
+          unreadCount 
+        });
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+        socket.emit('error', { message: 'Failed to mark notification as read' });
+      }
+    });
+
+    // Handle mark all notifications as read
+    socket.on('mark-all-notifications-read', async () => {
+      try {
+        const Notification = require('../models/Notification');
+        
+        await Notification.updateMany(
+          { recipient: socket.userId, isRead: false },
+          { isRead: true }
+        );
+
+        socket.emit('all-notifications-read-success', { unreadCount: 0 });
+      } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        socket.emit('error', { message: 'Failed to mark notifications as read' });
+      }
+    });
 
     // Broadcast user online status
     socket.broadcast.emit("user-online", {
@@ -515,4 +575,15 @@ const initializeSocket = (server) => {
   return io
 }
 
-module.exports = { initializeSocket }
+// Store the IO instance
+let ioInstance = null
+
+const setIO = (io) => {
+  ioInstance = io
+}
+
+const getIO = () => {
+  return ioInstance
+}
+
+module.exports = { initializeSocket, setIO, getIO }

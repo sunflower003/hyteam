@@ -1,74 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useNotifications } from '../../context/NotificationContext';
 import NotificationItem from './NotificationItem';
 import styles from '../../styles/components/notification/NotificationPanel.module.css';
 
 const NotificationPanel = ({ isOpen }) => {
-  const [notifications, setNotifications] = useState([]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setNotifications([
-        {
-          id: 1,
-          type: 'like',
-          user: 'johndoe',
-          avatar: null,
-          message: 'liked your post',
-          time: '2h',
-          isRead: false
-        },
-        {
-          id: 2,
-          type: 'follow',
-          user: 'jane_smith',
-          avatar: null,
-          message: 'started following you',
-          time: '1d',
-          isRead: false
-        },
-        {
-          id: 3,
-          type: 'comment',
-          user: 'mike_dev',
-          avatar: null,
-          message: 'commented on your post',
-          time: '3d',
-          isRead: true
-        }
-      ]);
-    }
-  }, [isOpen]);
-
-  const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, isRead: true } : notif
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, isRead: true }))
-    );
-  };
+  const { notifications, loading, markAllAsRead, fetchNotifications } = useNotifications();
 
   if (!isOpen) return null;
+
+  const handleRefresh = () => {
+    fetchNotifications();
+  };
 
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
         <h3>Notifications</h3>
-        <button 
-          className={styles.markAllButton}
-          onClick={markAllAsRead}
-        >
-          Mark all as read
-        </button>
+        <div className={styles.headerActions}>
+          <button 
+            className={styles.refreshButton}
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <i className="ri-refresh-line"></i>
+          </button>
+          <button 
+            className={styles.markAllButton}
+            onClick={markAllAsRead}
+            disabled={loading}
+          >
+            Mark all as read
+          </button>
+        </div>
       </div>
       
       <div className={styles.content}>
-        {notifications.length === 0 ? (
+        {loading ? (
+          <div className={styles.loading}>
+            <div className={styles.spinner}></div>
+            <p>Loading notifications...</p>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className={styles.empty}>
             <i className="ri-notification-off-line"></i>
             <p>No notifications yet</p>
@@ -76,9 +47,8 @@ const NotificationPanel = ({ isOpen }) => {
         ) : (
           notifications.map(notification => (
             <NotificationItem
-              key={notification.id}
+              key={notification._id}
               notification={notification}
-              onRead={markAsRead}
             />
           ))
         )}

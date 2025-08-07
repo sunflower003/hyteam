@@ -237,6 +237,8 @@ const getAllPosts = async (req, res) => {
     const posts = await Post.find()
       .populate('user', 'username avatar')
       .populate('comments.user', 'username avatar')
+      .populate('comments.likes.user', 'username')
+      .populate('comments.replyTo.user', 'username')
       .populate('likes.user', 'username')
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -312,6 +314,8 @@ const getPost = async (req, res) => {
     const post = await Post.findById(postId)
       .populate('user', 'username avatar')
       .populate('comments.user', 'username avatar')
+      .populate('comments.likes.user', 'username')
+      .populate('comments.replyTo.user', 'username')
       .populate('likes.user', 'username');
 
     if (!post) {
@@ -686,6 +690,193 @@ const deletePost = async (req, res) => {
   }
 };
 
+// Toggle like on comment
+const toggleCommentLike = async (req, res) => {
+  console.log('🔄 TOGGLE COMMENT LIKE FUNCTION CALLED');
+  try {
+    const { postId, commentId } = req.params;
+    
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const existingLike = comment.likes.find(like => like.user.toString() === req.user._id.toString());
+
+    if (existingLike) {
+      // Unlike comment
+      comment.likes = comment.likes.filter(like => like.user.toString() !== req.user._id.toString());
+    } else {
+      // Like comment
+      comment.likes.push({ user: req.user._id });
+
+      // Create notification if not liking own comment
+      if (comment.user._id.toString() !== req.user._id.toString()) {
+        try {
+          const notification = await createNotification({
+            recipient: comment.user._id,
+            sender: req.user._id,
+            type: 'comment_like',
+            post: postId,
+            commentId: commentId,
+            message: 'liked your comment'
+          });
+
+          // Send real-time notification
+          const { getIO } = require('../config/socket');
+          const io = getIO();
+          if (io && notification) {
+            const unreadCount = await Notification.countDocuments({
+              recipient: comment.user._id,
+              isRead: false
+            });
+
+            io.to(`user_${comment.user._id}`).emit('new-notification', {
+              notification,
+              unreadCount
+            });
+          }
+        } catch (notifError) {
+          console.error('Error creating comment like notification:', notifError);
+        }
+      }
+    }
+
+    await post.save();
+
+    // Emit real-time update
+    try {
+      const { getIO } = require('../config/socket');
+      const io = getIO();
+      if (io) {
+        io.emit('comment-like-updated', {
+          postId,
+          commentId,
+          likesCount: comment.likes.length,
+          isLiked: !existingLike,
+          userId: req.user._id.toString()
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting comment like update:', socketError);
+    }
+
+    res.json({
+      liked: !existingLike,
+      likesCount: comment.likes.length
+    });
+  } catch (error) {
+    console.error('Error toggling comment like:', error);
+    res.status(500).json({ error: 'Failed to toggle comment like' });
+  }
+};
+
+// Add reply to comment
+const addReply = async (req, res) => {
+  console.log('💬 ADD REPLY FUNCTION CALLED');
+  try {
+    const { postId, commentId } = req.params;
+    const { text, replyToUserId, replyToUsername } = req.body;
+
+    if (!text || text.trim() === '') {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    if (post.turnOffCommenting) {
+      return res.status(403).json({ error: 'Comments are disabled for this post' });
+    }
+
+    // Add reply as a new comment with parentComment reference
+    const reply = {
+      user: req.user._id,
+      text: text.trim(),
+      parentComment: commentId,
+      replyTo: replyToUserId ? {
+        user: replyToUserId,
+        username: replyToUsername
+      } : undefined,
+      likes: [],
+      replies: []
+    };
+
+    post.comments.push(reply);
+    await post.save();
+
+    // Update parent comment's replies array
+    const parentComment = post.comments.id(commentId);
+    if (parentComment) {
+      const newReply = post.comments[post.comments.length - 1];
+      parentComment.replies.push(newReply._id);
+      await post.save();
+    }
+
+    // Populate the new reply
+    await post.populate('comments.user', 'username avatar');
+    const newReply = post.comments[post.comments.length - 1];
+
+    // Create notification
+    if (replyToUserId && replyToUserId !== req.user._id.toString()) {
+      try {
+        const notification = await createNotification({
+          recipient: replyToUserId,
+          sender: req.user._id,
+          type: 'reply',
+          post: postId,
+          commentId: newReply._id,
+          message: 'replied to your comment'
+        });
+
+        // Send real-time notification
+        const { getIO } = require('../config/socket');
+        const io = getIO();
+        if (io && notification) {
+          const unreadCount = await Notification.countDocuments({
+            recipient: replyToUserId,
+            isRead: false
+          });
+
+          io.to(`user_${replyToUserId}`).emit('new-notification', {
+            notification,
+            unreadCount
+          });
+        }
+      } catch (notifError) {
+        console.error('Error creating reply notification:', notifError);
+      }
+    }
+
+    // Emit real-time update
+    try {
+      const { getIO } = require('../config/socket');
+      const io = getIO();
+      if (io) {
+        io.emit('comment-reply-added', {
+          postId,
+          parentCommentId: commentId,
+          reply: newReply
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting reply update:', socketError);
+    }
+
+    res.status(201).json(newReply);
+  } catch (error) {
+    console.error('Error adding reply:', error);
+    res.status(500).json({ error: 'Failed to add reply' });
+  }
+};
+
 module.exports = {
   createPost,
   getAllPosts,
@@ -695,5 +886,7 @@ module.exports = {
   addComment,
   deleteComment,
   deleteAllMyComments,
-  deletePost
+  deletePost,
+  toggleCommentLike,
+  addReply
 };

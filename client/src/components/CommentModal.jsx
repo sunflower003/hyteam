@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../utils/api';
-import { formatTimeAgo } from '../utils/formatters';
+import { formatTimeAgo, formatNumber } from '../utils/formatters';
 import styles from '../styles/components/CommentModal.module.css';
 
 const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
@@ -11,19 +11,55 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyTo, setReplyTo] = useState(null); // { commentId, username, userId }
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
+
+  // Process comments into nested structure
+  const processCommentsStructure = useCallback((rawComments) => {
+    const commentMap = new Map();
+    const rootComments = [];
+
+    // First pass: create comment map
+    rawComments.forEach(comment => {
+      const commentWithMeta = {
+        ...comment,
+        likesCount: comment.likes?.length || 0,
+        isLiked: comment.likes?.some(like => like.user === user?._id) || false,
+        replies: []
+      };
+      commentMap.set(comment._id, commentWithMeta);
+    });
+
+    // Second pass: build nested structure
+    rawComments.forEach(comment => {
+      if (comment.parentComment) {
+        // This is a reply
+        const parent = commentMap.get(comment.parentComment);
+        if (parent) {
+          parent.replies.push(commentMap.get(comment._id));
+        }
+      } else {
+        // This is a root comment
+        rootComments.push(commentMap.get(comment._id));
+      }
+    });
+
+    return rootComments;
+  }, [user]);
 
   // Load comments when modal opens
   useEffect(() => {
     if (isOpen && post) {
-      setComments(post.comments || []);
+      // Process comments to create nested structure
+      const processedComments = processCommentsStructure(post.comments || []);
+      setComments(processedComments);
       // Auto focus comment input
       setTimeout(() => {
         commentInputRef.current?.focus();
       }, 100);
     }
-  }, [isOpen, post]);
+  }, [isOpen, post, processCommentsStructure]);
 
   // Handle click outside to close
   useEffect(() => {
@@ -85,12 +121,34 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
 
     setIsSubmitting(true);
     try {
-      const response = await api.post(`/api/posts/${post._id}/comment`, {
-        text: commentText.trim()
-      });
+      let response;
+      
+      if (replyTo) {
+        // Adding a reply
+        response = await api.post(`/api/posts/${post._id}/comment/${replyTo.commentId}/reply`, {
+          text: commentText.trim(),
+          replyToUserId: replyTo.userId,
+          replyToUsername: replyTo.username
+        });
+      } else {
+        // Adding a regular comment
+        response = await api.post(`/api/posts/${post._id}/comment`, {
+          text: commentText.trim()
+        });
+      }
 
       const newComment = response.data;
-      setComments(prev => [...prev, newComment]);
+      
+      if (replyTo) {
+        // Handle reply - refresh comments to get updated structure
+        const refreshedComments = processCommentsStructure([...post.comments, newComment]);
+        setComments(refreshedComments);
+        setReplyTo(null);
+      } else {
+        // Handle regular comment
+        setComments(prev => [...prev, { ...newComment, replies: [], likesCount: 0, isLiked: false }]);
+      }
+      
       setCommentText('');
       
       // Update parent component
@@ -106,6 +164,53 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleLikeComment = async (commentId) => {
+    try {
+      const response = await api.post(`/api/posts/${post._id}/comment/${commentId}/like`);
+      
+      // Update comment likes in state
+      const updateCommentLikes = (commentsList) => {
+        return commentsList.map(comment => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              likesCount: response.data.likesCount,
+              isLiked: response.data.liked
+            };
+          }
+          if (comment.replies?.length > 0) {
+            return {
+              ...comment,
+              replies: updateCommentLikes(comment.replies)
+            };
+          }
+          return comment;
+        });
+      };
+
+      setComments(prev => updateCommentLikes(prev));
+    } catch (error) {
+      console.error('Error liking comment:', error);
+      alert('Failed to like comment. Please try again.');
+    }
+  };
+
+  const handleReplyClick = (comment) => {
+    setReplyTo({
+      commentId: comment.parentComment || comment._id, // Reply to parent or to this comment
+      username: comment.user?.username,
+      userId: comment.user?._id
+    });
+    setCommentText(`@${comment.user?.username} `);
+    commentInputRef.current?.focus();
+  };
+
+  const cancelReply = () => {
+    setReplyTo(null);
+    setCommentText('');
+    commentInputRef.current?.focus();
   };
 
   const handleDeleteComment = async (commentId) => {
@@ -151,6 +256,65 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
     );
   };
 
+  // Render individual comment with replies
+  const renderComment = (comment, isReply = false) => (
+    <div key={comment._id} className={`${styles.commentItem} ${isReply ? styles.replyItem : ''}`}>
+      <div className={styles.commentAvatar}>
+        {renderAvatar(comment.user)}
+      </div>
+      <div className={styles.commentContent}>
+        <div className={styles.commentMain}>
+          <span className={styles.commentUser}>{comment.user?.username}</span>
+          {comment.replyTo && (
+            <span className={styles.replyTag}>@{comment.replyTo.username}</span>
+          )}
+          <span className={styles.commentText}>{comment.text}</span>
+        </div>
+        <div className={styles.commentMeta}>
+          <span className={styles.commentTime}>
+            {formatTimeAgo(comment.createdAt)}
+          </span>
+          {comment.likesCount > 0 && (
+            <span className={styles.commentLikes}>
+              {formatNumber(comment.likesCount)} likes
+            </span>
+          )}
+          <button 
+            onClick={() => handleReplyClick(comment)}
+            className={styles.replyButton}
+          >
+            Reply
+          </button>
+          {comment.user?._id === user?._id && (
+            <button 
+              onClick={() => handleDeleteComment(comment._id)}
+              className={styles.deleteComment}
+            >
+              Delete
+            </button>
+          )}
+        </div>
+        
+        {/* Render replies */}
+        {comment.replies?.length > 0 && (
+          <div className={styles.repliesContainer}>
+            {comment.replies.map(reply => renderComment(reply, true))}
+          </div>
+        )}
+      </div>
+      
+      {/* Like button on the right */}
+      <div className={styles.commentActions}>
+        <button 
+          onClick={() => handleLikeComment(comment._id)}
+          className={`${styles.likeButton} ${comment.isLiked ? styles.liked : ''}`}
+        >
+          <i className={comment.isLiked ? 'ri-heart-3-fill' : 'ri-heart-3-line'}></i>
+        </button>
+      </div>
+    </div>
+  );
+
   if (!isOpen) return null;
 
   return (
@@ -184,38 +348,25 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
               <span>Be the first to comment!</span>
             </div>
           ) : (
-            comments.map((comment) => (
-              <div key={comment._id} className={styles.commentItem}>
-                <div className={styles.commentAvatar}>
-                  {renderAvatar(comment.user)}
-                </div>
-                <div className={styles.commentContent}>
-                  <div className={styles.commentMain}>
-                    <span className={styles.commentUser}>{comment.user?.username}</span>
-                    <span className={styles.commentText}>{comment.text}</span>
-                  </div>
-                  <div className={styles.commentMeta}>
-                    <span className={styles.commentTime}>
-                      {formatTimeAgo(comment.createdAt)}
-                    </span>
-                    {comment.user?._id === user?._id && (
-                      <button 
-                        onClick={() => handleDeleteComment(comment._id)}
-                        className={styles.deleteComment}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
+            comments.map(comment => renderComment(comment))
           )}
         </div>
 
         {/* Comment Form */}
         {!post.turnOffCommenting && (
           <form onSubmit={handleSubmitComment} className={styles.commentForm}>
+            {replyTo && (
+              <div className={styles.replyInfo}>
+                <span>Replying to @{replyTo.username}</span>
+                <button 
+                  type="button" 
+                  onClick={cancelReply}
+                  className={styles.cancelReply}
+                >
+                  ×
+                </button>
+              </div>
+            )}
             <div className={styles.commentInputContainer}>
               {renderAvatar(user)}
               <input
@@ -223,7 +374,7 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
+                placeholder={replyTo ? `Reply to @${replyTo.username}...` : "Add a comment..."}
                 className={styles.commentInput}
                 disabled={isSubmitting}
               />
@@ -233,7 +384,7 @@ const CommentModal = ({ isOpen, onClose, post, onCommentAdded }) => {
                   disabled={isSubmitting}
                   className={styles.postButton}
                 >
-                  {isSubmitting ? 'Posting...' : 'Post'}
+                  {isSubmitting ? 'Posting...' : (replyTo ? 'Reply' : 'Post')}
                 </button>
               )}
             </div>

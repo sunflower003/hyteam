@@ -126,6 +126,13 @@
   display: flex;
   padding: 8px 20px;
   gap: 12px;
+  position: relative;
+}
+
+.replyItem {
+  margin-left: 44px;
+  padding-left: 12px;
+  border-left: 2px solid #efefef;
 }
 
 .commentAvatar {
@@ -164,6 +171,12 @@
   color: #262626;
 }
 
+.replyTag {
+  color: #0095f6;
+  font-weight: 500;
+  font-size: 14px;
+}
+
 .commentText {
   font-size: 14px;
   color: #262626;
@@ -174,11 +187,32 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .commentTime {
   font-size: 12px;
   color: #8e8e8e;
+}
+
+.commentLikes {
+  font-size: 12px;
+  color: #8e8e8e;
+  font-weight: 600;
+}
+
+.replyButton {
+  background: none;
+  border: none;
+  color: #8e8e8e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.replyButton:hover {
+  color: #262626;
 }
 
 .deleteComment {
@@ -192,6 +226,73 @@
 
 .deleteComment:hover {
   color: #ed4956;
+}
+
+/* Comment Actions (like button on right) */
+.commentActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.likeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  color: #8e8e8e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.likeButton:hover {
+  color: #262626;
+}
+
+.likeButton.liked {
+  color: #ed4956;
+}
+
+/* Replies Container */
+.repliesContainer {
+  margin-top: 8px;
+}
+
+/* Reply Info */
+.replyInfo {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #65676b;
+}
+
+.cancelReply {
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  color: #8e8e8e;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.cancelReply:hover {
+  background: #e4e6ea;
+  color: #262626;
 }
 
 /* Comment Form */

@@ -75,6 +75,12 @@ router.post('/:postId/comment', protect, postController.addComment);
 // Delete specific comment
 router.delete('/:postId/comment/:commentId', protect, postController.deleteComment);
 
+// Like/Unlike comment
+router.post('/:postId/comment/:commentId/like', protect, postController.toggleCommentLike);
+
+// Add reply to comment
+router.post('/:postId/comment/:commentId/reply', protect, postController.addReply);
+
 // Delete all my comments from all posts
 router.delete('/my-comments/all', protect, postController.deleteAllMyComments);
 

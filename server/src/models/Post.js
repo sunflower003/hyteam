@@ -54,6 +54,30 @@ const postSchema = new mongoose.Schema({
       type: String,
       required: true
     },
+    likes: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    parentComment: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    replyTo: {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      username: String
+    },
+    replies: [{
+      type: mongoose.Schema.Types.ObjectId
+    }],
     createdAt: {
       type: Date,
       default: Date.now

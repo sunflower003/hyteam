@@ -399,7 +399,16 @@ const PostCard = ({ post, onLike, onCommentClick, onUserClick, renderAvatar }) =
                 </span>
             )}
 
-            <span className={styles.postTime}>{formatTimeAgo(post.createdAt)}</span>
+            <div className={styles.commentInputWrapper}>
+                <input 
+                    type="text" 
+                    className={styles.commentInput} 
+                    placeholder="Add a comment..." 
+                    onFocus={(e) => e.target.nextSibling.style.display = 'inline-block'}
+                    onBlur={(e) => e.target.nextSibling.style.display = 'none'}
+                />
+                <button className={styles.commentSendButton} style={{ display: 'none' }}>Send</button>
+            </div>
 
             <div className={styles.borderBottom}></div>
         </div>

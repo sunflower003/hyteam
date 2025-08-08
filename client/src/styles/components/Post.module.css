@@ -16,6 +16,21 @@
     align-items: center;
 }
 
+.commentInputWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.commentSendButton {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: blue;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+}
+
 .authorAndTime {
     display: flex;
     align-items: center;

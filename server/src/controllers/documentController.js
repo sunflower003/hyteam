@@ -5,15 +5,35 @@ const Document  = require('../models/document');
 // GET /api/documents
 exports.getAll = async (req, res, next) => {
   try {
+    const userId = req.user?._id;
     const { search = '', sortBy = 'createdAt', sort = -1 } = req.query;
     const regex = new RegExp(search, 'i');
 
     const docs = await Document
-      .find({ $or:[{ name: regex }, { tags: regex }] })
+      .find({ 
+        user: userId, // Chỉ lấy documents của user hiện tại
+        $or:[{ name: regex }, { tags: regex }] 
+      })
       .sort({ [sortBy]: sort });
 
-    res.json({ success: true, data: docs });
-  } catch (err) { next(err); }
+    // Format response với id field
+    const formattedDocs = docs.map(doc => ({
+      id: doc._id.toString(), // Chuyển _id thành id
+      name: doc.name,
+      size: doc.size,
+      type: doc.type,
+      createdAt: doc.createdAt,
+      path: doc.path,
+      url: doc.url,
+      filename: path.basename(doc.path) // Lấy filename từ path
+    }));
+
+    console.log('📋 Found documents for user:', userId, 'count:', formattedDocs.length);
+    res.json({ success: true, data: formattedDocs });
+  } catch (err) { 
+    console.error('Error in getAll:', err);
+    next(err); 
+  }
 };
 
 // POST /api/documents/upload
@@ -31,7 +51,19 @@ exports.upload = async (req, res, next) => {
       user        : req.user?._id
     })));
 
-    res.json({ success:true, message:`Tải lên ${saved.length} file`, data:saved });
+    // Format the response to match getAll format
+    const formattedSaved = saved.map(doc => ({
+      id: doc._id.toString(),
+      name: doc.name,
+      size: doc.size,
+      type: doc.type,
+      createdAt: doc.createdAt,
+      path: doc.path,
+      url: doc.url,
+      filename: path.basename(doc.path) // Lấy filename từ path
+    }));
+
+    res.json({ success:true, message:`Tải lên ${saved.length} file`, data:formattedSaved });
   } catch (err) { next(err); }
 };
 
@@ -50,58 +82,68 @@ exports.rename = async (req, res, next) => {
 exports.remove = async (req, res, next) => {
   try {
     const { ids = [] } = req.body;
+    const userId = req.user?._id;
     
     console.log('🗑️ DELETE REQUEST RECEIVED');
+    console.log('📋 User ID:', userId);
     console.log('📋 IDs to delete:', ids);
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    if (!ids || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'No IDs provided' });
+    }
+
+    // Chỉ tìm documents thuộc về user hiện tại
+    const docs = await Document.find({ 
+      _id: { $in: ids },
+      user: userId // QUAN TRỌNG: chỉ lấy file của user hiện tại
+    });
     
-    const docs = await Document.find({ _id: { $in: ids } });
-    console.log('📄 Found documents in DB:', docs.length);
+    console.log('📄 Found documents to delete:', docs.length, 'of', ids.length, 'requested');
     
-    docs.forEach((doc, index) => {
-      console.log(`📄 Document ${index + 1}:`, {
-        id: doc._id,
-        name: doc.name,
-        path: doc.path
+    if (docs.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No documents found or permission denied' 
       });
+    }
+
+    // Delete physical files
+    let filesDeleted = 0;
+    docs.forEach(doc => {
+      const filename = path.basename(doc.path);
+      const filePath = path.join(__dirname, '..', '..', 'uploads', 'documents', filename);
+      console.log('�️ Attempting to delete file:', filePath);
       
-      // Test multiple possible paths
-      const paths = [
-        path.join(__dirname, '..', '..', 'uploads', 'documents', path.basename(doc.path)),
-        path.join(__dirname, '..', '..', doc.path),
-        path.join(__dirname, '..', doc.path),
-        path.join(__dirname, '..', '..', 'uploads', 'documents', doc.path)
-      ];
-      
-      let fileDeleted = false;
-      paths.forEach((filePath, pathIndex) => {
-        console.log(`🔍 Path ${pathIndex + 1}:`, filePath);
-        const exists = fs.existsSync(filePath);
-        console.log(`📁 Exists:`, exists);
-        
-        if (exists && !fileDeleted) {
-          try {
-            fs.unlinkSync(filePath);
-            console.log('✅ Successfully deleted file!');
-            fileDeleted = true;
-          } catch (fileErr) {
-            console.error('❌ Error deleting file:', fileErr.message);
-          }
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+          console.log('✅ File deleted successfully:', doc.name);
+          filesDeleted++;
+        } catch (fileErr) {
+          console.error('❌ Error deleting file:', fileErr.message);
         }
-      });
-      
-      if (!fileDeleted) {
-        console.warn('⚠️ No file was deleted for:', doc.name);
+      } else {
+        console.warn('⚠️ File not found on disk:', filePath);
       }
     });
 
-    // Delete from database
-    const deleteResult = await Document.deleteMany({ _id: { $in: ids } });
+    // Delete from database - chỉ xóa documents của user hiện tại
+    const deleteResult = await Document.deleteMany({ 
+      _id: { $in: ids },
+      user: userId // QUAN TRỌNG: đảm bảo chỉ xóa file của user
+    });
+    
     console.log('🗄️ Deleted from database:', deleteResult.deletedCount);
 
     res.json({ 
       success: true, 
-      message: `Đã xóa ${docs.length} file`,
-      deletedCount: deleteResult.deletedCount
+      message: `Successfully deleted ${deleteResult.deletedCount} documents`,
+      deletedCount: deleteResult.deletedCount,
+      filesDeleted: filesDeleted
     });
   } catch (err) { 
     console.error('💥 Error in remove function:', err);

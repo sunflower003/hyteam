@@ -88,7 +88,10 @@ const DocumentList = ({
           <div>Thao tác</div>
         </div>
 
-        {documents.map(doc => (
+        {documents.map(doc => {
+          console.log('🔍 Rendering document:', doc);
+          console.log('🔍 Document ID:', doc.id);
+          return (
           <div key={doc.id} style={{ 
             display: 'grid', 
             gridTemplateColumns: '50px 1fr 120px 160px 140px',
@@ -145,7 +148,8 @@ const DocumentList = ({
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   }

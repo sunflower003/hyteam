@@ -28,6 +28,8 @@ const Documents = () => {
       setIsLoading(true);
       setError(null);
       const data = await documentAPI.getAll();
+      console.log('📊 Fetched documents data:', data);
+      console.log('📊 First document structure:', data[0]);
       setDocuments(data);
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -77,18 +79,44 @@ const Documents = () => {
   };
 
   const handleDelete = async (docIds) => {
-    if (!window.confirm('Bạn có chắc muốn xóa tài liệu này?')) return;
+    console.log('🚀 handleDelete called with:', docIds);
+    console.log('🚀 Type of docIds:', typeof docIds, Array.isArray(docIds));
+    
+    if (!docIds || docIds.length === 0) {
+      alert('Vui lòng chọn file để xóa');
+      return;
+    }
+
+    if (!window.confirm(`Bạn có chắc muốn xóa ${docIds.length} tài liệu?`)) return;
     
     try {
+      console.log('🗑️ Deleting documents with IDs:', docIds); // Debug
       setError(null);
-      await documentAPI.delete(docIds);
-      await fetchDocuments();
+      
+      const result = await documentAPI.delete(docIds);
+      console.log('✅ Delete API result:', result); // Debug
+      
+      // Cập nhật state ngay lập tức để UI phản hồi nhanh
+      setDocuments(prev => {
+        const filtered = prev.filter(doc => !docIds.includes(doc.id));
+        console.log('📊 Updated documents count:', prev.length, '→', filtered.length);
+        console.log('📊 Documents before filter:', prev.map(d => ({id: d.id, name: d.name})));
+        console.log('📊 Documents after filter:', filtered.map(d => ({id: d.id, name: d.name})));
+        return filtered;
+      });
       setSelectedDocs([]);
-      alert('Xóa thành công!');
+      
+      // Fetch lại từ server để đảm bảo đồng bộ
+      await fetchDocuments();
+      
+      alert(`Xóa thành công ${result.deletedCount || docIds.length} tài liệu!`);
     } catch (error) {
       console.error('Delete error:', error);
       setError(error.message);
       alert(`Lỗi xóa: ${error.message}`);
+      
+      // Refresh khi có lỗi
+      await fetchDocuments();
     }
   };
 
@@ -107,8 +135,21 @@ const Documents = () => {
 
   const handleDownload = async (doc) => {
     try {
+      console.log('📥 Downloading document:', doc);
+      console.log('📥 Document filename:', doc.filename);
+      console.log('📥 Document path:', doc.path);
+      console.log('📥 Document url:', doc.url);
       setError(null);
-      await documentAPI.download(doc.id, doc.name);
+      
+      // Lấy filename từ path nếu không có filename field
+      const filename = doc.filename || (doc.path ? doc.path.split('/').pop() : null);
+      console.log('📥 Using filename:', filename);
+      
+      if (!filename) {
+        throw new Error('Không tìm thấy tên file');
+      }
+      
+      await documentAPI.download(filename, doc.name);
     } catch (error) {
       console.error('Download error:', error);
       setError(error.message);

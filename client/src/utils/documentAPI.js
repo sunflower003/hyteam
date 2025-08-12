@@ -6,7 +6,10 @@ export const documentAPI = {
   getAll: async () => {
     try {
       const response = await api.get('/api/documents');
-      return response.data.data || response.data;
+      console.log('🔍 API Raw response:', response.data);
+      const data = response.data.data || response.data;
+      console.log('🔍 Extracted data:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching documents:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch documents');
@@ -42,9 +45,11 @@ export const documentAPI = {
   // DELETE /api/documents
   delete: async (ids) => {
     try {
+      console.log('🗑️ documentAPI.delete called with:', ids);
       const response = await api.delete('/api/documents', { 
         data: { ids } 
       });
+      console.log('🗑️ documentAPI.delete response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error deleting documents:', error);

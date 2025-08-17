@@ -9,8 +9,8 @@ class CacheManager {
     this.missCount = 0;
   }
 
-  // Generate cache key from messages
-  generateKey(messages) {
+  // Generate cache key from messages and model
+  generateKey(messages, selectedModel = 'auto') {
     try {
       // Lấy 3 tin nhắn cuối cùng để tạo context key
       const recentMessages = messages.slice(-3);
@@ -18,10 +18,13 @@ class CacheManager {
         .map(msg => `${msg.role}:${msg.content}`)
         .join('|');
       
+      // Include model in cache key for separate caching per model
+      const keyString = `${selectedModel}:${contextString}`;
+      
       // Create hash for consistent key
       return crypto
         .createHash('md5')
-        .update(contextString.toLowerCase())
+        .update(keyString.toLowerCase())
         .digest('hex')
         .substring(0, 16);
     } catch (error) {
@@ -31,9 +34,9 @@ class CacheManager {
   }
 
   // Get cached response
-  get(messages) {
+  get(messages, selectedModel = 'auto') {
     try {
-      const key = this.generateKey(messages);
+      const key = this.generateKey(messages, selectedModel);
       if (!key) return null;
 
       const cached = this.cache.get(key);
@@ -41,11 +44,12 @@ class CacheManager {
       if (cached && Date.now() - cached.timestamp < this.defaultTTL) {
         cached.hitCount++;
         this.hitCount++;
-        console.log(`⚡ Cache HIT for key: ${key} (hits: ${cached.hitCount})`);
+        console.log(`⚡ Cache HIT for key: ${key} (${selectedModel}) (hits: ${cached.hitCount})`);
         return {
           response: cached.response,
           fromCache: true,
-          hitCount: cached.hitCount
+          hitCount: cached.hitCount,
+          model: selectedModel
         };
       }
 
@@ -64,11 +68,11 @@ class CacheManager {
   }
 
   // Set cache
-  set(messages, response, customTTL = null) {
+  set(messages, response, selectedModel = 'auto', customTTL = null) {
     try {
       if (!response || response.length < 10) return false; // Don't cache very short responses
 
-      const key = this.generateKey(messages);
+      const key = this.generateKey(messages, selectedModel);
       if (!key) return false;
 
       // Implement LRU eviction
@@ -83,10 +87,11 @@ class CacheManager {
         timestamp: Date.now(),
         ttl: customTTL || this.defaultTTL,
         hitCount: 0,
-        size: response.length
+        size: response.length,
+        model: selectedModel
       });
 
-      console.log(`💾 Cached response for key: ${key} (${response.length} chars)`);
+      console.log(`💾 Cached response for key: ${key} (${selectedModel}) (${response.length} chars)`);
       return true;
     } catch (error) {
       console.error('❌ Error setting cache:', error);

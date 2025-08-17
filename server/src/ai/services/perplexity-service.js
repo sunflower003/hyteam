@@ -11,15 +11,12 @@ class PerplexityService {
     this.maxRetries = 3;
     this.baseDelay = 2000;
     
-    // Available Sonar models
+    // Available Sonar models - 2025 updated names
     this.sonarModels = {
-      'sonar': 'sonar', // Main model
-      'sonar-small': 'llama-3.1-sonar-small-128k-online',
-      'sonar-large': 'llama-3.1-sonar-large-128k-online', 
-      'sonar-huge': 'llama-3.1-sonar-huge-128k-online',
-      'sonar-small-chat': 'llama-3.1-sonar-small-128k-chat',
-      'sonar-large-chat': 'llama-3.1-sonar-large-128k-chat',
-      'sonar-huge-chat': 'llama-3.1-sonar-huge-128k-chat'
+      'sonar': 'sonar', // Main model (lightweight, cost-effective)
+      'sonar-pro': 'sonar-pro', // Pro version
+      'sonar-reasoning': 'sonar-reasoning', // Fast reasoning model
+      'sonar-deep-research': 'sonar-deep-research' // Expert research model
     };
     
     this.currentModel = this.defaultModel;
@@ -302,13 +299,23 @@ class PerplexityService {
     try {
       console.log(`[Sonar] Chat stream with ${messages.length} messages using model: ${model}`);
       
-      const stream = await this.client.chat.completions.create({
+      const requestOptions = {
         model: model,
         messages: messages,
         max_tokens: maxTokens,
         temperature: temperature,
         stream: true
-      });
+      };
+
+      // Add search control parameter to disable automatic web search
+      if (model === 'sonar') {
+        requestOptions.return_citations = false;
+        requestOptions.return_images = false;
+        requestOptions.search_domain_filter = [];
+        requestOptions.search_recency_filter = "month";
+      }
+      
+      const stream = await this.client.chat.completions.create(requestOptions);
 
       let fullResponse = '';
       

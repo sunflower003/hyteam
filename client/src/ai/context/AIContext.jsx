@@ -97,7 +97,7 @@ export const AIProvider = ({ children }) => {
     }
   }, [messages, conversationId, aiServiceStatus]);
 
-  const sendMessage = useCallback(async (message) => {
+  const sendMessage = useCallback(async (message, selectedModel = 'auto') => {
     if (!message?.trim() || loading || !conversationId) return;
 
     setLoading(true);
@@ -132,7 +132,8 @@ export const AIProvider = ({ children }) => {
         },
         body: JSON.stringify({ 
           message: message.trim(),
-          conversationId: conversationId
+          conversationId: conversationId,
+          selectedModel: selectedModel // Thêm model selection
         })
       });
 

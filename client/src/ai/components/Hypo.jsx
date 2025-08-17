@@ -10,6 +10,8 @@ const HypoComponent = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('auto'); // auto, ollama, sonar
 
   // AI logic from context
   const { 
@@ -102,7 +104,49 @@ const HypoComponent = () => {
     
     const messageToSend = inputMessage;
     setInputMessage('');
-    await sendMessage(messageToSend);
+    await sendMessage(messageToSend, selectedModel);
+  };
+
+  // Model selection handlers
+  const toggleModelSelector = () => {
+    setShowModelSelector(!showModelSelector);
+  };
+
+  const selectModel = (model) => {
+    setSelectedModel(model);
+    setShowModelSelector(false);
+  };
+
+  // Close model selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showModelSelector && !event.target.closest('.modelSelector')) {
+        setShowModelSelector(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showModelSelector]);
+
+  const getModelDisplayName = (model) => {
+    switch(model) {
+      case 'ollama': return 'Llama3 (Local)';
+      case 'sonar': return 'Web Search';
+      case 'auto': return 'Smart AI (Llama3)';
+      default: return 'Smart AI (Llama3)';
+    }
+  };
+
+  const getModelIcon = (model) => {
+    switch(model) {
+      case 'ollama': return 'ri-computer-line';
+      case 'sonar': return 'ri-global-line';
+      case 'auto': return 'ri-magic-line';
+      default: return 'ri-magic-line';
+    }
   };
 
   const handleInputKeyDown = (e) => {
@@ -115,7 +159,7 @@ const HypoComponent = () => {
   const handleSuggestionClick = (suggestionText) => {
     setInputMessage(suggestionText);
     setTimeout(() => {
-      sendMessage(suggestionText);
+      sendMessage(suggestionText, selectedModel);
     }, 100);
   };
 
@@ -136,7 +180,10 @@ const HypoComponent = () => {
         <div className={styles.boxchat}>
           <div className={styles.header}>
             <div className={styles.headerInfo}>
-             
+              <div className={styles.modelIndicator}>
+                <i className={getModelIcon(selectedModel)}></i>
+                <span>{getModelDisplayName(selectedModel)}</span>
+              </div>
               {messages.length > 0 && (
                 <button 
                   className={styles.clearButton}
@@ -233,6 +280,44 @@ const HypoComponent = () => {
                 <i className="ri-attachment-2"></i>
                 <i className="ri-at-line"></i>
               </div>
+              
+              {/* Model Selector */}
+              <div className={`${styles.modelSelector} modelSelector`}>
+                <button 
+                  className={styles.modelButton}
+                  onClick={toggleModelSelector}
+                  title={`Current: ${getModelDisplayName(selectedModel)}`}
+                >
+                  <i className={getModelIcon(selectedModel)}></i>
+                </button>
+                
+                {showModelSelector && (
+                  <div className={styles.modelDropdown}>
+                    <div 
+                      className={`${styles.modelOption} ${selectedModel === 'auto' ? styles.active : ''}`}
+                      onClick={() => selectModel('auto')}
+                    >
+                      <i className="ri-magic-line"></i>
+                      <span>Smart AI (Llama3)</span>
+                    </div>
+                    <div 
+                      className={`${styles.modelOption} ${selectedModel === 'ollama' ? styles.active : ''}`}
+                      onClick={() => selectModel('ollama')}
+                    >
+                      <i className="ri-computer-line"></i>
+                      <span>Llama3 (Local)</span>
+                    </div>
+                    <div 
+                      className={`${styles.modelOption} ${selectedModel === 'sonar' ? styles.active : ''}`}
+                      onClick={() => selectModel('sonar')}
+                    >
+                      <i className="ri-global-line"></i>
+                      <span>Web Search</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <i 
                 className={`ri-send-plane-fill ${styles.sendButton} ${loading ? styles.disabled : ''}`} 
                 onClick={handleSendMessage}

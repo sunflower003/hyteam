@@ -3,7 +3,7 @@ const axios = require('axios');
 class OllamaService {
   constructor() {
     this.baseURL = process.env.OLLAMA_URL || 'http://localhost:11434';
-    this.defaultModel = process.env.OLLAMA_MODEL || 'llama3.2:1b';
+    this.defaultModel = process.env.OLLAMA_MODEL || 'llama3:latest';
     this.timeout = 30000;
     this.maxRetries = 3;
     this.baseDelay = 2000;

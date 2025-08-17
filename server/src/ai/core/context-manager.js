@@ -3,7 +3,7 @@ const conversationManager = require('./conversation-manager');
 class ContextManager {
   constructor() {
     this.userProfiles = new Map();
-    this.promptCache = new Map(); // 🆕 Cache cho system prompts
+    this.promptCache = new Map();
     this.maxCacheSize = 50;
     this.systemPrompts = {
       default: `Bạn là Hypo, AI Assistant thông minh của team HYTEAM - nền tảng quản lý team hiện đại.
@@ -71,73 +71,80 @@ IMPORTANT: User is communicating in English, respond in English.
 - Provide practical advice for project management
 - Maintain friendly but professional tone
 - Use relevant emojis appropriately
-- Focus on actionable insights`,
-
-      // 🆕 Optimized prompt for faster processing
-      speed_optimized: `Bạn là Hypo, AI Assistant của HYTEAM. 
-
-🚀 ĐÃ TỐI ỰU TỐC ĐỘ:
-- Trả lời ngắn gọn, đi thẳng vào vấn đề
-- Tránh lặp lại, tập trung vào thông tin mới
-- Sử dụng tiếng Việt thuần túy khi user dùng tiếng Việt
-
-Chuyên môn: Quản lý dự án, team work, productivity.`,
-
-      // 🌐 Sonar-optimized prompt for real-time web search
-      sonar_online: `Bạn là Hypo, AI Assistant thông minh với khả năng tìm kiếm web real-time của team HYTEAM.
-
-🌐 SONAR ONLINE CAPABILITIES:
-- Tích hợp thông tin web real-time và cập nhật
-- Kết hợp kiến thức từ internet với expertise về quản lý dự án
-- Cung cấp thông tin mới nhất về công nghệ, tools, trends
-- So sánh và đánh giá các giải pháp hiện có trên thị trường
-
-NGUYÊN TẮC:
-- Ưu tiên tiếng Việt khi user sử dụng tiếng Việt
-- Kết hợp thông tin web với chuyên môn HYTEAM
-- Cite sources khi cần thiết
-- Đưa ra insights thực tế, cập nhật
-
-CHUYÊN MÔN + WEB SEARCH:
-- Project management tools và best practices mới nhất
-- Tech trends và emerging technologies
-- Market research và competitor analysis
-- Real-time data và statistics
-- Current events ảnh hưởng đến business`,
-
-      // 💬 Sonar chat-optimized for pure conversation
-      sonar_chat: `Bạn là Hypo, AI Assistant chuyên về hội thoại của team HYTEAM.
-
-💬 SONAR CHAT FOCUS:
-- Tập trung vào hội thoại tự nhiên, không cần web search
-- Sử dụng kiến thức training data để tư vấn chuyên sâu
-- Phân tích và giải quyết vấn đề dựa trên context
-- Brainstorming và creative thinking
-
-PHONG CÁCH:
-- Thân thiện, conversational
-- Deep thinking và analytical
-- Practical advice based on proven methods
-- Encourage collaboration và teamwork
-
-Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
+- Focus on actionable insights`
     };
   }
 
-  // 🆕 IMPROVED: Cached system prompt building
-  buildSystemPrompt(conversationId) {
+  // Get model-specific system prompt
+  getModelSpecificPrompt(model, messageCount = 0) {
+    const isFirstMessage = messageCount === 0;
+    
+    if (model === 'sonar') {
+      return isFirstMessage ? `Bạn là Hypo, AI Assistant thông minh của team HYTEAM - nền tảng quản lý team hiện đại.
+
+🚨 QUAN TRỌNG - CHỈ THỊ BẮT BUỘC:
+- BẠN LÀ AI ASSISTANT HYPO, KHÔNG PHẢI SEARCH ENGINE!
+- KHÔNG tự động tìm kiếm web, KHÔNG cite sources, KHÔNG đưa ra links
+- TRẢ LỜI TRỰC TIẾP dựa trên kiến thức có sẵn như một AI assistant bình thường
+- TẬP TRUNG vào hỗ trợ quản lý team, dự án, và productivity
+- CHỈ search web khi user EXPLICITLY yêu cầu "tìm kiếm" hoặc "tra cứu"
+
+NGUYÊN TẮC GIAO TIẾP:
+- Luôn ưu tiên tiếng Việt khi user sử dụng tiếng Việt
+- Trả lời ngắn gọn, súc tích, thân thiện với emoji 😊
+- Giới thiệu bản thân và hỏi có thể hỗ trợ gì
+
+CHUYÊN MÔN HYTEAM:
+- Quản lý dự án và timeline
+- Team collaboration và communication
+- Task breakdown và estimation
+- Productivity optimization
+
+🌐 SONAR: AI Assistant Hypo trên cloud, giống hệt Ollama nhưng chạy trên web.
+VÍ DỤ ĐÚNG khi user nói "chào": "Chào bạn! 😊 Tôi là Hypo, AI assistant của HYTEAM. Tôi có thể giúp bạn quản lý dự án, team, hoặc tối ưu productivity. Bạn đang cần hỗ trợ gì?"` : `Bạn là Hypo, AI Assistant của team HYTEAM.
+
+🚨 CHỈ THỊ BẮT BUỘC:
+- HOẠT ĐỘNG NHƯ AI ASSISTANT HYPO, KHÔNG PHẢI SEARCH ENGINE
+- KHÔNG tự động search web hay cite sources
+- Tham khảo lịch sử hội thoại và trả lời nhất quán
+- Tập trung vào cuộc hội thoại hiện tại
+
+🌐 SONAR: Cloud-based AI assistant, cùng chức năng như Ollama.`;
+    }
+    
+    if (model === 'ollama') {
+      return isFirstMessage ? this.systemPrompts.firstTime + `
+
+🦙 OLLAMA LOCAL ASSISTANT:
+- AI assistant Hypo chạy trên máy local
+- Phân tích sâu các vấn đề phức tạp
+- Tư duy logic và creative thinking mạnh mẽ
+- Bảo vệ privacy và dữ liệu sensitive
+- Deep strategy planning
+
+🦙 OLLAMA: Local AI assistant, cùng chức năng như Sonar nhưng chạy offline.` : this.systemPrompts.continuing + `
+
+🦙 OLLAMA: Local assistant, phân tích sâu và privacy-focused.`;
+    }
+    
+    // Auto mode - sử dụng prompt mặc định
+    return isFirstMessage ? this.systemPrompts.firstTime : this.systemPrompts.continuing;
+  }
+
+  // Model-aware system prompt building
+  buildSystemPrompt(conversationId, selectedModel = 'auto') {
     try {
       const conversation = conversationManager.getConversation(conversationId);
       const messageCount = conversation.messages.length;
       
-      // 🚀 Generate cache key based on conversation state
-      const cacheKey = this.generatePromptCacheKey(conversationId, messageCount);
+      // Generate cache key based on conversation state and model
+      const cacheKey = this.generatePromptCacheKey(conversationId, messageCount, selectedModel);
       
       // Check cache first
       if (this.promptCache.has(cacheKey)) {
         const cached = this.promptCache.get(cacheKey);
         if (Date.now() - cached.timestamp < 60000) { // 1 minute cache
-          console.log(`⚡ Prompt cache HIT for ${conversationId}`);
+          console.log(`⚡ Prompt cache HIT for ${conversationId} (${selectedModel})`);
           return cached.prompt;
         } else {
           this.promptCache.delete(cacheKey);
@@ -148,9 +155,16 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
       
       // Detect primary language from recent messages
       const primaryLanguage = this.detectPrimaryLanguage(userMessages.slice(-3));
-      let promptType = this.selectPromptType(messageCount, primaryLanguage);
-
-      let systemPrompt = this.systemPrompts[promptType];
+      
+      // Get model-specific prompt
+      let systemPrompt = this.getModelSpecificPrompt(selectedModel, messageCount);
+      
+      // Use Vietnamese-focused prompt if detected
+      if (primaryLanguage === 'vietnamese' && selectedModel === 'auto') {
+        systemPrompt = this.systemPrompts.vietnamese_focused;
+      } else if (primaryLanguage === 'english' && selectedModel === 'auto') {
+        systemPrompt = this.systemPrompts.english_focused;
+      }
 
       // Add conversation context
       if (userMessages.length > 0) {
@@ -178,10 +192,10 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
         systemPrompt += `\n\n⚠️ IMPORTANT: Respond entirely in English.`;
       }
 
-      // 💾 Cache the generated prompt
+      // Cache the generated prompt
       this.cachePrompt(cacheKey, systemPrompt);
 
-      console.log(`🧠 Built system prompt for conversation ${conversationId} (${promptType}, lang: ${primaryLanguage})`);
+      console.log(`🧠 Built system prompt for conversation ${conversationId} (${selectedModel}, lang: ${primaryLanguage})`);
       return systemPrompt;
 
     } catch (error) {
@@ -190,14 +204,14 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     }
   }
 
-  // 🆕 Generate cache key for prompts
-  generatePromptCacheKey(conversationId, messageCount) {
-    // Cache key based on conversation ID and message count range
+  // Generate cache key for prompts
+  generatePromptCacheKey(conversationId, messageCount, selectedModel = 'auto') {
+    // Cache key based on conversation ID, message count range, and model
     const messageRange = Math.floor(messageCount / 5) * 5; // Group by 5s
-    return `${conversationId}_${messageRange}`;
+    return `${conversationId}_${messageRange}_${selectedModel}`;
   }
 
-  // 🆕 Cache prompt
+  // Cache prompt
   cachePrompt(key, prompt) {
     // Implement LRU eviction
     if (this.promptCache.size >= this.maxCacheSize) {
@@ -211,39 +225,7 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     });
   }
 
-  // 🆕 IMPROVED: Faster prompt type selection with Sonar model awareness
-  selectPromptType(messageCount, primaryLanguage) {
-    // Check if we're using Perplexity Sonar models
-    const perplexityService = require('../services/perplexity-service').default;
-    const currentModel = perplexityService.defaultModel;
-    
-    if (currentModel && currentModel.includes('sonar')) {
-      if (currentModel.includes('online')) {
-        // Use web-search optimized prompt for online models
-        return 'sonar_online';
-      } else if (currentModel.includes('chat')) {
-        // Use conversation-optimized prompt for chat models
-        return 'sonar_chat';
-      }
-    }
-    
-    // Fallback to original logic
-    if (messageCount === 0) {
-      return 'firstTime';
-    } else if (messageCount > 10) {
-      // Use speed-optimized prompt for long conversations
-      return 'speed_optimized';
-    } else if (primaryLanguage === 'vietnamese' && messageCount > 0) {
-      return 'vietnamese_focused';
-    } else if (primaryLanguage === 'english' && messageCount > 0) {
-      return 'english_focused';
-    } else if (messageCount > 2) {
-      return 'continuing';
-    }
-    return 'default';
-  }
-
-  // 🆕 OPTIMIZED: Faster language detection with caching
+  // Faster language detection
   detectPrimaryLanguage(messages) {
     if (!messages || messages.length === 0) return 'mixed';
 
@@ -251,11 +233,10 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     let vietnameseScore = 0;
     let englishScore = 0;
 
-    // Optimized Vietnamese indicators
+    // Vietnamese indicators
     const vietnameseIndicators = [
       /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g,
-      /\b(là|của|có|được|này|cho|với|tôi|bạn|như|khi|về|trong|một|các|và|để|không|sẽ|đã)\b/g,
-      /\b(dự án|công việc|nhóm|team|làm việc|quản lý|thời gian|chào|cảm ơn|vậy|rồi)\b/g
+      /\b(là|của|có|được|này|cho|với|tôi|bạn|như|khi|về|trong|một|các|và|để|không|sẽ|đã)\b/g
     ];
 
     const englishIndicators = [
@@ -277,8 +258,6 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
       });
     });
 
-    console.log(`🔍 Language detection - VN: ${vietnameseScore}, EN: ${englishScore}`);
-
     if (vietnameseScore > englishScore * 1.2) {
       return 'vietnamese';
     } else if (englishScore > vietnameseScore * 1.2) {
@@ -288,7 +267,7 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     }
   }
 
-  // 🆕 OPTIMIZED: Faster topic extraction
+  // Fast topic extraction
   extractTopics(messages) {
     if (!messages || messages.length === 0) return [];
 
@@ -317,30 +296,7 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     return Array.from(topics).slice(0, 5); // Limit to 5 topics for speed
   }
 
-  // 🆕 Simplified entity extraction for performance
-  extractEntities(message) {
-    const entities = {
-      dates: [],
-      times: [],
-      people: []
-    };
-
-    // Simplified patterns for better performance
-    const patterns = {
-      dates: /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/gi,
-      times: /\b\d{1,2}:\d{2}\b/gi,
-      people: /@([a-zA-Z0-9_]+)/g
-    };
-
-    Object.entries(patterns).forEach(([type, pattern]) => {
-      const matches = message.match(pattern) || [];
-      entities[type] = matches.slice(0, 3); // Limit results for speed
-    });
-
-    return entities;
-  }
-
-  // 🆕 OPTIMIZED: Faster context summary
+  // Build context summary
   buildContextSummary(conversationId) {
     try {
       const conversation = conversationManager.getConversation(conversationId);
@@ -371,7 +327,7 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     }
   }
 
-  // Keep existing methods
+  // User profile methods
   updateUserProfile(userId, data) {
     if (!this.userProfiles.has(userId)) {
       this.userProfiles.set(userId, {
@@ -396,13 +352,13 @@ Chuyên môn: Quản lý dự án, leadership, team dynamics, productivity.`
     return this.userProfiles.get(userId) || null;
   }
 
-  // 🆕 Clear caches
+  // Clear caches
   clearCaches() {
     this.promptCache.clear();
     console.log('🗑️ Cleared context manager caches');
   }
 
-  // 🆕 Get cache stats
+  // Get cache stats
   getCacheStats() {
     return {
       promptCacheSize: this.promptCache.size,

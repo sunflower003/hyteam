@@ -14,18 +14,39 @@ const REQUEST_COOLDOWN = 500; // Reduced cooldown for better UX
 // AI Service Selection Priority
 const AI_SERVICE_PRIORITY = ['perplexity', 'ollama', 'openrouter'];
 
-// Get available AI service
-const getAvailableAIService = async () => {
-  // Check Sonar (Perplexity) first
-  if (await perplexityService.validateSetup()) {
-    console.log('🌐 Using Sonar AI service');
-    return perplexityService;
+// Get available AI service based on selection
+const getSelectedAIService = async (selectedModel = 'auto') => {
+  console.log(`🎯 Model selection: ${selectedModel}`);
+  
+  // Force specific model if requested
+  if (selectedModel === 'sonar') {
+    if (await perplexityService.validateSetup()) {
+      console.log('🌐 Using Sonar AI service (forced)');
+      return perplexityService;
+    } else {
+      console.log('⚠️ Sonar failed, falling back to Ollama...');
+      if (await ollamaService.validateSetup()) {
+        console.log('🦙 Using Ollama fallback for Sonar request');
+        return ollamaService;
+      } else {
+        throw new Error('Both Sonar and Ollama services unavailable');
+      }
+    }
   }
   
-  // Fallback to Ollama
-  if (await ollamaService.validateSetup()) {
-    console.log('🦙 Using Ollama AI service');
-    return ollamaService;
+  if (selectedModel === 'ollama') {
+    if (await ollamaService.validateSetup()) {
+      console.log('🦙 Using Ollama AI service (forced)');
+      return ollamaService;
+    } else {
+      throw new Error('Ollama service not available');
+    }
+  }
+  
+  // Auto selection - prioritize Perplexity for web deployment
+  if (await perplexityService.validateSetup()) {
+    console.log('🌐 Using Sonar AI service (auto)');
+    return perplexityService;
   }
   
   throw new Error('No AI service available');
@@ -37,7 +58,7 @@ exports.chatStream = async (req, res) => {
   let conversationId = null;
   
   try {
-    const { message, conversationId: clientConversationId } = req.body;
+    const { message, conversationId: clientConversationId, selectedModel = 'auto' } = req.body;
     const userKey = req.ip || 'default';
     
     // Input validation
@@ -80,10 +101,11 @@ exports.chatStream = async (req, res) => {
     
     console.log('=== 🚀 OPTIMIZED AI STREAMING START ===');
     console.log(`✅ Conversation ID: ${conversationId}`);
+    console.log(`✅ Selected Model: ${selectedModel}`);
     console.log(`✅ Message: ${message.substring(0, 100)}...`);
 
-    // Get available AI service
-    const aiService = await getAvailableAIService();
+    // Get selected AI service
+    const aiService = await getSelectedAIService(selectedModel);
     const serviceName = aiService === perplexityService ? 'Sonar' : 'Ollama';
     console.log(`🤖 Using ${serviceName} AI service`);
 
@@ -93,9 +115,9 @@ exports.chatStream = async (req, res) => {
       text: message.trim()
     });
 
-    // Build context with conversation history
+    // Build context with conversation history and model-specific prompts
     const conversationHistory = conversationManager.getContext(conversationId);
-    const systemPrompt = contextManager.buildSystemPrompt(conversationId);
+    const systemPrompt = contextManager.buildSystemPrompt(conversationId, selectedModel);
     const messages = [
       { role: "system", content: systemPrompt },
       ...conversationHistory
@@ -103,10 +125,10 @@ exports.chatStream = async (req, res) => {
 
     console.log(`📋 Prepared ${messages.length} messages for AI`);
 
-    // 🚀 CHECK CACHE FIRST
-    const cachedResult = cacheManager.get(messages);
+    // 🚀 CHECK CACHE FIRST (include model in cache key)
+    const cachedResult = cacheManager.get(messages, selectedModel);
     if (cachedResult) {
-      console.log('⚡ CACHE HIT - Serving from cache');
+      console.log(`⚡ CACHE HIT - Serving from cache (${selectedModel})`);
       
       // Set SSE headers
       res.writeHead(200, {
@@ -127,6 +149,7 @@ exports.chatStream = async (req, res) => {
           content: chunk,
           conversationId: conversationId,
           fromCache: true,
+          model: selectedModel,
           chunkIndex: Math.floor(i / chunkSize) + 1
         })}\n\n`);
         
@@ -146,6 +169,7 @@ exports.chatStream = async (req, res) => {
         fullText: response,
         conversationId: conversationId,
         fromCache: true,
+        model: selectedModel,
         processingTime: Date.now() - startTime
       })}\n\n`);
       res.end();
@@ -182,6 +206,7 @@ exports.chatStream = async (req, res) => {
           content: content, // Send only the content string
           conversationId: conversationId,
           chunkIndex: chunkCount,
+          model: selectedModel,
           fromCache: false
         })}\n\n`);
       }
@@ -194,8 +219,8 @@ exports.chatStream = async (req, res) => {
         text: fullResponse
       });
 
-      // 💾 CACHE THE RESPONSE for future use
-      cacheManager.set(messages, fullResponse);
+      // 💾 CACHE THE RESPONSE for future use (include model in cache)
+      cacheManager.set(messages, fullResponse, selectedModel);
 
       // Save conversation to memory service
       await memoryService.saveConversation(conversationId, 
@@ -213,6 +238,7 @@ exports.chatStream = async (req, res) => {
           (process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online') : 
           (process.env.OLLAMA_MODEL || 'llama3.2:1b'),
         service: aiService === perplexityService ? 'sonar' : 'ollama',
+        selectedModel: selectedModel,
         fromCache: false
       })}\n\n`);
       res.end();

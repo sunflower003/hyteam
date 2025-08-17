@@ -1,0 +1,628 @@
+{
+  "name": "My workflow 5",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10vtxsDxmPuP0lS2M_PoHPZMqr0216Cj2AsvV2sAPYAA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 558587335,
+          "mode": "list",
+          "cachedResultName": "HoiHang"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -120,
+        20
+      ],
+      "id": "a773daea-e54f-4e99-86b2-ed16e611606a",
+      "name": "Check lại HoiHang",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "m911Hk3TShHrG2uT",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(item => item.json['Tình trạng báo giá'] === 'ready');\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        20
+      ],
+      "id": "2cbea0a3-9414-48b5-8970-0720c3f6091d",
+      "name": "READY item"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(item => item.json.items).flat();\n\n// Thông tin công ty\nconst companyInfo = {\n  name: 'CÔNG TY TNHH CÔNG NGHỆ INDEX',\n  address: 'Số 8D- Phố An Hòa, P.Mộ Lao, Hà Đông, Hà Nội, Việt Nam',\n  phone: '+84 4 6294 2886',\n  fax: '+84 4 6294 2886',\n};\n\n// Map dữ liệu sản phẩm + chuẩn bị tính tổng\nconst products = items.map((item, index) => {\n  const giaVeKho = parseFloat(item.json['GIÁ VỀ KHO'] || '0') || 0;\n\n  return {\n    stt: index + 1,\n    tenHang: item.json['Tên hàng'] || '',\n    moTa: item.json['Mô tả'] || '',\n    maHang: item.json['Mã hàng'] || '',\n    xuatXu: item.json['Xuất xứ'] || '',\n    maker: item.json['Maker'] || '',\n    soLuong: item.json['Số lượng'] || '',\n    donVi: item.json['Đơn vị'] || '',\n    donGia: giaVeKho,\n    thanhTien: giaVeKho,\n    thoiGianGiaoHang: item.json['LEADTIME'] || '',\n    note: item.json['NOTES']\n  };\n});\n\n// Tính tổng thành tiền\nconst totalUSD = products.reduce((sum, item) => sum + item.thanhTien, 0);\n\n// Thông tin báo giá\nconst quotationData = {\n  quotationNumber: 'BG-' + new Date().getTime(),\n  date: new Date().toLocaleDateString('vi-VN'),\n  validityDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('vi-VN'),\n  requestedBy: 'BROTHER',\n  customer: 'BRO',\n  items: products,\n  totalUSD: totalUSD.toFixed(2), // Làm tròn 2 số thập phân\n  exchangeRate: '25,150',\n  deliveryTerms: 'At your Factory',\n  customsTerms: 'Giá trên đã bao gồm thủ tục mở hải quan 1 đầu xuất',\n  paymentTerms: '100% at the end of month after receiving the goods.',\n  goodsQuality: 'Đối với đơn hàng đã đặt, giá và giao hàng cố định.',\n  otherNotes: 'Các điều khoản khác theo hợp đồng.'\n};\n\nreturn [{ json: { companyInfo, quotationData } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -60,
+        260
+      ],
+      "id": "fea60860-7444-4012-9a4e-c572d5d28f39",
+      "name": "Chuẩn bị dữ liệu PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst { companyInfo, quotationData } = data;\n\nconst htmlTemplate = `\n<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Báo giá</title>\n    <style>\n        body { font-family: Arial, sans-serif; font-size: 14px; }\n        table { border-collapse: collapse; width: 100%; }\n        th, td { padding: 6px; text-align: left; vertical-align: top; }\n        h1 { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; }\n        .footer-note { font-size: 12px; line-height: 1.5; }\n        .logo { width: 150px; }\n        .stamp { width: 150px; margin-top: 10px; }\n    </style>\n</head>\n<body>\n    <h1>BÁO GIÁ / QUOTATION</h1>\n\n    <table>\n        <tr>\n            <td style=\"width: 150px;\">\n                <img src=\"YOUR_LOGO_LINK_HERE\" alt=\"Logo\" class=\"logo\" />\n            </td>\n            <td>\n                <b>${companyInfo.name}</b><br/>\n                Địa chỉ: ${companyInfo.address}<br/>\n                Số điện thoại: ${companyInfo.phone}<br/>\n                Số fax: ${companyInfo.fax}\n            </td>\n            <td>\n                <b>Số báo giá:</b> ${quotationData.quotationNumber}<br/>\n                <b>Ngày gửi:</b> ${quotationData.date}<br/>\n                <b>Hiệu lực:</b> ${quotationData.validityDate}<br/>\n                <b>Người yêu cầu:</b> ${quotationData.requestedBy}\n            </td>\n        </tr>\n        <tr>\n            <td></td>\n            <td>\n                <b>Công ty TNHH Công nghiệp Brother Việt Nam</b><br/>\n                Địa chỉ: KCN Phúc Điền, Hải Dương, Việt Nam<br/>\n                Số điện thoại: +0220 3545860<br/>\n                Số fax: +0220 3545860\n            </td>\n            <td></td>\n        </tr>\n    </table>\n\n    <!-- Phần bảng sản phẩm (giữ nguyên, có border) -->\n    <table border=\"1\">\n        <thead>\n            <tr>\n                <th>No</th>\n                <th>Tên hàng (Tiếng Anh)</th>\n                <th>Tên hàng (Tiếng Việt)</th>\n                <th>Mã hàng</th>\n                <th>Xuất xứ</th>\n                <th>Maker</th>\n                <th>Số lượng MOQ</th>\n                <th>Đơn vị</th>\n                <th>Giá thành (USD)</th>\n                <th>Thành tiền</th>\n                <th>Thời gian giao hàng</th>\n                <th>NOTE</th>\n            </tr>\n        </thead>\n        <tbody>\n            ${quotationData.items.map(item => `\n                <tr>\n                    <td>${item.stt}</td>\n                    <td>${item.tenHang}</td>\n                    <td>${item.moTa}</td>\n                    <td>${item.maHang}</td>\n                    <td>${item.xuatXu}</td>\n                    <td>${item.maker}</td>\n                    <td>${item.soLuong}</td>\n                    <td>${item.donVi}</td>\n                    <td>${item.donGia}</td>\n                    <td>${item.thanhTien}</td>\n                    <td>${item.thoiGianGiaoHang}</td>\n                    <td>${item.note}</td>\n                </tr>\n            `).join('')}\n        </tbody>\n    </table>\n\n    <p><b>Total (USD):</b> ${quotationData.totalUSD}</p>\n    <p><i>Exchange rate: USD = ${quotationData.exchangeRate} VND</i></p>\n\n    <div class=\"footer-note\">\n        <b>Ghi chú:</b>\n        <ol>\n          <li>Điều kiện giao hàng: ${quotationData.deliveryTerms}</li>\n          <li>Điều kiện mở thủ tục hải quan: ${quotationData.customsTerms}</li>\n          <li>Điều kiện thanh toán: ${quotationData.paymentTerms}</li>\n          <li>Chất lượng hàng hóa: ${quotationData.goodsQuality}</li>\n          <li>Thông tin khác: ${quotationData.otherNotes}</li>\n        </ol>\n    </div>\n\n    <div style=\"text-align: right;\">\n        <img src=\"YOUR_STAMP_LINK_HERE\" alt=\"Stamp\" class=\"stamp\" /><br/>\n        <b>GIÁM ĐỐC</b><br/>\n        Vũ Xuân Anh\n    </div>\n</body>\n</html>\n`;\n\nconst minimizedHtml = htmlTemplate.trim().replace(/\\n/g, '').replace(/\\s{2,}/g, ' ');\n\nreturn [{ json: { html: minimizedHtml } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        260
+      ],
+      "id": "c2d15565-1e9d-4e87-acf4-66e085a8d8ef",
+      "name": "Generate HTML Template"
+    },
+    {
+      "parameters": {
+        "jsCode": "const grouped = Object.create(null);\n\nfor (const item of $input.all()) {\n  const email = item.json['Người hỏi'] || 'unknown';\n  if (!(email in grouped)) {\n    grouped[email] = [];\n  }\n  grouped[email].push(item);\n}\n\nreturn Object.entries(grouped).map(([email, items]) => ({\n  json: { email, items }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        20
+      ],
+      "id": "2f856419-9631-48f5-8cac-ddff3b058050",
+      "name": "Phân loại item theo mail"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        460,
+        20
+      ],
+      "id": "9b803d2c-d46c-44e4-bbef-dccd524ff314",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Phân loại item theo mail').item.json.email }}",
+        "subject": "BÁO GIÁ SẢN PHẨM - {{ $('Chuẩn bị dữ liệu PDF').item.json.quotationData.quotationNumber }}",
+        "message": "Kính gửi Quý khách hàng,<br><br>Công ty xin gửi đến Quý khách bản báo giá sản phẩm trong file đính kèm.<br><br>Xin vui lòng xem xét và phản hồi cho chúng tôi.<br><br>Trân trọng cảm ơn!",
+        "attachments": "json",
+        "options": {
+          "attachmentsPropertyName": "attachment"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        280
+      ],
+      "id": "6fb0b58c-8d62-4650-983d-7d52b89ac854",
+      "name": "Send a message",
+      "webhookId": "fe4e2007-3f5b-4b31-adfb-00a461b8dcca",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "hi5oCIob5Viz7PQ3",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "10vtxsDxmPuP0lS2M_PoHPZMqr0216Cj2AsvV2sAPYAA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=558587335",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ngày": "= {{ $json.json['Ngày'] }}",
+            "Tên hàng": "={{ $json.json['Tên hàng'] }}",
+            "Mô tả": "={{ $json.json['Mô tả'] }}",
+            "Mã hàng": "={{ $json.json['Mã hàng'] }}",
+            "Số lượng": "={{ $json.json['Số lượng'] }}",
+            "Đơn vị": "={{ $json.json['Đơn vị'] }}",
+            "NOTES": "={{ $json.json.NOTES }}",
+            "Người hỏi": "={{ $json.json['Người hỏi'] }}",
+            "Tình trạng báo giá": "Đã báo giá",
+            "CUSTOMER": "={{ $json.json.CUSTOMER }}",
+            "Maker": "={{ $json.json.Maker }}",
+            "Xuất xứ": "={{ $json.json['Xuất xứ'] }}",
+            "MAKER": "={{ $json.json.MAKER }}",
+            "NCC": "={{ $json.json.NCC }}",
+            "GIÁ VỀ KHO": "={{ $json.json['GIÁ VỀ KHO'] }}",
+            "LEADTIME": "={{ $json.json.LEADTIME }}"
+          },
+          "matchingColumns": [
+            "Mã hàng"
+          ],
+          "schema": [
+            {
+              "id": "Ngày",
+              "displayName": "Ngày",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CUSTOMER",
+              "displayName": "CUSTOMER",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Người hỏi",
+              "displayName": "Người hỏi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tên hàng",
+              "displayName": "Tên hàng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mô tả",
+              "displayName": "Mô tả",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mã hàng",
+              "displayName": "Mã hàng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Maker",
+              "displayName": "Maker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Số lượng",
+              "displayName": "Số lượng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Đơn vị",
+              "displayName": "Đơn vị",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "HÃY ĐỌC HẾT!!!\nTƯƠNG TÁC SALES - SOURCING",
+              "displayName": "HÃY ĐỌC HẾT!!!\nTƯƠNG TÁC SALES - SOURCING",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tình trạng báo giá",
+              "displayName": "Tình trạng báo giá",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tình trạng PO",
+              "displayName": "Tình trạng PO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Xuất xứ",
+              "displayName": "Xuất xứ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MAKER",
+              "displayName": "MAKER",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NCC",
+              "displayName": "NCC",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "GIÁ VỀ KHO",
+              "displayName": "GIÁ VỀ KHO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LEADTIME",
+              "displayName": "LEADTIME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NOTES",
+              "displayName": "NOTES",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        920,
+        40
+      ],
+      "id": "95478976-ccce-4480-bf33-642fa1a381bb",
+      "name": "update Hỏi Hàng",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "m911Hk3TShHrG2uT",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        700,
+        40
+      ],
+      "id": "560740a6-3261-469f-bfee-ac03922b3a14",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        120
+      ],
+      "id": "5a483edc-5ded-4c17-884c-5de25e586666",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "command": "=quotationNumber=\"{{ $json.quotationNumber }}\" && \\\nHTML=\"{{ $json.html }}\" && \\\necho \"$HTML\" > /data/shared/$quotationNumber.html && \\\nnode -e \"\nconst puppeteer = require('puppeteer');\nconst fs = require('fs');\n\n(async () => {\n  const quotationNumber = '$quotationNumber';\n  const html = fs.readFileSync('/data/shared/' + quotationNumber + '.html', 'utf-8');\n  const browser = await puppeteer.launch({\n    headless: true,\n    args: ['--no-sandbox'],\n    defaultViewport: { width: 1200, height: 1600 }\n  });\n  const page = await browser.newPage();\n  await page.setContent(html, { waitUntil: 'networkidle0' });\n  const filePath = '/data/shared/' + quotationNumber + '.pdf';\n  await page.pdf({ path: filePath, format: 'A4', printBackground: true });\n  await browser.close();\n  console.log(JSON.stringify({ download_url: filePath }));\n})();\n\"\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        480,
+        260
+      ],
+      "id": "bd939dd7-43a4-44d9-a4d7-7834c5c6ba6d",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data1 = $items(\"Chuẩn bị dữ liệu PDF\").at(0).json;\nconst data2 = $items(\"Generate HTML Template\").at(0).json;\n\n// Thay tất cả dấu \" bằng '\\\"' để đưa vào echo safely\nconst htmlEscaped = data2.html.replace(/([\"`\\\\$])/g, '\\\\$1');\n\nreturn [{\n  json: {\n    quotationNumber: data1.quotationData.quotationNumber,\n    html: htmlEscaped\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        260
+      ],
+      "id": "715d8e4f-3465-404f-b930-4e72232682ad",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ JSON.parse($json.stdout).download_url.trim() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        900,
+        260
+      ],
+      "id": "fb917dd8-5893-4da0-96e3-b2e9fc1d7ff5",
+      "name": "Read/Write Files from Disk",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        700,
+        260
+      ],
+      "id": "c70b39a0-ae26-4b98-bed7-6950e8b1da7a",
+      "name": "Wait",
+      "webhookId": "0cdf95c8-f5ef-4ccd-81c9-440469884ead"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy data từ node Read/Write Files và quotationNumber\nconst fileData = $input.first();\nconst quotationNumber = $('Chuẩn bị dữ liệu PDF').item.json.quotationData.quotationNumber;\n\n// Tạo attachment cho email\nreturn [{\n  json: {\n    attachment: [{\n      name: `${quotationNumber}.pdf`,\n      data: fileData.binary.data.data,\n      type: 'application/pdf'\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        260
+      ],
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "name": "Prepare PDF Attachment"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check lại HoiHang": {
+      "main": [
+        [
+          {
+            "node": "READY item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "READY item": {
+      "main": [
+        [
+          {
+            "node": "Phân loại item theo mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuẩn bị dữ liệu PDF": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Template": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phân loại item theo mail": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Chuẩn bị dữ liệu PDF",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "update Hỏi Hàng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Check lại HoiHang",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Prepare PDF Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare PDF Attachment": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "",
+  "meta": {
+    "instanceId": "eac9b65398f7b7f1c4c170946f3f871411046b203535209c4b7d284ea1f430c4"
+  },
+  "tags": []
+}

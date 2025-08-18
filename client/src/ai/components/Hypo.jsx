@@ -134,9 +134,9 @@ const HypoComponent = () => {
   const getModelDisplayName = (model) => {
     switch(model) {
       case 'ollama': return 'Llama3 (Local)';
-      case 'sonar': return 'Web Search';
-      case 'auto': return 'Smart AI (Llama3)';
-      default: return 'Smart AI (Llama3)';
+      case 'sonar': return 'Sonar (Web)';
+      case 'auto': return 'Smart AI';
+      default: return 'Smart AI';
     }
   };
 
@@ -298,21 +298,21 @@ const HypoComponent = () => {
                       onClick={() => selectModel('auto')}
                     >
                       <i className="ri-magic-line"></i>
-                      <span>Smart AI (Llama3)</span>
+                      <span>Auto model</span>
                     </div>
                     <div 
                       className={`${styles.modelOption} ${selectedModel === 'ollama' ? styles.active : ''}`}
                       onClick={() => selectModel('ollama')}
                     >
                       <i className="ri-computer-line"></i>
-                      <span>Llama3 (Local)</span>
+                      <span>Llama3(Local)</span>
                     </div>
                     <div 
                       className={`${styles.modelOption} ${selectedModel === 'sonar' ? styles.active : ''}`}
                       onClick={() => selectModel('sonar')}
                     >
                       <i className="ri-global-line"></i>
-                      <span>Web Search</span>
+                      <span>Sonar(web)</span>
                     </div>
                   </div>
                 )}

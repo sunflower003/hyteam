@@ -104,10 +104,11 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    padding: 10px 15px;
+    height: 100dvh; /* iOS dynamic viewport */
+    padding: 0; /* avoid gaps on mobile */
     background-color: var(--story-bg);
     overflow: hidden;
-    z-index: 9999;
+    z-index: 10050;
 }
 .header {
     color: white;
@@ -134,7 +135,8 @@
     align-items: center;
     gap: 20px;
     height: 100vh;
-    padding: 15px 0;
+    height: 100dvh;
+    padding: 0;
 }
 .player > i {
     font-size: 30px;
@@ -155,6 +157,9 @@
     justify-content: space-between;
     cursor: pointer;
     user-select: none;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain; /* like IG: fit entire media */
 }
 .overlay {
     position: absolute;
@@ -239,6 +244,7 @@
     justify-content: space-between;
     gap: 10px;
     z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .answer {
     flex-grow: 1;
@@ -322,6 +328,17 @@ textarea::placeholder {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     font-weight: 600;
     z-index: 2;
+}
+
+/* Video inside story content (mobile & desktop) */
+.storyVideo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* full media visible */
+    z-index: 0; /* behind overlays */
+    background: #000; /* fallback */
 }
 
 /* ================================ */
@@ -438,9 +455,10 @@ textarea::placeholder {
     .content {
         width: 100vw;
         height: 100vh;
+        height: 100dvh; /* iOS dynamic viewport */
         max-width: none;
         border-radius: 0;
-        padding: 15px;
+        padding: 12px;
         position: relative;
     }
     /* Touch areas for navigation */
@@ -465,5 +483,26 @@ textarea::placeholder {
     /* Close button inside content for mobile */
     .contentHeader {
         position: relative;
+    }
+}
+
+/* iOS specific optimizations for story viewer */
+@supports (-webkit-touch-callout: none) {
+    .viewStory {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 100vh;
+        min-height: 100dvh;
+        -webkit-transform: translate3d(0,0,0);
+        transform: translate3d(0,0,0);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        overscroll-behavior: none;
+    }
+    .player {
+        height: 100vh;
+        height: 100dvh;
     }
 }

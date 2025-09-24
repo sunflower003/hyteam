@@ -1,5 +1,6 @@
 /*  client/src/components/Story.jsx  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../utils/api';
@@ -23,6 +24,7 @@ const Story = () => {
   const [isMobile, setIsMobile]               = useState(false);
   const [showUpload, setShowUpload]           = useState(false);
   const [loading, setLoading]                 = useState(true);
+  const [ignoreFirstTap, setIgnoreFirstTap]   = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -261,6 +263,9 @@ const Story = () => {
     setCurrentStoryInGroup(0); // Start with first story in group
     setIsViewingStory(true);
     setProgress(0);
+  // Avoid initial tap triggering next/prev immediately on iOS
+  setIgnoreFirstTap(true);
+  setTimeout(() => setIgnoreFirstTap(false), 400);
 
     // Mark first story as viewed
     const firstStoryId = targetUser.stories[0]?._id;
@@ -333,10 +338,35 @@ const Story = () => {
   /* Touch navigation (mobile) */
   const handleContentClick = (e) => {
     if (!isMobile) return;
+    if (ignoreFirstTap) return; // ignore initial opening tap
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     clickX > rect.width / 2 ? handleNextStory() : handlePrevStory();
   };
+
+  // Lock body scroll while story viewer is open (prevents underlying page capturing touches)
+  useEffect(() => {
+    if (isViewingStory) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.body.style.webkitOverflowScrolling = 'auto';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.webkitOverflowScrolling = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.webkitOverflowScrolling = '';
+    };
+  }, [isViewingStory]);
 
   /* ------------------------------------------------------------------ */
   /*  UPLOAD STORY                                                       */
@@ -468,6 +498,14 @@ const Story = () => {
         
         if (!currentStory) return null;
 
+        // Helper: determine media type
+        const isVideoStory = (story) => {
+          if (!story) return false;
+          if (story.mediaType && story.mediaType.startsWith('video')) return true;
+          const url = story.mediaUrl || '';
+          return /(\.mp4|\.mov|\.webm|\.m4v|\.3gp)(\?.*)?$/i.test(url);
+        };
+
         // Calculate progress bars for multiple stories
         const progressBars = currentStoryUser.stories.map((_, index) => {
           let progressValue = 0;
@@ -488,8 +526,8 @@ const Story = () => {
           );
         });
 
-        // Generate filters style
-        const getFilterStyle = () => {
+        // Generate styles for images
+        const getImageStyle = () => {
           const filters = currentStory.filters || {};
           let filterString = '';
           
@@ -507,8 +545,21 @@ const Story = () => {
             filter: filterString.trim()
           };
         };
+
+        // Generate filter style for videos
+        const getVideoFilterStyle = () => {
+          const filters = currentStory.filters || {};
+          let filterString = '';
+          if (filters.brightness !== 0) filterString += `brightness(${100 + filters.brightness}%) `;
+          if (filters.contrast !== 0) filterString += `contrast(${100 + filters.contrast}%) `;
+          if (filters.saturation !== 0) filterString += `saturate(${100 + filters.saturation}%) `;
+          if (filters.blur > 0) filterString += `blur(${filters.blur}px) `;
+          if (filters.blackAndWhite) filterString += 'grayscale(100%) ';
+          if (filters.vintage) filterString += 'sepia(50%) ';
+          return { filter: filterString.trim() };
+        };
         
-        return (
+        const viewer = (
           <div className={styles.viewStory}>
             {/* Header (desktop) */}
             {!isMobile && (
@@ -531,7 +582,7 @@ const Story = () => {
               {/* Content */}
               <div
                 className={styles.content}
-                style={getFilterStyle()}
+                style={!isVideoStory(currentStory) ? getImageStyle() : undefined}
                 onMouseDown={() => !isMobile && setIsPaused(true)}
                 onMouseUp={() => !isMobile && setIsPaused(false)}
                 onMouseLeave={() => !isMobile && setIsPaused(false)}
@@ -539,6 +590,18 @@ const Story = () => {
                 onTouchEnd={() => setIsPaused(false)}
                 onClick={handleContentClick}
               >
+                {isVideoStory(currentStory) && (
+                  <video
+                    className={styles.storyVideo}
+                    src={currentStory.mediaUrl}
+                    playsInline
+                    autoPlay
+                    muted
+                    loop
+                    controls={false}
+                    style={getVideoFilterStyle()}
+                  />
+                )}
                 {/* Text Overlays */}
                 {currentStory.textOverlays?.map((textOverlay, index) => (
                   <div
@@ -641,6 +704,8 @@ const Story = () => {
             </div>
           </div>
         );
+
+        return createPortal(viewer, document.body);
       })()}
     </div>
   );

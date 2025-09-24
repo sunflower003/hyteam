@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import styles from '../styles/components/StoryUpload.module.css';
 import api from '../utils/api';
 
@@ -8,6 +9,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [fileType, setFileType] = useState(null);
   const [currentStep, setCurrentStep] = useState('select'); // 'select', 'edit'
+  const [showFilters, setShowFilters] = useState(false);
   
   // Story editing states
   const [content, setContent] = useState('');
@@ -40,36 +42,82 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
   const [textOverlays, setTextOverlays] = useState([]);
   const [showTextEditor, setShowTextEditor] = useState(false);
   const [newText, setNewText] = useState('');
+  const [imageErrored, setImageErrored] = useState(false);
 
   const fileInputRef = useRef(null);
+  const previewRef = useRef(null); // container for drag calculations
+  const dragStateRef = useRef({ draggingIndex: null, startX: 0, startY: 0 });
 
-  // Auto trigger file selection when component opens and lock body scroll
+  // iOS detection and viewport utilities
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isIOSSafari = isIOS && !window.MSStream;
+
+  // Handle viewport changes on iOS
+  useEffect(() => {
+    if (isIOSSafari && isOpen) {
+      const handleViewportChange = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      };
+
+      handleViewportChange();
+      window.addEventListener('resize', handleViewportChange);
+      window.addEventListener('orientationchange', handleViewportChange);
+      
+      return () => {
+        window.removeEventListener('resize', handleViewportChange);
+        window.removeEventListener('orientationchange', handleViewportChange);
+      };
+    }
+  }, [isOpen, isIOSSafari]);
+
+  // Lock body scroll on iOS with better handling
   useEffect(() => {
     if (isOpen) {
-      // Lock body scroll
+      // Enhanced iOS body lock
       document.body.style.overflow = 'hidden';
-      
-      // iOS Safari needs user gesture to trigger file input
-      // Don't auto-trigger on iOS, let user click manually
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      if (currentStep === 'select' && !isIOS) {
-        setTimeout(() => {
-          fileInputRef.current?.click();
-        }, 200);
-      }
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.body.style.webkitOverflowScrolling = 'touch';
     } else {
-      // Unlock body scroll
-      document.body.style.overflow = 'unset';
+      // Restore body styles
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.webkitOverflowScrolling = '';
     }
-    
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, currentStep]);
 
-  const handleFileSelect = (event) => {
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.webkitOverflowScrolling = '';
+    };
+  }, [isOpen]);
+
+  // Auto-trigger file picker when component opens (except on iOS)
+  useEffect(() => {
+    if (isOpen && currentStep === 'select' && !isIOS) {
+      const timer = setTimeout(() => {
+        fileInputRef.current?.click();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, currentStep, isIOS]);
+
+  const testImageUrl = (url) => new Promise((resolve, reject) => {
+    try {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = reject;
+      img.src = url;
+    } catch (e) { reject(e); }
+  });
+
+  const handleFileSelect = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
       onClose();
@@ -87,16 +135,68 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
       return;
     }
 
-    setSelectedFile(file);
-    
-    // Tạo preview URL
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    // Revoke old blob URL if any
+    if (previewUrl && typeof previewUrl === 'string' && previewUrl.startsWith('blob:')) {
+      try { URL.revokeObjectURL(previewUrl); } catch (_) {}
+    }
+
+  setSelectedFile(file);
+
+    // Create preview: prefer Blob URL for images (fast), HEIC -> convert to JPEG for Safari, verify it actually loads, fallback to DataURL; blob for videos
+    setImageErrored(false);
+    if (file.type.startsWith('image/')) {
+      const fileName = (file.name || '').toLowerCase();
+      const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || fileName.endsWith('.heic') || fileName.endsWith('.heif');
+      if (isHeic) {
+        // Convert HEIC/HEIF to JPEG for reliable preview
+        try {
+          const mod = await import('heic2any');
+          const heic2any = (mod && mod.default) || mod;
+          const jpgBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+          const jpgUrl = URL.createObjectURL(jpgBlob);
+          try {
+            await testImageUrl(jpgUrl);
+            setPreviewUrl(jpgUrl);
+          } catch (_) {
+            const dataUrl = await readFileAsDataUrl(jpgBlob);
+            setPreviewUrl(dataUrl);
+          }
+        } catch (_) {
+          const url = URL.createObjectURL(file);
+          try { await testImageUrl(url); setPreviewUrl(url); }
+          catch { const dataUrl = await readFileAsDataUrl(file); setPreviewUrl(dataUrl); }
+        }
+      } else {
+        const url = URL.createObjectURL(file);
+        try {
+          await testImageUrl(url);
+          setPreviewUrl(url);
+        } catch (_) {
+          const dataUrl = await readFileAsDataUrl(file);
+          setPreviewUrl(dataUrl);
+        }
+      }
+      setShowFilters(true);
+    } else {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setShowFilters(false);
+    }
     setCurrentStep('edit');
     
     // Reset input value để có thể chọn cùng file nhiều lần
     event.target.value = '';
   };
+
+  // Fallback reader to dataURL if blob fails
+  const readFileAsDataUrl = (fileOrBlob) => new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(fileOrBlob);
+    } catch (err) { reject(err); }
+  });
 
   const handleUpload = async () => {
     if (!selectedFile) return;
@@ -146,6 +246,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
     setPreviewUrl(null);
     setFileType(null);
     setCurrentStep('select');
+    setShowFilters(false);
     setContent('');
     setDuration(15);
     setFilters({
@@ -161,8 +262,8 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
     setNewText('');
     setIsUploading(false);
     
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    if (previewUrl && typeof previewUrl === 'string' && previewUrl.startsWith('blob:')) {
+      try { URL.revokeObjectURL(previewUrl); } catch (_) {}
     }
     
     onClose();
@@ -394,8 +495,48 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
     callback();
   };
 
-  // Generate preview style with filters
-  const getPreviewStyle = () => {
+  // Drag handlers for text overlays
+  const onStartDragText = (index, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const point = 'touches' in e ? e.touches[0] : e;
+    dragStateRef.current.draggingIndex = index;
+    dragStateRef.current.startX = point.clientX;
+    dragStateRef.current.startY = point.clientY;
+
+    // Attach listeners on document to track dragging outside element
+    document.addEventListener('mousemove', onDragText);
+    document.addEventListener('mouseup', onEndDragText);
+    document.addEventListener('touchmove', onDragText, { passive: false });
+    document.addEventListener('touchend', onEndDragText);
+  };
+
+  const onDragText = (e) => {
+    const idx = dragStateRef.current.draggingIndex;
+    if (idx === null || !previewRef.current) return;
+    const point = 'touches' in e ? e.touches[0] : e;
+    if ('touches' in e) e.preventDefault();
+
+    const rect = previewRef.current.getBoundingClientRect();
+    const x = ((point.clientX - rect.left) / rect.width) * 100;
+    const y = ((point.clientY - rect.top) / rect.height) * 100;
+    const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+    const nx = clamp(x, 2, 98);
+    const ny = clamp(y, 2, 98);
+
+    setTextOverlays(prev => prev.map((t, i) => i === idx ? { ...t, x: nx, y: ny } : t));
+  };
+
+  const onEndDragText = () => {
+    dragStateRef.current.draggingIndex = null;
+    document.removeEventListener('mousemove', onDragText);
+    document.removeEventListener('mouseup', onEndDragText);
+    document.removeEventListener('touchmove', onDragText);
+    document.removeEventListener('touchend', onEndDragText);
+  };
+
+  // Generate media filter style (apply directly to <img>/<video>)
+  const getMediaFilterStyle = () => {
     let filterString = '';
     
     if (filters.brightness !== 0) filterString += `brightness(${100 + filters.brightness}%) `;
@@ -410,26 +551,22 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
     if (filters.invert) filterString += 'invert(100%) ';
 
     return {
-      filter: filterString.trim(),
-      backgroundImage: `url(${previewUrl})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat'
+      filter: filterString.trim()
     };
   };
 
   if (!isOpen) return null;
 
-  return (
-    <div className={styles.uploadOverlay}>
+  const modal = (
+    <div className={styles.uploadOverlay} onClick={(e) => e.target === e.currentTarget && handleClose()}>
       <div className={styles.uploadContainer}>
-        {/* Header */}
-        <div className={styles.header}>
-          <button className={styles.closeBtn} onClick={handleClose}>
-            <i className="ri-close-line"></i>
-          </button>
-          <h3>Create Story</h3>
-          {currentStep === 'edit' && (
+        {/* Header: hide on edit to mimic Instagram full-bleed editor */}
+        {currentStep !== 'edit' && (
+          <div className={styles.header}>
+            <button className={styles.closeBtn} onClick={handleClose}>
+              <i className="ri-close-line"></i>
+            </button>
+            <h3>Create Story</h3>
             <button 
               className={styles.shareBtn}
               onClick={handleUpload}
@@ -437,8 +574,8 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
             >
               {isUploading ? 'Sharing...' : 'Share'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className={styles.content}>
@@ -463,7 +600,63 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
             <div className={styles.editScreen}>
               {/* Main Preview */}
               <div className={styles.previewArea}>
-                <div className={styles.storyPreview} style={getPreviewStyle()}>
+                <div className={styles.storyPreview} ref={previewRef}>
+                  {/* Blurred backdrop to avoid letterboxing gaps (image only) */}
+                  {fileType === 'image' && previewUrl && (
+                    <div
+                      className={styles.storyBackdrop}
+                      style={{ backgroundImage: `url(${previewUrl})` }}
+                    />
+                  )}
+                  {/* Media Element (use <img>/<video> instead of CSS background for iOS) */}
+                  {fileType === 'image' && previewUrl && (
+                    <div
+                      className={styles.storyMediaBg}
+                      style={{
+                        backgroundImage: `url(${previewUrl})`,
+                        ...getMediaFilterStyle()
+                      }}
+                    />
+                  )}
+                  {fileType === 'video' && previewUrl && (
+                    <video
+                      src={previewUrl}
+                      className={styles.storyMedia}
+                      /* Do not apply image filters to videos for better performance/compat */
+                      playsInline
+                      controls
+                    />
+                  )}
+                  {/* Instagram-like top bar (X, Aa, Filter) */}
+                  <div className={styles.igTopBar}>
+                    <div className={styles.igActionsLeft}>
+                      <button 
+                        className={styles.igBtn}
+                        title="Close"
+                        onClick={handleClose}
+                      >
+                        <i className="ri-close-line" />
+                      </button>
+                    </div>
+                    <div className={styles.igActions}>
+                      <button 
+                        className={styles.igBtn}
+                        title="Add text"
+                        onClick={() => setShowTextEditor(true)}
+                      >
+                        <span className={styles.igAa}>Aa</span>
+                      </button>
+                      {fileType === 'image' && (
+                        <button 
+                          className={`${styles.igBtn} ${showFilters ? styles.active : ''}`}
+                          title="Filters"
+                          onClick={() => setShowFilters(prev => !prev)}
+                        >
+                          <i className="ri-sparkling-2-line" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   {/* Text Overlays */}
                   {textOverlays.map((textOverlay, index) => (
                     <div
@@ -476,63 +669,30 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         color: textOverlay.color,
                         fontFamily: textOverlay.fontFamily
                       }}
-                      onClick={() => removeTextOverlay(index)}
+                      onMouseDown={(e) => onStartDragText(index, e)}
+                      onTouchStart={(e) => onStartDragText(index, e)}
                     >
                       {textOverlay.text}
                     </div>
                   ))}
 
-                  {/* Duration indicator */}
-                  <div className={styles.durationIndicator}>
-                    {duration}s
-                  </div>
+                  {/* Duration indicator (subtle like IG) */}
+                  <div className={styles.durationIndicator}>{duration}s</div>
                 </div>
 
-                {/* Story Tools */}
-                <div className={styles.storyTools}>
-                  <button 
-                    className={styles.toolBtn}
-                    onClick={() => setShowTextEditor(true)}
-                  >
-                    <i className="ri-text"></i>
-                  </button>
-                  <button className={styles.toolBtn}>
-                    <i className="ri-brush-line"></i>
-                  </button>
-                  <button className={styles.toolBtn}>
-                    <i className="ri-sticker-line"></i>
-                  </button>
-                </div>
+                {/* Removed legacy side tools to match Instagram minimal UI */}
               </div>
-
-              {/* Bottom Controls */}
-              <div className={styles.bottomControls}>
-                {/* Duration Selector */}
-                <div className={styles.durationRow}>
-                  <span>Display Duration</span>
-                  <div className={styles.durationButtons}>
-                    {[10, 15, 30].map(time => (
-                      <button
-                        key={time}
-                        className={`${styles.timeBtn} ${duration === time ? styles.active : ''}`}
-                        onClick={() => setDuration(time)}
-                      >
-                        {time}s
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Instagram Filter Presets */}
-                <div className={styles.filterRow}>
-                  <span>Filter Presets</span>
-                  <div className={styles.instagramFilters}>
+              
+              {/* IG-style filter overlay on top of the image */}
+              {fileType === 'image' && showFilters && (
+                <div className={styles.igFilterOverlay}>
+                  <div className={styles.instagramFiltersOverlay}>
                     <div className={styles.filterPreset}>
                       <div 
                         className={`${styles.filterPreviewBtn} ${filters.normal ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('normal')}
                       >
-                        <div className={styles.filterPreview} style={{backgroundImage: `url(${previewUrl})`}}></div>
+                        <div className={`${styles.filterPreviewCircle}`} style={{backgroundImage: `url(${previewUrl})`}}></div>
                         <span>Normal</span>
                       </div>
                     </div>
@@ -541,7 +701,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.clarendon ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('clarendon')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(110%) contrast(120%) saturate(115%)'
                         }}></div>
@@ -553,7 +713,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.gingham ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('gingham')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(105%) contrast(90%) saturate(95%)'
                         }}></div>
@@ -565,7 +725,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.moon ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('moon')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(95%) contrast(110%) saturate(85%) grayscale(100%)'
                         }}></div>
@@ -577,7 +737,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.lark ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('lark')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(115%) contrast(95%) saturate(110%) hue-rotate(15deg)'
                         }}></div>
@@ -589,7 +749,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.reyes ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('reyes')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(105%) contrast(90%) saturate(95%) opacity(90%) sepia(50%)'
                         }}></div>
@@ -601,7 +761,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.juno ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('juno')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(110%) contrast(115%) saturate(120%)'
                         }}></div>
@@ -613,7 +773,7 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                         className={`${styles.filterPreviewBtn} ${filters.ludwig ? styles.active : ''}`}
                         onClick={() => applyInstagramFilter('ludwig')}
                       >
-                        <div className={styles.filterPreview} style={{
+                        <div className={styles.filterPreviewCircle} style={{
                           backgroundImage: `url(${previewUrl})`,
                           filter: 'brightness(105%) contrast(110%) saturate(115%)'
                         }}></div>
@@ -622,151 +782,31 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Quick Filter Buttons */}
-                <div className={styles.filterRow}>
-                  <span>Quick Filters</span>
-                  <div className={styles.filterButtons}>
-                    <button 
-                      className={`${styles.filterBtn} ${filters.vintage ? styles.active : ''}`}
-                      onClick={() => handleFilterChange('vintage', !filters.vintage)}
-                    >
-                      Vintage
-                    </button>
-                    <button 
-                      className={`${styles.filterBtn} ${filters.blackAndWhite ? styles.active : ''}`}
-                      onClick={() => handleFilterChange('blackAndWhite', !filters.blackAndWhite)}
-                    >
-                      B&W
-                    </button>
-                    <button 
-                      className={`${styles.filterBtn} ${filters.sepia ? styles.active : ''}`}
-                      onClick={() => handleFilterChange('sepia', !filters.sepia)}
-                    >
-                      Sepia
-                    </button>
-                    <button 
-                      className={`${styles.filterBtn} ${filters.invert ? styles.active : ''}`}
-                      onClick={() => handleFilterChange('invert', !filters.invert)}
-                    >
-                      Invert
-                    </button>
-                  </div>
-                </div>
-
-                {/* Advanced Filters */}
-                <div className={styles.advancedFilters}>
-                  <div className={styles.filterSlider}>
-                    <label>Brightness: {filters.brightness}</label>
-                    <input
-                      type="range"
-                      min="-50"
-                      max="50"
-                      value={filters.brightness}
-                      onChange={(e) => handleFilterChange('brightness', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
-                  </div>
-                  
-                  <div className={styles.filterSlider}>
-                    <label>Contrast: {filters.contrast}</label>
-                    <input
-                      type="range"
-                      min="-50"
-                      max="50"
-                      value={filters.contrast}
-                      onChange={(e) => handleFilterChange('contrast', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
-                  </div>
-                  
-                  <div className={styles.filterSlider}>
-                    <label>Saturation: {filters.saturation}</label>
-                    <input
-                      type="range"
-                      min="-50"
-                      max="50"
-                      value={filters.saturation}
-                      onChange={(e) => handleFilterChange('saturation', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
-                  </div>
-                  
-                  <div className={styles.filterSlider}>
-                    <label>Blur: {filters.blur}px</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={filters.blur}
-                      onChange={(e) => handleFilterChange('blur', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
-                  </div>
-                  
-                  <div className={styles.filterSlider}>
-                    <label>Hue: {filters.hueRotate}°</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      value={filters.hueRotate}
-                      onChange={(e) => handleFilterChange('hueRotate', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
-                  </div>
-                  
-                  <div className={styles.filterSlider}>
-                    <label>Opacity: {filters.opacity}%</label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      value={filters.opacity}
-                      onChange={(e) => handleFilterChange('opacity', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
-                  </div>
-                  
-                  <button 
-                    className={styles.resetFilters}
-                    onClick={resetFilters}
-                  >
-                    Reset All Filters
-                  </button>
-                </div>
-
-                {/* Caption */}
-                <div className={styles.captionRow}>
-                  <input
-                    type="text"
-                    placeholder="Add a caption..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    maxLength={500}
-                    className={styles.captionInput}
-                  />
-                </div>
+              {/* Bottom share bar like Instagram */}
+              <div className={styles.igShareBar}>
+                <input
+                  type="text"
+                  placeholder="Add a caption..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  maxLength={300}
+                  className={styles.captionInput}
+                />
+                <button 
+                  className={styles.shareBtn}
+                  onClick={handleUpload}
+                  disabled={isUploading || !selectedFile}
+                >
+                  {isUploading ? 'Sharing...' : 'Share'}
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer Buttons cho Edit Screen */}
-        {currentStep === 'edit' && (
-          <div className={styles.footerButtons}>
-            <button className={styles.cancelBtn} onClick={handleClose}>
-              Discard
-            </button>
-            <button 
-              className={styles.shareBtn}
-              onClick={handleUpload}
-              disabled={isUploading || !selectedFile}
-            >
-              {isUploading ? 'Sharing...' : 'Share to Story'}
-            </button>
-          </div>
-        )}
+        {/* Footer buttons removed in IG mode; handled by igShareBar */}
 
         {/* Text Editor Modal */}
         {showTextEditor && (
@@ -800,6 +840,9 @@ const StoryUpload = ({ isOpen, onClose, onUpload }) => {
       </div>
     </div>
   );
+
+  // Use portal to avoid ancestor clipping/transform issues on iOS Safari
+  return createPortal(modal, document.body);
 };
 
 export default StoryUpload;

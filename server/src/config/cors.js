@@ -5,6 +5,9 @@ const corsOptions = {
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:5000',
+            'http://192.168.1.3:5173',
+            'http://192.168.1.3:5174',
+            'http://192.168.1.3:5000',
             'https://hyteam.vercel.app',
             'https://hyteam.onrender.com',
             process.env.CLIENT_URL

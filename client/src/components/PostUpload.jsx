@@ -17,15 +17,65 @@ const PostUpload = ({ isOpen, onClose, onUpload }) => {
   const [turnOffCommenting, setTurnOffCommenting] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Auto-trigger file picker when component opens
+  // iOS detection and utilities
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isIOSSafari = isIOS && !window.MSStream;
+
+  // Handle viewport changes on iOS
   useEffect(() => {
-    if (isOpen && step === 1) {
+    if (isIOSSafari && isOpen) {
+      const handleViewportChange = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      };
+
+      handleViewportChange();
+      window.addEventListener('resize', handleViewportChange);
+      window.addEventListener('orientationchange', handleViewportChange);
+      
+      return () => {
+        window.removeEventListener('resize', handleViewportChange);
+        window.removeEventListener('orientationchange', handleViewportChange);
+      };
+    }
+  }, [isOpen, isIOSSafari]);
+
+  // Lock body scroll on iOS with better handling
+  useEffect(() => {
+    if (isOpen) {
+      // Enhanced iOS body lock
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.body.style.webkitOverflowScrolling = 'touch';
+    } else {
+      // Restore body styles
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.webkitOverflowScrolling = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.body.style.webkitOverflowScrolling = '';
+    };
+  }, [isOpen]);
+
+  // Auto-trigger file picker when component opens (except on iOS)
+  useEffect(() => {
+    if (isOpen && step === 1 && !isIOS) {
       const timer = setTimeout(() => {
         fileInputRef.current?.click();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, step]);
+  }, [isOpen, step, isIOS]);
 
   // Reset state when modal closes
   useEffect(() => {

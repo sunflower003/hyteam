@@ -56,16 +56,23 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
+        console.log('🔐 Login request received from:', req.ip);
+        console.log('🔐 Request body:', { email: req.body.email, password: '***' });
+        console.log('🔐 Request headers:', req.headers);
+        
         const {email, password} = req.body;
 
         //Kiem tra nguoi dung ton tai va xac thuc mat khau
         const user = await User.findOne({ email }).select('+password');
 
         if (!user || !(await user.comparePassword(password))) {
-        return res.status(401).json(
-            createResponse(false, null,  'Invalid email or password')
-        );
+            console.log('❌ Login failed: Invalid credentials');
+            return res.status(401).json(
+                createResponse(false, null,  'Invalid email or password')
+            );
         }
+
+        console.log('✅ Login successful for user:', user.username);
 
         //Cap nhat lan cuoi dang nhap
         user.lastLogin = new Date();

@@ -414,6 +414,7 @@
     .boxchat {
         width: 100vw;
         height: 100vh;
+        height: 100dvh; /* Dynamic viewport for iOS */
         top: 0;
         left: 0;
         right: 0;
@@ -421,8 +422,16 @@
         border-radius: 0;
         border: none;
         padding: 15px;
+        /* iOS safe area support */
+        padding-top: calc(15px + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+        padding-left: calc(15px + env(safe-area-inset-left, 0px));
+        padding-right: calc(15px + env(safe-area-inset-right, 0px));
         max-height: 100vh;
+        max-height: 100dvh;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
     
     .content {
@@ -432,6 +441,7 @@
         flex-direction: column;
         gap: 15px;
         margin-bottom: 15px;
+        min-height: 0; /* Important for flex shrinking */
     }
     
     .chatHistory {
@@ -441,6 +451,8 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         padding: 10px 0;
+        /* Prevent overscroll bounce on iOS */
+        overscroll-behavior: contain;
     }
     
     .suggestion {
@@ -448,6 +460,8 @@
         justify-content: center;
         gap: 15px;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
     
     .inputChat {
@@ -455,6 +469,14 @@
         flex-shrink: 0;
         gap: 15px;
         padding: 12px 15px;
+        /* Fix input being hidden behind iOS UI */
+        position: relative;
+        z-index: 100;
+        background: white;
+        /* Ensure input is always visible */
+        margin-bottom: 0;
+        border-radius: 15px;
+        border: 1px solid var(--grey-2);
     }
     
     .message {
@@ -470,12 +492,14 @@
         white-space: pre-wrap;
     }
     
-    .inputField {
-        font-size: 16px;
+    .inputField,
+    .inputChat input {
+        font-size: 16px; /* Prevent zoom on iOS */
         padding: 8px 0;
         appearance: none;
         -webkit-appearance: none;
         border-radius: 0;
+        -webkit-text-size-adjust: 100%;
     }
     
     .header {
@@ -499,4 +523,44 @@
         height: 80px;
         margin: 0 auto;
     }
+}
+
+/* iOS specific fixes for AI Chat */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    .boxchat {
+      /* Ensure full viewport coverage */
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      /* Handle viewport changes */
+      min-height: -webkit-fill-available;
+    }
+    
+    .inputChat {
+      /* Prevent input from being hidden */
+      position: sticky;
+      bottom: 0;
+      background: white;
+      z-index: 1000;
+      /* Add shadow to separate from content */
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 15px 15px 0 0;
+      margin: 0 -15px;
+      padding: 15px;
+    }
+    
+    .content {
+      /* Account for sticky input */
+      padding-bottom: 10px;
+    }
+    
+    .chatHistory {
+      /* Prevent content from being hidden behind input */
+      margin-bottom: 10px;
+      /* Smooth scrolling on iOS */
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+  }
 }

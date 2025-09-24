@@ -8,6 +8,15 @@
   --text-primary: #1a1a1a;
   --text-secondary: #6b7280;
   --border-color: #e5e7eb;
+  /* iOS viewport height variables */
+  --vh: 1vh;
+}
+
+/* iOS specific viewport handling */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --vh: 1vh;
+  }
 }
 
 * {
@@ -20,14 +29,33 @@
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--primary-bg);
   color: var(--text-primary);
+  /* Prevent iOS bounce scrolling */
+  overscroll-behavior: none;
 }
 
 body {
   background: var(--primary-bg);
   color: var(--text-primary);
+  /* iOS safe area support */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* Prevent iOS bounce scrolling */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile body padding for navbar */
+@media (max-width: 768px) {
+  body {
+    /* Account for mobile navbar height + safe area */
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 img {
@@ -41,8 +69,33 @@ li {
 
 .app {
   min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   position: relative;
   background: var(--primary-bg);
+}
+
+/* iOS input optimizations */
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Prevent zoom on iOS */
+    -webkit-text-size-adjust: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Prevent overscroll bounce */
+  html,
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Auth Styles - Optimized for Laptop */

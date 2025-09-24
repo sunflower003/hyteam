@@ -57,13 +57,16 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
+            console.log('🔐 Attempting login with:', { email, password: '***' });
             const response = await api.post('/api/auth/login', 
                 { email, 
                   password 
                 });
 
+                console.log('🔐 Login response:', response.data);
                 if (response.data.success) {
                     const {user, token} = response.data.data;
+                    console.log('✅ Login successful, setting user and token');
                     setUser(user);
                     setToken(token);
                     localStorage.setItem('token', token);
@@ -71,6 +74,8 @@ export const AuthProvider = ({ children }) => {
                     return { success: true, message: response.data.message };
                 }
         } catch (error) {
+            console.error('❌ Login error:', error);
+            console.error('❌ Error response:', error.response?.data);
             const message = error.response?.data?.message || 'Login failed';
             return { success: false, message };
         }

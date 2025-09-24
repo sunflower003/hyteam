@@ -177,11 +177,25 @@
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
-    height: 60px;   
+    /* Anchor to viewport edges to avoid horizontal overflow */
+    right: 0;
+    width: auto;
+    height: 60px;
     box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
     background-color: white;
-    z-index: 1000;
+    z-index: 10040; /* below story viewer (10050) but above page content */
+    /* iOS safe area support */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    /* Create new stacking context/composited layer to stabilize on iOS */
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: layout paint;
+    isolation: isolate;
+    pointer-events: auto;
 }
 
 @media (max-width: 768px) {
@@ -194,6 +208,45 @@
         justify-content: space-between;
         align-items: center;
         padding: 10px 40px;
+        /* Fix cho iOS 18 - thêm padding bottom cho safe area */
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        /* Ensure content is centered properly */
+        box-sizing: border-box;
+        /* Prevent scroll chaining triggering layout shifts */
+        overscroll-behavior: contain;
+    }
+
+    /* iOS specific fixes */
+    @supports (-webkit-touch-callout: none) {
+        .navbar {
+            /* Better safe area handling */
+            height: calc(60px + env(safe-area-inset-bottom, 0px));
+            min-height: calc(60px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            background: white;
+            /* Prevent content shifting */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+        }
+        
+        /* Add gap for home indicator on newer iPhones */
+        .navbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-bottom, 0px);
+            background: white;
+        }
     }
 
     .avatarCircle {
@@ -225,6 +278,9 @@
         font-weight: 550 !important;
         color: #262626;
         transition: color 0.3s ease, font-weight 0.3s ease;
+        /* Better touch targets for iOS */
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
     }
 
     /* Active state cho mobile icons */
@@ -232,6 +288,9 @@
     
     .iconContainer {
         position: relative;
+        /* Better touch target */
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
     }
 
     /* Active state cho icon container (notification) */

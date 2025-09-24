@@ -211,38 +211,35 @@ const Sidebar = () => {
         </div>
       )}
 
-      {/* Mobile Navbar - render via portal to ensure fixed at viewport on iOS */}
-      {createPortal(
-        <div className={styles.navbar}>
-          <i 
-            className={`ri-instagram-line ${isActive('/') ? styles.active : ''}`} 
-            onClick={() => handleNavigation('/')}
-          ></i>
-          <div 
-            className={`${styles.iconContainer} ${showNotifications ? styles.active : ''}`} 
-            onClick={handleMobileNotificationClick}
-          >
-            <i className="ri-notification-2-line"></i>
-            <NotificationBadge count={unreadCount} />
-          </div>
-          <i 
-            className={`ri-chat-1-line ${isActive('/chat') ? styles.active : ''}`} 
-            onClick={() => handleNavigation('/chat')}
-          ></i>
-          <i 
-            className={`ri-btc-line ${isActive('/funding') ? styles.active : ''}`} 
-            onClick={() => handleNavigation('/funding')}
-          ></i>
-          <i 
-            className={`ri-film-line ${isActive('/movie-room') ? styles.active : ''}`} 
-            onClick={() => handleNavigation('/movie-room')}
-          ></i>
-          <div onClick={() => handleNavigation('/profile')}>
-            {renderAvatar(user, styles.avatarCircle)}
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Mobile Navbar */}
+      <div className={styles.navbar}>
+        <i 
+          className={`ri-instagram-line ${isActive('/') ? styles.active : ''}`} 
+          onClick={() => handleNavigation('/')}
+        ></i>
+        <div 
+          className={`${styles.iconContainer} ${showNotifications ? styles.active : ''}`} 
+          onClick={handleMobileNotificationClick}
+        >
+          <i className="ri-notification-2-line"></i>
+          <NotificationBadge count={unreadCount} />
+        </div>
+        <i 
+          className={`ri-chat-1-line ${isActive('/chat') ? styles.active : ''}`} 
+          onClick={() => handleNavigation('/chat')}
+        ></i>
+        <i 
+          className={`ri-btc-line ${isActive('/funding') ? styles.active : ''}`} 
+          onClick={() => handleNavigation('/funding')}
+        ></i>
+        <i 
+          className={`ri-film-line ${isActive('/movie-room') ? styles.active : ''}`} 
+          onClick={() => handleNavigation('/movie-room')}
+        ></i>
+        <div onClick={() => handleNavigation('/profile')}>
+          {renderAvatar(user, styles.avatarCircle)}
+        </div>
+      </div>
 
       {/* Post Upload Modal */}
       <PostUpload

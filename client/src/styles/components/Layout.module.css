@@ -12,6 +12,11 @@
   min-height: 100vh;
 }
 
+/* When in chat routes with collapsed sidebar, reduce margin-left to match collapsed width */
+.chatLayout .content {
+  margin-left: 72px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {  
   

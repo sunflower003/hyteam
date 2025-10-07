@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import useReleaseBodyScroll from '../hooks/useReleaseBodyScroll';
 import { useSearchParams } from 'react-router-dom';
 import Story from "../components/Story";
 import Post from "../components/Post";
@@ -10,6 +11,8 @@ import Birthday from '@/components/RightSide/Birthday';
 import Copyright from '@/components/RightSide/Copyright';
 
 const Hyfeed = () => {
+  // Ensure body scroll is not locked when entering feed
+  useReleaseBodyScroll();
   const [showPostUpload, setShowPostUpload] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 

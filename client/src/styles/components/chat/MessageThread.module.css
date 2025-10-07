@@ -1,8 +1,13 @@
 .messageThread {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background: white;
+  height: 100vh;
+  height: 100dvh;
+  height: 100svh; /* small viewport height iOS 16+ */
+  background: #ffffff;
+  /* IMPORTANT: don't set overflow hidden to preserve sticky on iOS */
+  position: relative;
+  min-height: -webkit-fill-available;
 }
 
 .threadHeader {
@@ -13,7 +18,24 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 250;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  transition: transform .28s cubic-bezier(.4,.0,.2,1), opacity .24s ease;
 }
+
+/* Header hidden state when keyboard open */
+.headerHidden .threadHeader {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
 
 .backBtn {
   display: flex;
@@ -115,13 +137,49 @@
 }
 
 .messagesContainer {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding: 16px;
-  background: white;
+  overflow-x: hidden;
+  --bottom-offset: 72px; /* updated dynamically */
+  padding: 12px 16px var(--bottom-offset) 16px;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
+  scroll-padding-bottom: 96px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding-top: var(--header-space,60px);
+  /* Prevent translucent gap flicker behind keyboard on iOS */
+  transform: translateZ(0);
 }
+
+/* When header hidden we reduce top padding smoothly */
+.headerHidden .messagesContainer {
+  transition: padding-top .24s ease;
+  padding-top: 4px;
+}
+
+/* removed legacy fixedMode styles */
+
+.compactThread .threadHeader {
+  padding: 10px 14px;
+  box-shadow: none;
+}
+
+.compactMessages {
+  --bottom-offset: 56px;
+  padding: 8px 12px var(--bottom-offset) 12px;
+}
+
+@media (max-width: 768px) {
+  .compactMessages {
+    --bottom-offset: 52px;
+    padding: 6px 10px var(--bottom-offset) 10px;
+  }
+}
+
+/* Fixed input mode: input được fixed phía dưới nên vùng messages phải chừa chỗ tương ứng */
+/* Bottom padding now will be handled dynamically later via inline style / variable */
 
 .messagesContainer::-webkit-scrollbar {
   width: 14px;
@@ -175,6 +233,91 @@
   max-width: 100%;
   padding: 2px 0;
 }
+
+/* New flex layout piece: sticky input bar */
+.inputBar {
+  flex: 0 0 auto;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 8px 12px calc(env(safe-area-inset-bottom) + 8px);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+  will-change: transform, bottom;
+  transform: translateZ(0);
+  transition: bottom .22s cubic-bezier(.4,.0,.2,1);
+}
+
+/* Desktop variant: center and constrain width (don't span full screen) */
+.desktopInputBar {
+  position: fixed; /* still fixed but width/left will be set inline to match messages container */
+  bottom: 0;
+  right: auto; /* left & width computed in JS */
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  border-radius: 0;
+}
+
+/* Removed max-width override; width handled dynamically via JS measurements */
+
+/* Fallback absolute mode when Safari sticky + keyboard tạo gap */
+.inputBar[data-absolute="true"] {
+  position: absolute;
+}
+
+@supports(padding-bottom: env(keyboard-inset-height)) {
+  .inputBar[data-keyboard-open="true"] {
+    padding-bottom: calc(env(keyboard-inset-height) + env(safe-area-inset-bottom) + 8px);
+  }
+}
+
+/* IMPORTANT: Previously this selector locked body scroll anywhere a .messageThread existed, causing Hyfeed/Notifications to appear non-scrollable after navigating. 
+   We scope it behind a data attribute opt-in so default navigation restores scrolling. */
+html[data-chat-lock="true"], body[data-chat-lock="true"] {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* only when explicitly opted in */
+}
+
+@supports (-webkit-touch-callout: none) and (not (translate: none)) {
+  .messageThread { height: -webkit-fill-available; }
+}
+
+/* Header sticky styling (reuse existing threadHeader class later) */
+.headerWrapper {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  height: 60px;
+  z-index: 120;
+  width: 100%;
+}
+
+.threadHeader {
+  position: absolute;
+  inset: 0;
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #dbdbdb;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  z-index: 120;
+}
+
+/* Anchor element for latest message */
+.messagesEnd { scroll-margin-bottom: 16px; }
+
+/* removed keyboard-open header reposition to keep header visible */
 
 .messageContainer:hover {
   background: rgba(102, 126, 234, 0.05);
@@ -386,6 +529,16 @@
   font-style: italic;
 }
 
+/* iOS specific tweaks */
+@supports (-webkit-touch-callout: none) {
+  .messageThread {
+    contain: paint;
+  }
+  .inputBar {
+    backface-visibility: hidden;
+  }
+}
+
 .replyContextBar {
   display: flex;
   align-items: center;
@@ -443,7 +596,7 @@
   }
 
   .messagesContainer {
-    padding: 8px;
+    padding: 8px 8px var(--bottom-offset) 8px;
   }
 
   .threadHeader {

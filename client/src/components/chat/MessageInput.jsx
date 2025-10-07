@@ -5,7 +5,7 @@ import { useChat } from "../../context/ChatContext"
 import api from "../../utils/api"
 import styles from "../../styles/components/chat/MessageInput.module.css"
 
-const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
+const MessageInput = ({ onSendMessage, replyingTo, onCancelReply, compact = false, fixed = false, onFocusInput, onBlurInput }) => {
   const { startTyping, stopTyping } = useChat()
   const [newMessage, setNewMessage] = useState("")
   const [isTyping, setIsTyping] = useState(false)
@@ -114,8 +114,26 @@ const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
     }
   }, [])
 
+  const handleFocus = (e) => {
+    onFocusInput && onFocusInput(e)
+    // iOS: prevent auto scroll jumping header
+    try {
+      if (e.target && typeof e.target.focus === 'function') {
+        e.target.focus({ preventScroll: true })
+      }
+    } catch {}
+    // đảm bảo input vào vùng nhìn thấy đặc biệt khi bàn phím mở (manual)
+    setTimeout(() => {
+      try { inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) } catch {}
+    }, 250)
+  }
+
+  const handleBlur = (e) => {
+    onBlurInput && onBlurInput(e)
+  }
+
   return (
-    <div className={styles.messageInputContainer}>
+  <div className={`${styles.messageInputContainer} ${compact ? styles.compactInput : ''} ${fixed ? styles.fixedInput : ''}`}>
       {/* Reply Preview */}
       {replyingTo && (
         <div className={styles.replyPreview}>
@@ -148,6 +166,8 @@ const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
             value={newMessage}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             placeholder="Message..."
             className={styles.messageInput}
             rows={1}

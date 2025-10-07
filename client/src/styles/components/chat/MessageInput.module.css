@@ -6,6 +6,29 @@
   position: relative;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding-bottom: env(safe-area-inset-bottom); /* iOS home indicator safe area */
+}
+
+.compactInput {
+  margin-bottom: 8px;
+}
+
+.fixedInput {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  border-radius: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+  max-width: 100%;
+  width: 100%;
+  background: rgba(248, 249, 250, 0.92);
+  backdrop-filter: blur(16px);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
 
 .replyPreview {
@@ -171,7 +194,24 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
   .messageInputContainer {
-    margin: 0 8px 16px 8px;
+    /* Đẩy input lên trên thanh nav cố định dưới (ước lượng ~72px) + safe area */
+    margin: 0 8px calc(env(safe-area-inset-bottom, 0px) + 80px) 8px;
+    position: relative;
+    z-index: 60; /* đảm bảo nổi trên nền */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+  }
+
+  .messageInputContainer.compactInput {
+    margin: 0 8px calc(env(safe-area-inset-bottom, 0px) + 4px) 8px; /* gần sát cạnh dưới */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 2px);
+  }
+
+  .messageInputContainer.fixedInput {
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+    padding: 0 12px calc(env(safe-area-inset-bottom) + 6px) 12px;
   }
 
   .messageForm {

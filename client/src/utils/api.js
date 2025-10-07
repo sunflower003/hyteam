@@ -2,8 +2,9 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'http://192.168.1.3:5000', // Force IP for mobile testing
+  baseURL: 'http://192.168.0.106:5000', // Force IP for mobile testing
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://192.168.0.106:5000' || 'http://localhost:5000',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

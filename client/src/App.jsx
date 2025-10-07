@@ -51,7 +51,10 @@ const AppContent = () => {
             <Routes>
               <Route path="/" element={<Layout />}>
                 <Route index element={<Hyfeed />} />
-                <Route path="chat" element={<Chat />} /> 
+                {/* Chat list (mobile shows list) */}
+                <Route path="chat" element={<Chat />} />
+                {/* Chat thread (mobile full screen thread) */}
+                <Route path="chat/:conversationId" element={<Chat />} /> 
                 <Route path="movie-room" element={<MovieRoom />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="profile/:userId" element={<Profile />} />

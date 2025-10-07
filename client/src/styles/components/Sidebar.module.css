@@ -11,6 +11,39 @@
     padding: 20px;
     background: white;
     z-index: 100;
+    transition: width 0.25s ease, padding 0.25s ease;
+}
+
+/* Collapsed (icon-only) mode for desktop chat view */
+.collapsed {
+    width: 72px;
+    padding: 20px 12px;
+}
+
+.collapsed .version,
+.collapsed .linkText,
+.collapsed .accountInfo,
+.collapsed .account i {
+    display: none !important;
+}
+
+.collapsed .link {
+    justify-content: center;
+    padding: 12px 8px;
+}
+
+.collapsed .link i {
+    font-size: 26px;
+}
+
+.collapsed .account {
+    justify-content: center;
+    padding: 10px 8px;
+}
+
+.accountCollapsed {
+    flex-direction: column;
+    gap: 6px;
 }
 
 .navbar {
@@ -93,13 +126,23 @@
 /* Notification Panel Overlay */
 .notificationOverlay {
     position: fixed;
-    left: 155px;
     top: 0;
     bottom: 0;
-    width: 500px;
     z-index: 999;
-    animation: slideInFromLeft 0.3s ease-out;
+    display: flex;
+    pointer-events: none; /* let panel handle pointer */
 }
+
+/* Default (expanded) sidebar placement */
+.notificationOverlay { left: 300px; padding-left: 16px; }
+
+/* When sidebar is collapsed, shift overlay left */
+/* Collapsed override via global attribute */
+[data-sidebar-collapsed='true'] .notificationOverlay { left: 72px; padding-left: 8px; }
+
+.notificationOverlay > * { pointer-events: auto; }
+
+/* Remove old slide keyframe usage; rely on panelEnter animation inside panel */
 
 @keyframes slideInFromLeft {
     from {

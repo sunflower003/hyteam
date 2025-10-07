@@ -1,8 +1,10 @@
 import { useNotifications } from '../context/NotificationContext';
+import useReleaseBodyScroll from '../hooks/useReleaseBodyScroll';
 import NotificationItem from '../components/notification/NotificationItem';
 import styles from '../styles/pages/Notifications.module.css';
 
 const Notifications = () => {
+  useReleaseBodyScroll();
   const { notifications, loading, markAllAsRead, fetchNotifications } = useNotifications();
 
   const handleRefresh = () => {

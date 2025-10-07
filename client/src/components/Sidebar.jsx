@@ -58,7 +58,7 @@ const Sidebar = () => {
 
   const handleNotificationClick = () => {
     setShowNotifications(prev => !prev);
-    // Không tự động mark as read khi mở panel
+    // collapse handled by effect (showNotifications dependency)
   };
 
   const handleMobileNotificationClick = () => {
@@ -117,87 +117,137 @@ const Sidebar = () => {
     }
   };
 
+  // Ẩn navbar chỉ khi đang ở trang thread cụ thể: /chat/:conversationId
+  const isChatThreadRoute = /^\/chat\/.+/.test(location.pathname.replace(/\/$/, ''));
+
+  // Collapse rules:
+  // 1. Always collapsed on /chat (desktop width >=1024)
+  // 2. Collapsed while notifications panel open (desktop) on ANY route
+  const [isCollapsedBase, setIsCollapsedBase] = useState(false);
+  useEffect(() => {
+    const compute = () => {
+      const wide = window.innerWidth >= 1024;
+      if (!wide) {
+        setIsCollapsedBase(false);
+        return;
+      }
+      const chatCollapse = location.pathname.startsWith('/chat');
+      const notifCollapse = showNotifications; // open panel => collapse
+      setIsCollapsedBase(chatCollapse || notifCollapse);
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, [location.pathname, showNotifications]);
+
+  const effectiveCollapsed = isCollapsedBase; // no hover expansion anymore
+
+  // Reflect collapsed state via data attribute for global layout / CSS
+  useEffect(() => {
+    if (effectiveCollapsed) {
+      document.documentElement.setAttribute('data-sidebar-collapsed', 'true');
+      document.body.setAttribute('data-sidebar-collapsed', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-sidebar-collapsed');
+      document.body.removeAttribute('data-sidebar-collapsed');
+    }
+    return () => {
+      document.documentElement.removeAttribute('data-sidebar-collapsed');
+      document.body.removeAttribute('data-sidebar-collapsed');
+    };
+  }, [effectiveCollapsed]);
+
   return (
     <>
       <div 
         ref={sidebarRef}
-        className={styles.sidebar}
+        className={`${styles.sidebar} ${effectiveCollapsed ? styles.collapsed : ''}`}
       >
         <div className={styles.header}>
           <img src="/img/hyteam-logo.png" alt="hyteam" className={styles.logo}/>
-          <p className={`${styles.version} ${showNotifications ? styles.textHidden : ''}`}>v1.0</p>
+          {!effectiveCollapsed && <p className={`${styles.version} ${showNotifications ? styles.textHidden : ''}`}>v1.0</p>}
         </div>
         
         <ul className={styles.links}>
           <li 
             className={`${styles.link} ${isActive('/') ? styles.active : ''}`} 
             onClick={() => handleNavigation('/')}
+            title={effectiveCollapsed ? 'Hyfeed' : undefined}
           >
             <i className="ri-instagram-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Hyfeed</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Hyfeed</span>}
           </li>
           <li 
             className={`${styles.link} ${styles.notificationLink} ${showNotifications ? styles.active : ''}`} 
             onClick={handleNotificationClick}
+            title={effectiveCollapsed ? 'Notifications' : undefined}
           >
             <div className={styles.iconContainer}>
               <i className="ri-notification-2-line"></i>
               <NotificationBadge count={unreadCount} />
             </div>
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Notification</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Notification</span>}
           </li>
-          <li className={styles.link} onClick={handleCreatePost}>
+          <li className={styles.link} onClick={handleCreatePost} title={effectiveCollapsed ? 'Add Post' : undefined}>
             <i className="ri-add-box-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Add</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Add</span>}
           </li>
           <li 
             className={`${styles.link} ${isActive('/chat') ? styles.active : ''}`} 
             onClick={() => handleNavigation('/chat')}
+            title={effectiveCollapsed ? 'Chat' : undefined}
           >
             <i className="ri-chat-1-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Chat</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Chat</span>}
           </li>
           <li 
             className={`${styles.link} ${isActive('/projects') ? styles.active : ''}`} 
             onClick={() => handleNavigation('/projects')}
+            title={effectiveCollapsed ? 'Project' : undefined}
           >
             <i className="ri-task-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Project</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Project</span>}
           </li>
           <li 
             className={`${styles.link} ${isActive('/funding') ? styles.active : ''}`} 
             onClick={() => handleNavigation('/funding')}
+            title={effectiveCollapsed ? 'Funding' : undefined}
           >
             <i className="ri-btc-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Funding</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Funding</span>}
           </li>
           <li 
             className={`${styles.link} ${isActive('/documents') ? styles.active : ''}`} 
             onClick={() => handleNavigation('/documents')}
+            title={effectiveCollapsed ? 'Documents' : undefined}
           >
             <i className="ri-drive-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Document</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Document</span>}
           </li>
           <li 
             className={`${styles.link} ${isActive('/movie-room') ? styles.active : ''}`} 
             onClick={() => handleNavigation('/movie-room')}
+            title={effectiveCollapsed ? 'Movie Room' : undefined}
           >
             <i className="ri-film-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Movie Room</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Movie Room</span>}
           </li>
-          <li className={styles.link} onClick={handleLogout}>
+          <li className={styles.link} onClick={handleLogout} title={effectiveCollapsed ? 'Logout' : undefined}>
             <i className="ri-logout-circle-line"></i> 
-            <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Logout</span>
+            {!effectiveCollapsed && <span className={`${styles.linkText} ${showNotifications ? styles.textHidden : ''}`}>Logout</span>}
           </li>
         </ul>
-        
-        <div className={styles.account} onClick={() => handleNavigation('/profile')}>
+        <div className={`${styles.account} ${effectiveCollapsed ? styles.accountCollapsed : ''}`} onClick={() => handleNavigation('/profile')} title={effectiveCollapsed ? (user?.username || 'Profile') : undefined}>
           {renderAvatar(user, styles.avatar)}
-          <div className={`${styles.accountInfo} ${showNotifications ? styles.textHidden : ''}`}>
-            <p className={styles.accountName}>{user?.username || 'Guest User'}</p>
-            <p className={styles.accountEmail}>{user?.email || 'guest@example.com'}</p>
-          </div>
-          <i className={`ri-more-2-line ${showNotifications ? styles.textHidden : ''}`}></i>
+          {!effectiveCollapsed && (
+            <>
+              <div className={`${styles.accountInfo} ${showNotifications ? styles.textHidden : ''}`}>
+                <p className={styles.accountName}>{user?.username || 'Guest User'}</p>
+                <p className={styles.accountEmail}>{user?.email || 'guest@example.com'}</p>
+              </div>
+              <i className={`ri-more-2-line ${showNotifications ? styles.textHidden : ''}`}></i>
+            </>
+          )}
         </div>
       </div>
 
@@ -211,35 +261,37 @@ const Sidebar = () => {
         </div>
       )}
 
-      {/* Mobile Navbar */}
-      <div className={styles.navbar}>
-        <i 
-          className={`ri-instagram-line ${isActive('/') ? styles.active : ''}`} 
-          onClick={() => handleNavigation('/')}
-        ></i>
-        <div 
-          className={`${styles.iconContainer} ${showNotifications ? styles.active : ''}`} 
-          onClick={handleMobileNotificationClick}
-        >
-          <i className="ri-notification-2-line"></i>
-          <NotificationBadge count={unreadCount} />
+      {/* Mobile Navbar (ẩn trên trang chat để tối ưu không gian soạn tin) */}
+      {!isChatThreadRoute && (
+        <div className={styles.navbar}>
+          <i 
+            className={`ri-instagram-line ${isActive('/') ? styles.active : ''}`} 
+            onClick={() => handleNavigation('/')}
+          ></i>
+          <div 
+            className={`${styles.iconContainer} ${showNotifications ? styles.active : ''}`} 
+            onClick={handleMobileNotificationClick}
+          >
+            <i className="ri-notification-2-line"></i>
+            <NotificationBadge count={unreadCount} />
+          </div>
+          <i 
+            className={`ri-chat-1-line ${isActive('/chat') ? styles.active : ''}`} 
+            onClick={() => handleNavigation('/chat')}
+          ></i>
+          <i 
+            className={`ri-btc-line ${isActive('/funding') ? styles.active : ''}`} 
+            onClick={() => handleNavigation('/funding')}
+          ></i>
+          <i 
+            className={`ri-film-line ${isActive('/movie-room') ? styles.active : ''}`} 
+            onClick={() => handleNavigation('/movie-room')}
+          ></i>
+          <div onClick={() => handleNavigation('/profile')}>
+            {renderAvatar(user, styles.avatarCircle)}
+          </div>
         </div>
-        <i 
-          className={`ri-chat-1-line ${isActive('/chat') ? styles.active : ''}`} 
-          onClick={() => handleNavigation('/chat')}
-        ></i>
-        <i 
-          className={`ri-btc-line ${isActive('/funding') ? styles.active : ''}`} 
-          onClick={() => handleNavigation('/funding')}
-        ></i>
-        <i 
-          className={`ri-film-line ${isActive('/movie-room') ? styles.active : ''}`} 
-          onClick={() => handleNavigation('/movie-room')}
-        ></i>
-        <div onClick={() => handleNavigation('/profile')}>
-          {renderAvatar(user, styles.avatarCircle)}
-        </div>
-      </div>
+      )}
 
       {/* Post Upload Modal */}
       <PostUpload

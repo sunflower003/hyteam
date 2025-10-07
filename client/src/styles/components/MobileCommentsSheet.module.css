@@ -1,0 +1,40 @@
+.overlay{position:fixed;inset:0;z-index:3000;pointer-events:none;}
+/* Soften backdrop: remove blur & reduce opacity so không làm mờ toàn bộ UI quá mức */
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.32);/* removed blur */pointer-events:auto;transition:background .2s ease;z-index:0;}
+.sheet{position:fixed;left:0;right:0;bottom:max(0px,var(--keyboard-offset,0px));background:#0f1013;color:#fff;border-top-left-radius:18px;border-top-right-radius:18px;height:clamp(58vh,62vh,70vh);max-height:88vh;min-height:58vh;width:100%;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .24s cubic-bezier(.22,.61,.36,1);pointer-events:auto;box-shadow:0 -6px 18px rgba(0,0,0,.55);z-index:1;} 
+.open{transform:translateY(0);}
+.handleArea{padding:8px 0 4px;cursor:grab;touch-action:pan-y;}
+.handle{width:44px;height:4px;background:#2a2d33;border-radius:4px;margin:0 auto;}
+.header{font-weight:600;font-size:14px;padding:4px 16px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);}
+.scrollArea{flex:1;overflow-y:auto;padding:8px 0 calc(72px + var(--keyboard-offset,0px)) 0;overscroll-behavior:contain;} /* bottom padding for input overlap */
+.empty{padding:32px 0;text-align:center;font-size:13px;color:#888;}
+.commentItem{display:flex;align-items:flex-start;padding:8px 16px 4px;gap:8px;font-size:13.5px;}
+.reply{padding-left:54px;}
+.left{flex:0 0 auto;}
+.mid{flex:1 1 auto;min-width:0;}
+.right{flex:0 0 auto;display:flex;}
+.avatar,.avatarFallback{border-radius:50%;object-fit:cover;background:#222;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;}
+.line{line-height:1.35;word-break:break-word;}
+.username{font-weight:600;margin-right:4px;}
+.text{white-space:pre-wrap;}
+.meta{display:flex;gap:12px;margin:4px 0 2px;font-size:11px;color:#888;flex-wrap:wrap;}
+.meta button{background:none;border:none;color:#888;font-size:11px;padding:0;}
+.meta button:active{color:#fff;}
+.likeBtn{background:none;border:none;color:#888;display:flex;align-items:center;justify-content:center;padding:4px;}
+.likeBtn i{font-size:18px;}
+.liked i{color:#ff3d63;}
+.moreRepliesBtn{background:none;border:none;color:#6aa9ff;font-size:12px;padding:2px 0;margin:2px 0 4px;}
+.repliesWrapper{margin-top:2px;}
+.inputBar{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(to top,#0f1013 70%,rgba(15,16,19,0));padding:6px 12px 6px;display:flex;flex-direction:column;gap:4px;border-top:1px solid rgba(255,255,255,.06);}
+.inputRow{display:flex;align-items:flex-end;gap:8px;}
+.textarea{flex:1;background:#1a1d22;border:1px solid #262a31;border-radius:18px;padding:8px 12px;font-size:13px;line-height:1.3;max-height:120px;resize:none;color:#fff;}
+.textarea:focus{outline:none;border-color:#3d82ff;background:#20242b;}
+.sendBtn{background:none;border:none;color:#3d82ff;font-weight:600;font-size:13px;padding:6px 8px;opacity:.6;}
+.sendBtn:not(:disabled){opacity:1;}
+.sendBtn:disabled{pointer-events:none;}
+.replyChip{background:#1f2227;border:1px solid #2d3137;color:#bbb;font-size:11px;padding:4px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:6px;max-width:100%;}
+.replyChip button{background:none;border:none;color:#777;font-size:14px;line-height:1;}
+.safePad{height:env(safe-area-inset-bottom);}
+.avatarDefault{border:1px solid #222;}
+@supports(padding:max(0px)){.inputBar{padding-bottom:calc(6px + env(safe-area-inset-bottom));}}
+@media (hover:hover){.likeBtn:hover i{transform:scale(1.08);} }

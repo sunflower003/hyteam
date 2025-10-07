@@ -1,8 +1,11 @@
 // Navigation utility for handling different navigation scenarios
 export const navigateToPage = (path) => {
   console.log(`🧭 Navigating to: ${path}`);
-  // Simple navigation using window.location for compatibility
-  window.location.href = path;
+  if (window.__spaNavigate) {
+    window.__spaNavigate(path);
+  } else {
+    window.location.href = path; // fallback
+  }
 };
 
 // Scroll to element with highlight
@@ -35,18 +38,35 @@ export const navigateToPostHighlight = (postId, commentId = null) => {
   
   const targetUrl = `/?${queryParams.toString()}`;
   console.log(`🎯 Navigating to highlight post: ${targetUrl}`);
-  navigateToPage(targetUrl);
+  // If already on home, just push state + dispatch event instead of full rerender
+  if (window.location.pathname === '/' && window.__spaNavigate) {
+    // Update URL without reload
+    window.history.replaceState({}, '', targetUrl);
+    // Try highlight again
+    setTimeout(() => scrollToPost(postId), 50);
+  } else {
+    navigateToPage(targetUrl);
+  }
 };
 
 // Open story by user ID (similar to existing logic)
-export const openStoryByUserId = (userId) => {
-  console.log(`📚 Attempting to open story for user: ${userId}`);
+export const openStoryByUserId = (userId, storyId = null) => {
+  console.log(`📚 Attempting to open story for user: ${userId} ${storyId ? ' (target story '+storyId+')' : ''}`);
   if (window.openStoryByUserId) {
-    console.log('✅ Story component available, opening story');
-    window.openStoryByUserId(userId);
-    return true;
-  } else {
-    console.log('❌ Story component not available');
-    return false;
+    try {
+      window.openStoryByUserId(userId, storyId);
+      console.log('✅ Story overlay open triggered');
+      return true;
+    } catch (e) {
+      console.warn('⚠️ Error calling window.openStoryByUserId', e);
+      return false;
+    }
   }
+  console.log('❌ Story component not available in current view');
+  return false;
+};
+
+// Queue a pending story open (used when story component not mounted yet)
+export const queuePendingStoryOpen = (userId, storyId = null) => {
+  window.__PENDING_STORY_OPEN = { userId, storyId, ts: Date.now() };
 };

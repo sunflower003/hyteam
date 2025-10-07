@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api';
 import styles from '../styles/pages/StoryViewer.module.css';
 
 const StoryViewer = () => {
   const { userId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [stories, setStories] = useState([]);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
@@ -24,10 +25,28 @@ const StoryViewer = () => {
           return;
         }
         setStories(userStories);
-        
-        // Mark first story as viewed
-        if (userStories[0] && !userStories[0].hasViewed) {
-          markStoryAsViewed(userStories[0]._id);
+
+        // If query has specific storyId, jump to it
+        const params = new URLSearchParams(location.search);
+        const targetStoryId = params.get('story');
+        if (targetStoryId) {
+          const idx = userStories.findIndex(s => s._id === targetStoryId);
+          if (idx !== -1) {
+            setCurrentStoryIndex(idx);
+            if (!userStories[idx].hasViewed) {
+              markStoryAsViewed(userStories[idx]._id);
+            }
+          } else {
+            // fallback mark first
+            if (userStories[0] && !userStories[0].hasViewed) {
+              markStoryAsViewed(userStories[0]._id);
+            }
+          }
+        } else {
+          // Mark first story as viewed
+            if (userStories[0] && !userStories[0].hasViewed) {
+              markStoryAsViewed(userStories[0]._id);
+            }
         }
       } else {
         setError('Failed to load stories');
@@ -38,7 +57,7 @@ const StoryViewer = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, location.search]);
 
   const markStoryAsViewed = async (storyId) => {
     try {

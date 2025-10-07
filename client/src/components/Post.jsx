@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import VerifiedBadge from './ui/VerifiedBadge';
 import CommentModal from './CommentModal';
+import MobileCommentsSheet from './MobileCommentsSheet';
 import api from '../utils/api';
 import { formatTimeAgo, formatNumber } from '../utils/formatters';
 import styles from '../styles/components/Post.module.css';
@@ -19,6 +20,8 @@ const Post = () => {
     // Comment modal states
     const [selectedPost, setSelectedPost] = useState(null);
     const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+    const [isMobileCommentsOpen, setIsMobileCommentsOpen] = useState(false);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     // Navigate to user profile
     const handleUserClick = (userId) => {
@@ -155,12 +158,17 @@ const Post = () => {
     // Handle comment icon click - open modal
     const handleCommentClick = (post) => {
         setSelectedPost(post);
-        setIsCommentModalOpen(true);
+        if (isMobile) {
+            setIsMobileCommentsOpen(true);
+        } else {
+            setIsCommentModalOpen(true);
+        }
     };
 
     // Handle comment modal close
     const handleCommentModalClose = () => {
         setIsCommentModalOpen(false);
+        setIsMobileCommentsOpen(false);
         setSelectedPost(null);
     };
 
@@ -293,13 +301,24 @@ const Post = () => {
                 />
             ))}
 
-            {/* Comment Modal */}
-            <CommentModal
-                isOpen={isCommentModalOpen}
-                onClose={handleCommentModalClose}
-                post={selectedPost}
-                onCommentAdded={handleCommentAdded}
-            />
+            {/* Desktop / tablet modal */}
+            {isCommentModalOpen && selectedPost && !isMobile && (
+                <CommentModal
+                    isOpen={isCommentModalOpen}
+                    onClose={handleCommentModalClose}
+                    post={selectedPost}
+                    onCommentAdded={handleCommentAdded}
+                />
+            )}
+            {/* Mobile bottom sheet */}
+            {isMobileCommentsOpen && selectedPost && isMobile && (
+                <MobileCommentsSheet
+                    isOpen={isMobileCommentsOpen}
+                    onClose={handleCommentModalClose}
+                    post={selectedPost}
+                    onCommentAdded={handleCommentAdded}
+                />
+            )}
         </div>
     );
 };
@@ -399,16 +418,18 @@ const PostCard = ({ post, onLike, onCommentClick, onUserClick, renderAvatar }) =
                 </span>
             )}
 
-            <div className={styles.commentInputWrapper}>
-                <input 
-                    type="text" 
-                    className={styles.commentInput} 
-                    placeholder="Add a comment..." 
-                    onFocus={(e) => e.target.nextSibling.style.display = 'inline-block'}
-                    onBlur={(e) => e.target.nextSibling.style.display = 'none'}
-                />
-                <button className={styles.commentSendButton} style={{ display: 'none' }}>Send</button>
-            </div>
+            {!(typeof window !== 'undefined' && window.innerWidth < 768) && (
+                <div className={styles.commentInputWrapper}>
+                    <input 
+                        type="text" 
+                        className={styles.commentInput} 
+                        placeholder="Add a comment..." 
+                        onFocus={(e) => e.target.nextSibling.style.display = 'inline-block'}
+                        onBlur={(e) => e.target.nextSibling.style.display = 'none'}
+                    />
+                    <button className={styles.commentSendButton} style={{ display: 'none' }}>Send</button>
+                </div>
+            )}
 
             <div className={styles.borderBottom}></div>
         </div>

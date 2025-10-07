@@ -5,7 +5,8 @@ import { createContext, useContext, useReducer, useEffect, useRef } from "react"
 import { useAuth } from "./AuthContext"
 import io from "socket.io-client"
 import api from "../utils/api"
-import { navigateToPage, scrollToPost, navigateToPostHighlight, openStoryByUserId } from "../utils/navigation"
+import { navigateToPage, scrollToPost, navigateToPostHighlight, openStoryByUserId, queuePendingStoryOpen } from "../utils/navigation"
+import { prefetchUserStories, getCachedStories } from '../utils/storyPrefetch';
 
 const NotificationContext = createContext()
 
@@ -282,7 +283,7 @@ export const NotificationProvider = ({ children }) => {
   const navigateToNotification = async (notification) => {
     try {
       console.log("🔔 Navigating to notification:", notification)
-      const { _id, type, post, commentId, sender } = notification
+  const { _id, type, post, commentId, sender, story } = notification
 
       // Mark as read first and update local state immediately
       if (!notification.isRead) {
@@ -314,10 +315,27 @@ export const NotificationProvider = ({ children }) => {
         }
       } else if (type === "story") {
         if (sender?._id) {
-          console.log(`📖 Navigating to story by user: ${sender._id}`)
-          // Try to open story, fallback to home
-          if (!openStoryByUserId(sender._id)) {
-            console.log(`🏠 Story not available, navigating to home`)
+          console.log(`📖 Opening story overlay for user: ${sender._id}`)
+          // Prefetch attempt (fire & forget)
+          prefetchUserStories(sender._id);
+          const opened = openStoryByUserId(sender._id, story)
+          if (!opened) {
+            console.log('🏠 Story overlay not available, queue + SPA navigate + fast open on ready')
+            queuePendingStoryOpen(sender._id, story)
+            try {
+              performance.mark && performance.mark('notif_story_preopen');
+            } catch(_) {}
+            // Fire preopen so shell overlay appears instantly once Story component mounts (or if already mounting)
+            try { window.dispatchEvent(new CustomEvent('story:preopen')); } catch(_) {}
+            // One-time listener for immediate open after mount (in case queue consumed too late)
+            const onReady = () => {
+              // If still pending (not yet consumed) attempt direct open again
+              if (window.__PENDING_STORY_OPEN) {
+                openStoryByUserId(sender._id, story)
+              }
+              window.removeEventListener('stories:ready', onReady)
+            }
+            window.addEventListener('stories:ready', onReady, { once: true })
             navigateToPage('/')
           }
         }

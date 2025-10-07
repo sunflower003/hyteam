@@ -25,6 +25,7 @@ const Story = () => {
   const [showUpload, setShowUpload]           = useState(false);
   const [loading, setLoading]                 = useState(true);
   const [ignoreFirstTap, setIgnoreFirstTap]   = useState(false);
+  const [preopenRequested, setPreopenRequested] = useState(false); // indicates overlay forced open before data
 
   const fileInputRef = useRef(null);
 
@@ -85,6 +86,10 @@ const Story = () => {
       });
       
       setUsers(sortedUsers);
+      if (preopenRequested) {
+        // If we pre-opened and have pending target -> stories:ready re-dispatched elsewhere already
+        try { window.dispatchEvent(new CustomEvent('stories:ready')); } catch(_) {}
+      }
       
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -296,10 +301,70 @@ const Story = () => {
   // Make openStoryByUserId available globally for notifications
   useEffect(() => {
     window.openStoryByUserId = openStoryByUserId;
+    // Dispatch stories:ready when we have data (users with stories) to allow instant open
+    try {
+      const usersWithStories = users?.filter(u => u.hasStory) || [];
+      if (usersWithStories.length) {
+        window.dispatchEvent(new CustomEvent('stories:ready'));
+      }
+    } catch (e) { /* ignore */ }
     return () => {
       delete window.openStoryByUserId;
     };
   }, [users, openStoryByUserId]); // Re-attach when users data changes
+
+  // Auto-consume pending story open (from notification when component not mounted yet)
+  useEffect(() => {
+    if (!users || !users.length) return;
+    const processPending = () => {
+      if (!window.__PENDING_STORY_OPEN) return;
+      const { userId, storyId, ts } = window.__PENDING_STORY_OPEN;
+      if (Date.now() - ts > 30000) { delete window.__PENDING_STORY_OPEN; return; }
+      openStoryByUserId(userId);
+      if (storyId) {
+        // Use rAF loop to wait until viewing state + lists set
+        let attempts = 0;
+        const trySelect = () => {
+          attempts++;
+            const usersWithStories = users.filter(u => u.hasStory);
+            const userIndex = users.findIndex(u => u._id === userId);
+            if (userIndex !== -1) {
+              const mappedIndex = usersWithStories.findIndex(u => u._id === users[userIndex]._id);
+              if (mappedIndex !== -1) {
+                const targetUser = usersWithStories[mappedIndex];
+                const storyPos = targetUser.stories.findIndex(s => s._id === storyId);
+                if (storyPos >= 0) {
+                  setCurrentStory(mappedIndex);
+                  setCurrentStoryInGroup(storyPos);
+                  setProgress(0);
+                  return; // success
+                }
+              }
+            }
+          if (attempts < 20) requestAnimationFrame(trySelect); // ~2s worst case
+        };
+        requestAnimationFrame(trySelect);
+      }
+      delete window.__PENDING_STORY_OPEN;
+    };
+    processPending();
+  }, [users, openStoryByUserId]);
+
+  /* ------------------------------------------------------------------ */
+  /*  PREOPEN IMMEDIATE OVERLAY (INSTANT UX)                             */
+  /* ------------------------------------------------------------------ */
+  useEffect(() => {
+    const handler = () => {
+      if (!isViewingStory) {
+        setPreopenRequested(true);
+        setIsViewingStory(true); // open empty shell instantly
+        setProgress(0);
+        performance.mark && performance.mark('story_preopen_shell');
+      }
+    };
+    window.addEventListener('story:preopen', handler);
+    return () => window.removeEventListener('story:preopen', handler);
+  }, [isViewingStory]);
 
   /* ------------------------------------------------------------------ */
   /*  STORY VIEW HANDLERS                                                */

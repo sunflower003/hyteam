@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -8,7 +8,7 @@ import { buildNestedComments } from '../utils/commentHelpers';
 import styles from '../styles/components/MobileCommentsSheet.module.css';
 
 // View constants
-const REPLY_COLLAPSE_COUNT = 2;
+const REPLY_COLLAPSE_COUNT = 1;
 
 const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
   const { user } = useAuth();
@@ -87,13 +87,6 @@ const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
       setKeyboardOffset(0);
     };
   }, [isOpen]);
-
-  // keep latest comment area visible when keyboard lifts
-  useEffect(() => {
-    if (keyboardOffset > 0 && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [keyboardOffset]);
 
   // ESC to close
   useEffect(() => {
@@ -180,10 +173,49 @@ const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
     };
   };
 
+  const scrollCommentIntoView = useCallback((commentId) => {
+    if (!commentId) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const node = container.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!node) return;
+    const desiredGap = Math.max(96, keyboardOffset + 56);
+    const nodeTop = node.offsetTop;
+    const nodeBottom = nodeTop + node.offsetHeight;
+    const currentTop = container.scrollTop;
+    const visibleHeight = container.clientHeight;
+    const bottomThreshold = currentTop + visibleHeight - desiredGap;
+
+    if (nodeBottom > bottomThreshold) {
+      const next = nodeBottom - visibleHeight + desiredGap;
+      container.scrollTo({ top: Math.max(0, next), behavior: 'smooth' });
+    } else if (nodeTop < currentTop) {
+      container.scrollTo({ top: Math.max(0, nodeTop - 16), behavior: 'smooth' });
+    }
+  }, [keyboardOffset]);
+
+  // keep latest comment area visible when keyboard lifts
+  useEffect(() => {
+    if (!isOpen) return;
+    const focusId = replyTo?.originId || replyTo?.commentId;
+    if (keyboardOffset > 0) {
+      if (focusId) {
+        scrollCommentIntoView(focusId);
+      } else if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }
+  }, [keyboardOffset, isOpen, replyTo?.originId, replyTo?.commentId, scrollCommentIntoView]);
+
   const handleReplyClick = (c) => {
-    setReplyTo({ commentId: c.parentComment || c._id, username: c.user?.username, userId: c.user?._id });
+    const parentId = c.parentComment || c._id;
+    const targetScrollId = c._id;
+    setReplyTo({ commentId: parentId, originId: targetScrollId, username: c.user?.username, userId: c.user?._id });
     setCommentText(`@${c.user?.username} `);
-    inputRef.current?.focus();
+    requestAnimationFrame(() => {
+      scrollCommentIntoView(targetScrollId);
+      inputRef.current?.focus();
+    });
   };
 
   const cancelReply = () => { setReplyTo(null); setCommentText(''); };
@@ -242,13 +274,19 @@ const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
   };
 
   const renderComment = (c, isReply=false) => (
-    <div key={c._id} className={`${styles.commentItem} ${isReply?styles.reply:''}`}>      
-      <div className={styles.left}>{renderAvatar(c.user,isReply?28:32)}</div>
+    <div
+      key={c._id}
+      data-comment-id={c._id}
+      className={`${styles.commentItem} ${isReply?styles.reply:''}`}
+    >      
+  <div className={styles.left}>{renderAvatar(c.user,isReply?28:32)}</div>
       <div className={styles.mid}>
-        <div className={styles.line}><span className={styles.username}>{c.user?.username}</span> <span className={styles.text}>{c.text}</span></div>
+        <div className={styles.line}>
+          <span className={styles.username}>{c.user?.username}</span>
+          <span className={styles.text}>{c.text}</span>
+        </div>
         <div className={styles.meta}>
           <span>{formatTimeAgo(c.createdAt)}</span>
-          {c.likesCount>0 && <span>{formatNumber(c.likesCount)} lượt thích</span>}
           <button type="button" onClick={()=>handleReplyClick(c)}>Trả lời</button>
           {c.user?._id === user?._id && <button type="button" onClick={()=>handleDelete(c._id)}>Xóa</button>}
         </div>
@@ -258,6 +296,9 @@ const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
         <button className={`${styles.likeBtn} ${c.isLiked?styles.liked:''}`} onClick={()=>toggleLike(c._id)}>
           <i className={c.isLiked? 'ri-heart-3-fill':'ri-heart-3-line'}></i>
         </button>
+        <span className={`${styles.likeCount} ${c.isLiked?styles.likeCountActive:''}`}>
+          {formatNumber(c.likesCount || 0)}
+        </span>
       </div>
     </div>
   );
@@ -295,7 +336,7 @@ const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
           {comments.length===0 ? (
             <div className={styles.empty}>Chưa có bình luận</div>
           ) : comments.map(c => renderComment(c,false))}
-          <div style={{height:'72px'}}></div>{/* spacer above input */}
+          <div style={{height:'40px'}}></div>{/* spacer above input */}
         </div>
         <form className={styles.inputBar} onSubmit={handleSubmit}>
           {replyTo && (
@@ -314,12 +355,15 @@ const MobileCommentsSheet = ({ isOpen, onClose, post, onCommentAdded }) => {
               onChange={e=>setCommentText(e.target.value)}
               rows={1}
               onInput={(e)=>{e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px';}}
-              onFocus={()=>{
-                setTimeout(()=>{
-                  if (scrollRef.current) {
-                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                  }
-                }, 50);
+              onFocus={()=>{ 
+                setTimeout(()=>{ 
+                  const focusId = replyTo?.originId || replyTo?.commentId;
+                  if (focusId) { 
+                    scrollCommentIntoView(focusId); 
+                  } else if (scrollRef.current) { 
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight; 
+                  } 
+                }, 50); 
               }}
             />
             <button type="submit" disabled={!commentText.trim()||isSubmitting} className={styles.sendBtn}>

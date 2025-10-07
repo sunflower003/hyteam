@@ -300,10 +300,41 @@
         cursor: pointer;
         font-weight: 550 !important;
         color: #262626;
-        transition: color 0.3s ease, font-weight 0.3s ease;
+        transition: color 0.28s ease, font-weight 0.28s ease, transform 0.28s ease, text-shadow 0.35s ease;
         /* Better touch targets for iOS */
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        position: relative;
+    }
+
+    /* Active visual emphasis: subtle glow + slight lift */
+    .navbar i.active, .navbar .iconContainer.active i {
+        color: #111;
+        font-weight: 700 !important;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.15), 0 0 0.5px rgba(0,0,0,0.3);
+        transform: translateY(-2px);
+    }
+
+    /* Add a soft radial highlight pseudo-element behind active icon */
+    .navbar i.active::after, .navbar .iconContainer.active i::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 50%, rgba(102,126,234,0.28), rgba(118,75,162,0.18) 55%, rgba(118,75,162,0) 75%);
+        pointer-events: none;
+        z-index: -1;
+        animation: mobileIconPulse 1.2s ease-out;
+    }
+
+    @keyframes mobileIconPulse {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+        60% { opacity: 1; }
+        100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
 
     /* Active state cho mobile icons */

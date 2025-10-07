@@ -269,8 +269,9 @@ const Sidebar = () => {
             onClick={() => handleNavigation('/')}
           ></i>
           <div 
-            className={`${styles.iconContainer} ${showNotifications ? styles.active : ''}`} 
+            className={`${styles.iconContainer} ${isActive('/notifications') ? styles.active : ''}`} 
             onClick={handleMobileNotificationClick}
+            title="Notifications"
           >
             <i className="ri-notification-2-line"></i>
             <NotificationBadge count={unreadCount} />
